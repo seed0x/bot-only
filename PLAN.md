@@ -1,5 +1,7 @@
 # bot-only — build the demo that wins
 
+> Current main-game direction: [MAIN_GAME_PLAN.md](docs/MAIN_GAME_PLAN.md). The requested continuous survival game runs across all pages except the leaderboard, with progressively stricter input and objective rules. Implement G01–G08 from that plan; the older S01–S05 roadmap below is background where it conflicts. This is a plan, not implemented behavior.
+
 **Goal: win Showerhacks with a funny, technically real, memorable live experience.** Build decisions serve the moment the room understands and wants to try it. Reliability, React structure and responsive behavior support that moment.
 
 **Creative direction: “The network puts a human on trial.”** One judge, one real automated contender, one network that visibly prefers the machine. See [the 90-second demo and interaction design](docs/DEMO.md).

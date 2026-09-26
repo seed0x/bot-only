@@ -1,5 +1,13 @@
 # Takeover record — 2026-09-26
 
+## Main-game planning — 2026-09-26
+
+- New user direction: continuous survival gameplay across every page except the leaderboard; idle, erratic cursor/typing/scrolling and missed objectives end the run, with increasing difficulty.
+- [MAIN_GAME_PLAN.md](MAIN_GAME_PLAN.md) defines proposed defaults, sensor math, clocks/pause rules, run-specific objective receipts, result persistence and G01–G08 implementation tasks for smaller agents. It supersedes conflicting S01–S05 product assumptions; no implementation agents were launched.
+- Inspected current gate/feed, shared layout/types, objective/score APIs and leaderboard dialog. There is no leaderboard route; current objectives are lifetime booleans and current score writes do not preserve a best score. The plan explicitly covers those integration gaps.
+- Documentation only on `main`, uncommitted. Existing AGENTS.md edits and untracked database files preserved. No application tests, server, database operations, fetch/integration, push or deployment performed.
+- Next: G01 shared contracts and validation limits, then focused implementation slices. Thresholds and pause/start choices are proposed defaults requiring playtest tuning, not verified game balance.
+
 ## Location and integration state (updated at integration)
 
 - Repository: `seed0x/bot-only`; clone at `/home/vlad/hack/bot-only`. `main` is the integration branch.
