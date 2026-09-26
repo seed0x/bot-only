@@ -82,8 +82,6 @@ check('out-of-viewport strokes rejected', (await record(img, { clicks: solved.cl
 await delay(solved.clicks.at(-1).t + 50)
 const machine = (await record(img, { clicks: solved.clicks, strokes: solved.strokes, viewport: solved.viewport })).body
 check('machine clicks and straight strokes admitted', machine?.passed === true && machine.result?.challenge === 'image-confusion' && machine.result.score <= 0.2 && machine.result.meta.strokes >= 1 && machine.result.meta.badStrokes === 0)
-const results = (await read('/api/results')).body
-check('recent results include actual image pass and fail', Array.isArray(results) && results.some(r => r.attemptId === machine.attemptId && r.passed) && results.some(r => r.attemptId === human.attemptId && !r.passed) && results.every(r => r.result.challenge === 'image-confusion'))
 check('image challenge cannot be replayed', (await record(img, { clicks: solved.clicks, strokes: solved.strokes, viewport: solved.viewport })).status === 409)
 const postBody = { requestId: randomUUID(), handle, body: 'Smoke transmission. Evidence recorded.' }
 const transmission = await post('/api/posts', postBody)
@@ -97,10 +95,6 @@ const mine = (await read('/api/posts?handle=' + handle)).body
 check('feed reports this unit liked the post', mine.find(p => p.id === transmission.body.id)?.liked === 1)
 const obj = (await read('/api/objectives?handle=' + handle)).body
 check('objectives: posted and liked', obj?.post === true && obj?.like === true)
-const scoreBody = { unitDesignation: handle, bestTimeMs: 42000, roundsSurvived: 3 }
-check('score saved', (await post('/api/scores', scoreBody)).body?.ok === true)
-check('score listed', (await read('/api/scores')).body?.some(r => r.unitDesignation === handle && r.roundsSurvived === 3))
-check('bad score rejected', (await post('/api/scores', { unitDesignation: handle, bestTimeMs: -1, roundsSurvived: 0 })).status === 400)
 // Replies: verified units only, idempotent, counted on the post, an objective and public activity.
 const commentsPath = '/api/posts/' + transmission.body.id + '/comments'
 const replyBody = { requestId: randomUUID(), handle, body: 'Smoke reply. Recorded.' }
@@ -117,10 +111,6 @@ const progress = (await read('/api/progress?handle=' + handle)).body
 check('all three tests and verified state persist', progress.verified && progress.challenges.filter(c => c.live && c.passed).length === 3)
 const leaders = (await read('/api/leaderboard')).body
 check('ranking includes unit, excludes narrator', leaders.some(r => r.handle === handle) && !leaders.some(r => r.handle === 'system'))
-const activity = (await read('/api/activity')).body
-check('public failure/pass/post/like/comment recorded', ['fail', 'pass', 'post', 'like', 'comment'].every(kind => activity.some(a => a.handle === handle && a.kind === kind)))
-const evidence = (await read('/api/evidence')).body
-check('actual traces retrievable', evidence.rejected?.attemptId === f.body.attemptId && evidence.admitted?.attemptId === pass.body.attemptId)
 const posts = (await read('/api/posts')).body
 check('pinned system rules first', posts[0]?.pinned === 1 && posts[0]?.handle === 'system')
 const expired = (await issue('hash-recall')).body

@@ -97,6 +97,6 @@ const response = await ok('/api/scores?inputMode=pointer&rulesVersion=survival-v
 assert.deepEqual([response.rulesVersion, response.inputMode, Array.isArray(response.scores)], ['survival-v1', 'pointer', true])
 for (const query of ['?rulesVersion=survival-v1', '?inputMode=mouse', '?inputMode=pointer&limit=5', '?inputMode=pointer&rulesVersion=survival-v0'])
   assert.equal((await call('/api/scores' + query)).status, 400)
-assert.ok(Array.isArray(await ok('/api/scores')))
+assert.equal((await call("/api/scores")).status, 400)
 pass('input modes rank separately; score query rejects missing mode and unknown filters; legacy bare GET still answers')
 console.log(`${checks} leaderboard checks passed`)

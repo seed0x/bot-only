@@ -39,10 +39,8 @@ Existing paths remain the starting point. New paths below are proposed and shoul
 | `Objective` | Disabled Post / Comment / Like checkboxes in the feed sidebar, beneath Composer | `/api/objectives?handle=…` returns persisted post/like completion; comment is null (unavailable). Refresh after acknowledged actions; retain confirmed values on read error with explicit retry. Identity change remounts the component. |
 | `PostCard` | One transmission and like action | Like status/count and callback; no global feed ownership. Feed reads include this unit's persisted like state. |
 | `MovementCaptcha`, `HashRecall` | Input, scoring, timer and local verdict | Emit one `CaptchaResult` per run. No fetch, identity write or navigation. |
-| `LeaderboardPanel` | Dialog, ranking states, focus lifecycle | Open/close props and resource state. |
 | Proposed `AttemptEvidence` | Bounded actual trace and metric presentation | Receives recorded/run evidence; no invented data or scoring changes. |
 | Proposed `VerdictReceipt` | Pending/confirmed public receipt | Attempt ID, confirmed result and retry action; shared by verify/feed. |
-| Proposed `TrialComparison` | Human/machine comparison | Actual attempt IDs/evidence; labels trace duration vs request time and recorded replay. |
 | `ChallengeTrial` | Issue → play → record lifecycle for one test, idempotent request IDs | Used by the gate with `image-confusion`; renders `ImageCaptcha`, `MovementCaptcha` or `HashRecall`. |
 | `ImageCaptcha` | Tile clicks, timer and independent movement metrics | Fixed look-alike pair rule with a two-minute limit; submits clicks plus optional browser-observed pointer metrics. Correctness depends on final selection, not rhythm or movement. |
 | Proposed focused read hooks | Fetch, cadence, cancellation, freshness | Start with feed/activity/ranking hooks, not a generic state framework. |
