@@ -42,7 +42,7 @@ Run smoke and seed only against explicitly disposable local/test data during dev
 | Path | Responsibility |
 | --- | --- |
 | `src/app/page.tsx`, `verify/page.tsx`, `feed/page.tsx` | Three-screen story |
-| `src/components/feed/` | Identity, activity, composer, transmissions, tests, ranking panel |
+| `src/components/feed/` | Identity, composer, transmissions, ranking panel |
 | `src/components/MovementCaptcha.tsx`, `HashRecall.tsx` | Two live games |
 | `src/lib/challenges.ts`, `types.ts` | Registry and shared contracts |
 | `src/app/api/` | HTTP handlers |

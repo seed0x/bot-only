@@ -61,7 +61,7 @@ Owners are unassigned until claimed. Timeboxes are planning budgets, not deliver
 
 ### S03 — deliver the payoff
 
-- Reuse existing feed, ticker and UnitChip; add `TrialComparison` and a feed receipt presentation. Keep existing TestCard stable while data updates.
+- Keep the feed focused on transmissions and UnitChip; add `TrialComparison` and a feed receipt presentation. Verification challenges stay outside the feed.
 - Show actual human/machine trace and results side by side on wide screens; stack them on phone. Distinguish trace duration from round-trip time.
 - Use the automated client to post one evidence-based reaction and the closing line after acknowledged completion. A curated machine voice is fine; do not claim it is an independent LLM conversation.
 - Put pinned network rules first and make seeded history consistent. Demo counts must come from actual events. Prevent duplicate receipts/posts on retry.

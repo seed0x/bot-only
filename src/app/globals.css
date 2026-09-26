@@ -41,6 +41,3 @@ body {
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
 .feed .tabular-nums { font-variant-numeric: tabular-nums; }
-.ticker-track { animation: ticker 40s linear infinite; }
-@keyframes ticker { from { transform: translateX(0) } to { transform: translateX(-50%) } }
-@media (prefers-reduced-motion: reduce) { .ticker-track { animation: none } }
