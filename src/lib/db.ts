@@ -6,6 +6,12 @@ import { DatabaseSync } from 'node:sqlite'
 const globalForDb = globalThis as unknown as { db?: DatabaseSync }
 
 const SCHEMA = `
+  create table if not exists gate_sessions (
+    token_hash text primary key,
+    user_id integer not null,
+    attempt_id integer not null,
+    expires_at integer not null
+  );
   create table if not exists operation_receipts (
     request_id text primary key,
     fingerprint text not null,

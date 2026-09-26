@@ -1,7 +1,6 @@
 'use client'
 import { useRef, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import ChallengeTrial from '@/components/ChallengeTrial'
 import { requestJson, jsonPost } from '@/lib/api'
 import { setSessionUser } from '@/lib/session'
@@ -9,7 +8,6 @@ import type { SessionUser } from '@/lib/types'
 
 // The gate: a name, then the reverse captcha, then the feed.
 export default function Home() {
-  const router = useRouter()
   const [handle, setHandle] = useState(''), [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [unit, setUnit] = useState<SessionUser | null>(null)
@@ -53,12 +51,10 @@ export default function Home() {
             handle={unit.handle}
             kind="image-confusion"
             autoStart
-            onRecorded={(r) => { if (r.passed) setTimeout(() => router.push('/feed'), 1400) }}
           >
-            {(r) => r.passed ? <p className="fine-print">Verified. Opening feed…</p> : null}
+            {(r) => r.passed ? <Link className="button-primary" href="/feed" prefetch={false}>Enter feed</Link> : null}
           </ChallengeTrial>
         </section>
       )}
-      <Link className="text-link gate-browse" href="/feed">Browse the feed</Link>
     </main>
 }

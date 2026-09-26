@@ -1,6 +1,8 @@
 # Frontend and interaction contract
 
-Current visual direction: compact monospace bot-only branding, Archivo body text, solid dark surfaces and thin separators. The composer uses a raised surface; objectives stay quiet beneath it. Keep Claude’s CSS cascade layers so Tailwind utilities retain priority. Buttons are at least 44px high. Preserve current image verification on `/` and every existing data/error/retry contract. This UI pass changes presentation only; older proposed routes below remain historical planning.
+Current access contract: `/` name → server-scored image CAPTCHA → visible recorded result → Enter feed. Failed results expose Try again; no Browse link. `/feed` checks the HttpOnly admission cookie server-side before rendering; posts GET also requires it. A pass sets admission, registration/failure clears it. `VerdictReceipt` owns presentation; CAPTCHA scoring/player remain in the teammate’s existing modules.
+
+Current visual direction: compact Supreme bot-only branding, Supreme body text with Archivo numeric data, solid dark surfaces and thin separators. The composer uses a raised surface; objectives stay quiet beneath it. Keep Claude’s CSS cascade layers so Tailwind utilities retain priority. Buttons are at least 44px high. Preserve current image verification on `/` and every existing data/error/retry contract. This UI pass changes presentation only; older proposed routes below remain historical planning.
 
 The showstopper and build order are defined in [DEMO.md](DEMO.md) and [PLAN.md](../PLAN.md). These supporting contracts guide S01–S04; T-number references identify detail in [ENGINEERING_BACKLOG.md](ENGINEERING_BACKLOG.md), not a prerequisite cleanup sequence. Target behavior is not yet implemented. [HANDOFF.md](HANDOFF.md) records actual gaps.
 

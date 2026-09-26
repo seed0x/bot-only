@@ -4,7 +4,7 @@ if (!process.env.DB_PATH) throw new Error('Set DB_PATH explicitly to the disposa
 const db = getDb()
 db.exec('begin immediate')
 try {
-  for (const table of ['operation_receipts', 'challenge_instances', 'likes', 'posts', 'activity', 'captcha_attempts', 'cursor_events', 'users']) db.exec(`delete from ${table}`)
+  for (const table of ['gate_sessions', 'operation_receipts', 'challenge_instances', 'likes', 'posts', 'activity', 'captcha_attempts', 'cursor_events', 'users']) db.exec(`delete from ${table}`)
   db.exec('delete from sqlite_sequence')
   const createUser = db.prepare('insert into users (handle, humanity_score, verified_bot) values (?, ?, 1)')
   const post = db.prepare("insert into posts (user_id, handle, body, likes, pinned, created_at) values (?, ?, ?, 0, ?, datetime('now', '-1 hour'))")

@@ -3,7 +3,7 @@
 The primary goal is to win Showerhacks with the live human-versus-machine showstopper in `docs/DEMO.md`. Read `PLAN.md`, `docs/HANDOFF.md` and the relevant contracts before editing. Follow S01–S05; supporting engineering work is not a prerequisite cleanup marathon. Keep them current when behavior or verification changes.
 
 - Build one complete increment at a time. State intended behavior, errors/retries and acceptance checks before implementation.
-- Continue the existing Next.js/React/SQLite app. Preserve gate → verification → network with tests played in the feed.
+- Continue the existing Next.js/React/SQLite app. Preserve name → image CAPTCHA → recorded result → admitted feed. The owner has asked to preserve dswim’s CAPTCHA logic; coordinate his pending update before changing scoring or the player.
 - Use `src/lib/challenges.ts` and `src/lib/types.ts` as shared boundaries. Coordinate shared-contract and page edits with other contributors.
 - No fake success, silent errors, substitute backend, mock content on failure, or extra challenge activated without its contract and checks.
 - Client verdict and server acknowledgement are separate. Do not report a result as public before confirmation. Mutation retries must not duplicate writes.

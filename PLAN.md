@@ -1,5 +1,14 @@
 # bot-only — build the demo that wins
 
+## Remaining demo priorities — owner says three hours remain
+
+1. **Integrate dswim's CAPTCHA changes when pushed.** Keep his scoring/interaction implementation authoritative; adapt only the admission/result boundary if its contract changes. His push is not available yet. No new challenge design in this pass.
+2. **Rehearse the full loop:** name → failed result → retry → passed result → Enter feed → post/like. Check the presenter machine and one phone. Fix only issues that interrupt or confuse that loop.
+3. **Freeze and prepare the presentation:** one clear opening line, an actual human/machine attempt, one visible network action. Leave time to verify the deployed URL and persistence. Avoid new features before this works.
+
+Current completed increment: server-checked image-CAPTCHA admission, compact result card with explicit continue/retry, and CBS typography (Supreme UI, Archivo numbers). Checks and limitations are at the top of `docs/HANDOFF.md`. CAPTCHA scoring/player code is unchanged; dswim integration remains pending his push.
+
+
 > Completed UI increment: original compact branding, restrained dark surfaces, clearer feed/sidebar hierarchy, readable secondary type and 44px actions. Built from Claude’s `d959e50`; existing gate image verification, APIs and retries remain unchanged. The owner requested merge. See the current evidence in `docs/HANDOFF.md`.
 
 **Goal: win Showerhacks with a funny, technically real, memorable live experience.** Build decisions serve the moment the room understands and wants to try it. Reliability, React structure and responsive behavior support that moment.

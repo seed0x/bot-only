@@ -3,10 +3,12 @@ import { randomUUID } from 'node:crypto'
 import { setTimeout as delay } from 'node:timers/promises'
 if (!process.env.BASE_URL) throw new Error('Set BASE_URL explicitly to an isolated test server.')
 const base = process.env.BASE_URL, handle = 'smoke_' + randomUUID().slice(0, 8)
-let failures = 0, checks = 0
+let failures = 0, checks = 0, cookie = ''
 function check(name, passed) { checks++; console.log(`${passed ? 'PASS' : 'FAIL'}  ${name}`); if (!passed) failures++ }
 async function read(path, options) {
-  const response = await fetch(base + path, { ...options, signal: AbortSignal.timeout(10_000) })
+  const response = await fetch(base + path, { ...options, headers: { ...options?.headers, ...(cookie ? { cookie } : {}) }, signal: AbortSignal.timeout(10_000) })
+  const received = response.headers.get('set-cookie')
+  if (received) cookie = received.split(';')[0]
   return { status: response.status, body: await response.json() }
 }
 const post = (path, body) => read(path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })

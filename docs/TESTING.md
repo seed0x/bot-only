@@ -1,5 +1,7 @@
 # Verification and test plan
 
+Current admission regression: run `BASE_URL=http://127.0.0.1:3102 npm run smoke:gate` against isolated data. Anonymous posts GET must return 401 and `/feed` must redirect to `/`; naming a user alone cannot admit it. Full smoke now carries the admission cookie from a server-confirmed image pass. Result UI and CBS font checks are recorded in the latest HANDOFF entry.
+
 Separate baseline evidence from target acceptance. [HANDOFF.md](HANDOFF.md) is the latest observed result; the cases below are not all automated yet.
 
 ## Demo acceptance comes first
@@ -44,12 +46,12 @@ In terminal B, from that same checkout:
 
 ```bash
 export DB_PATH="$PWD/qa.db"
-curl -fsS http://127.0.0.1:3101/api/posts
+curl -fsS http://127.0.0.1:3101/api/health
 npm run seed
 BASE_URL=http://127.0.0.1:3101 npm run smoke
 ```
 
-Stop if any command fails. The first database-backed GET creates the schema; health alone does not. The current seed assumes schema exists. Seed erases the selected database's network data: this procedure is only for a newly created disposable `qa.db`. Smoke leaves test rows behind.
+Stop if any command fails. The seed calls getDb and creates the schema. Health alone does not create it. Seed erases the selected database's network data: this procedure is only for a newly created disposable `qa.db`. Smoke leaves test rows behind.
 
 During takeover an exported snapshot at commit `7457fef` used a disposable DB and `next dev --webpack` at port 3101 with the existing installed dependencies. That verified API behavior; it did not prove `npm ci` or a production build from a fresh clone.
 

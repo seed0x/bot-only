@@ -9,13 +9,13 @@
 }
 @theme inline {
   --color-background: var(--bg); --color-foreground: var(--text);
-  --font-sans: var(--font-archivo); --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-sans: "Supreme", sans-serif; --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 /* Element resets. In the base layer so any Tailwind utility on an element wins over them. */
 @layer base {
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font-archivo), sans-serif; font-size: 16px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: "Supreme", sans-serif; font-size: 16px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
   button, input, textarea { font: inherit; }
   button, a, input, textarea { -webkit-tap-highlight-color: transparent; }
   button, a { touch-action: manipulation; }
@@ -50,7 +50,7 @@
   .site-header { position: sticky; top: 0; z-index: 30; background: var(--bg); border-bottom: 1px solid var(--line); }
   .site-header-inner { max-width: 1000px; margin: auto; min-height: 72px; padding: 12px 20px; display: flex; align-items: center; gap: 24px; }
   .site-header-inner > :last-child:not(.network-status) { margin-left: auto; }
-  .wordmark { font: 700 22px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: -.055em; flex-shrink: 0; }
+  .wordmark { font: 600 24px/1.1 "Supreme", sans-serif; letter-spacing: -.055em; flex-shrink: 0; }
   .wordmark span { color: var(--muted); }
   .network-status { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
   .network-count { border-left: 1px solid var(--line); padding-left: 10px; font-variant-numeric: tabular-nums; }
@@ -58,7 +58,7 @@
   .signal-dot.danger { background: var(--danger); box-shadow: 0 0 14px rgb(240 64 47 / .35); }
   .gate-layout { width: 100%; max-width: 448px; min-height: 80dvh; margin: auto; padding: 40px 24px; display: flex; flex-direction: column; justify-content: center; }
   .gate-intro .eyebrow { margin-bottom: 28px; }
-  .gate-intro h1 { font: 700 48px/1.1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: -.045em; }
+  .gate-intro h1 { font: 600 48px/1.05 "Supreme", sans-serif; letter-spacing: -.045em; }
   .gate-description { font-size: 16px; line-height: 1.6; margin-top: 12px; color: var(--muted); }
   .gate-form { margin-top: 32px; }
   .gate-input-row { display: flex; gap: 12px; align-items: center; margin: 8px 0; }
@@ -92,14 +92,7 @@
   .instrument-facts > span { display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; font-size: 17px; color: #c9cccd; }
   .instrument-facts small { font-size: 10px; color: var(--muted); }
   .instrument-compact .instrument-value { font-size: 52px; }
-  .receipt-top { display: flex; justify-content: space-between; gap: 12px; }
-  .verdict-title { font-size: clamp(55px,8.5vw,96px); margin-top: 28px; }
-  .verdict-receipt.rejected .verdict-title { color: var(--danger); }
-  .verdict-receipt.admitted .verdict-title { color: var(--verified); }
-  .receipt-handle { font-size: 20px; margin-top: 18px; overflow-wrap: anywhere; }
-  .verdict-reason { font-size: 14px; line-height: 1.6; color: #b6bcbd; margin: 10px 0 25px; }
   .receipt-footer { border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; padding-top: 15px; margin-top: 15px; color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
-  .receipt-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
   .trial-pending { display: grid; gap: 20px; justify-items: stretch; }
   .trial-pending .button-secondary { justify-self: start; }
   .form-error, .error-state { font-size: 13px; line-height: 1.6; margin-top: 12px; color: #e3d7d4; }
@@ -127,7 +120,6 @@
   .test-card > .button-secondary, .test-card > .text-link { margin-top: 22px; }
   .test-passed { margin-left: auto; color: var(--verified); font-size: 11px; font-variant-numeric: tabular-nums; }
   .test-player { padding-top: 14px; }
-  .test-player .verdict-title { font-size: clamp(32px,7vw,48px); }
   .composer { display: flex; align-items: start; gap: 12px; padding: 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
   .composer-content { flex: 1; min-width: 0; }
   .composer-content textarea { font-size: 16px; line-height: 1.5; padding: 4px 0; min-height: 88px; }
@@ -184,8 +176,6 @@
     .composer-actions { flex-wrap: wrap; }
     .comparison-grid { grid-template-columns: 1fr; }
     .evidence-card .evidence svg { max-height: 210px; }
-    .receipt-actions > * { width: 100%; }
-    .verdict-title { font-size: clamp(50px,12vw,76px); }
   }
   @media (max-width: 360px) {
     .gate-layout { padding-inline: 18px; }
@@ -240,7 +230,7 @@
   .gate-form label { font-size: 14px; font-weight: 500; }
   .gate-browse { align-self: flex-start; margin-top: 12px; color: var(--muted); }
   .unit-meta { font-size: 12px; line-height: 1.4; color: var(--muted); }
-  .unit-humanity { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text); }
+  .unit-humanity { font-family: var(--font-archivo), sans-serif; font-variant-numeric: tabular-nums; color: var(--text); }
   .composer .button-primary { min-width: 76px; }
   .composer-actions .fine-print { font-variant-numeric: tabular-nums; }
   .feed-verification { display: grid; justify-items: start; gap: 12px; padding: 16px; border: 1px solid var(--line); border-radius: 10px; line-height: 1.6; margin-bottom: 0; }
@@ -251,4 +241,29 @@
     .gate-input-row { flex-wrap: wrap; gap: 10px; }
     .gate-input-row input, .gate-input-row .button-primary { flex-basis: 100%; width: 100%; }
   }
+}
+
+@layer components {
+  .verdict-receipt { padding: 24px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+  .result-heading { display: flex; align-items: center; gap: 14px; }
+  .result-icon { display: grid; place-items: center; width: 44px; height: 44px; flex-shrink: 0; border-radius: 50%; }
+  .result-icon svg { width: 24px; height: 24px; }
+  .admitted .result-icon { background: rgb(155 223 170 / .12); color: var(--verified); }
+  .rejected .result-icon { background: rgb(240 64 47 / .12); color: var(--danger); }
+  .result-label { color: var(--muted); font-size: 12px; line-height: 1.4; }
+  .verdict-title { margin-top: 2px; font-size: 32px; font-weight: 500; line-height: 1.1; letter-spacing: -.03em; }
+  .receipt-handle { margin-top: 22px; color: var(--muted); font-size: 14px; overflow-wrap: anywhere; }
+  .verdict-reason { margin-top: 8px; font-size: 16px; line-height: 1.5; }
+  .result-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 24px 0 0; padding-top: 20px; border-top: 1px solid var(--line); }
+  .result-metrics dt { color: var(--muted); font-size: 12px; }
+  .result-metrics dd { margin: 6px 0 0; font: 450 30px/1.15 var(--font-archivo), sans-serif; font-variant-numeric: tabular-nums; letter-spacing: -.025em; }
+  .result-metrics dd span { margin-left: 4px; font-size: 14px; color: var(--muted); }
+  .result-reference { margin-top: 20px; font: 400 11px/1.4 var(--font-archivo), sans-serif; color: var(--muted); }
+  .receipt-actions { display: grid; gap: 12px; margin-top: 20px; }
+  .receipt-actions > .button-primary, .receipt-actions > .button-secondary { width: 100%; }
+  .result-evidence { margin-top: 16px; }
+  .result-evidence summary { min-height: 44px; padding-block: 12px; font-size: 14px; cursor: pointer; }
+  .trial-pending { border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 24px; }
+  .access-error-title { font-size: 28px; }
+  @media (max-width: 380px) { .verdict-receipt, .trial-pending { padding: 20px; } }
 }
