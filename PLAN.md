@@ -1,5 +1,7 @@
 # bot-only — build the demo that wins
 
+> Completed UI increment: original compact branding, restrained dark surfaces, clearer feed/sidebar hierarchy, readable secondary type and 44px actions. Built from Claude’s `d959e50`; existing gate image verification, APIs and retries remain unchanged. The owner requested merge. See the current evidence in `docs/HANDOFF.md`.
+
 **Goal: win Showerhacks with a funny, technically real, memorable live experience.** Build decisions serve the moment the room understands and wants to try it. Reliability, React structure and responsive behavior support that moment.
 
 **Creative direction: “The network puts a human on trial.”** One judge, one real automated contender, one network that visibly prefers the machine. See [the 90-second demo and interaction design](docs/DEMO.md).

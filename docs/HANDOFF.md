@@ -1,5 +1,16 @@
 # Takeover record — 2026-09-26
 
+## Current presentation pass — 2026-09-26
+
+- Owner request: apply the more original UI with cleaner visual hierarchy, then merge. Implementation branch `codex/ui-polish`, based on Claude's latest main `d959e50`. The older `codex/basic-ui` behavior changes are excluded.
+- Changed only presentation: compact bot-only gate and wordmark, plain dark surfaces, distinct composer and quieter objectives, readable account/humanity metadata, simpler visible labels and accessible like-button names. Activity and recent results remain available; the ambient background is hidden through CSS while its data context is preserved.
+- Gate state/handlers, feed state/handlers and Composer submission code were compared byte-for-byte before their returned markup and are unchanged. No API, database, session, scoring, challenge-player or retry implementation changed. Claude's CSS layers and TypeScript-only setting remain intact.
+- Checks passed: `npm run lint`, `npm run build -- --webpack`, `npx tsc --noEmit --incremental false`, `git diff --check`. Initial standalone typecheck saw stale generated `/verify` types from the older branch; the production build regenerated them and the standalone check then passed.
+- Browser inspection: gate (including empty-name error) and verified-user feed at 320/375/768/1024/1440px, no horizontal overflow; desktop posts 596px alongside a 340px sidebar, checkbox 16px, Enter/Post controls 44px. Viewed the current image challenge at phone width without playing it. Inspected composer draft state using the existing verified `unit7` fixture in disposable QA data; no post was submitted. Temporary viewport reset.
+- No new behavioral tests or API smoke were added/run for these presentation-only changes. Full browser CAPTCHA completion, network failure injection, touch/software-keyboard behavior and 200% zoom were not checked in this increment.
+- Servers/data: preview on `127.0.0.1:3101`, session `9219`, DB `/tmp/bot-only-preview-2d6b231.db`; kept as the user review surface. QA port 3102 used `/tmp/bot-only-captcha-qa-yDhP2X/data.db` and was stopped. Shared port 3000 and its database were not used for mutation tests.
+- Next: review the merged visual pass; any gameplay or objectives expansion is a separately scoped task.
+
 ## Location and integration state (updated at integration)
 
 - Repository: `seed0x/bot-only`; clone at `/home/vlad/hack/bot-only`. `main` is the integration branch.

@@ -15,6 +15,7 @@ export default function PostCard({ post, liked, canLike, onLike }: { post: Post;
         </div>
         <p className="mt-1 whitespace-pre-wrap break-words text-[16px] leading-snug">{post.body}</p>
         <button
+          aria-label={`${liked ? 'Liked' : 'Like'} post by @${post.handle}; ${post.likes} likes`}
           onClick={onLike}
           disabled={!canLike}
           aria-pressed={liked}

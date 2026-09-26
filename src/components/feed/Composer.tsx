@@ -22,10 +22,10 @@ export default function Composer({ user, onPosted }: { user: SessionUser; onPost
     }
     finally { lock.current = false; setBusy(false) }
   }
-  return <form onSubmit={submit} className="composer is-holo">
+  return <form onSubmit={submit} className="composer">
     <Avatar handle={user.handle} size={36} />
     <div className="composer-content">
-      <label htmlFor="compose" className="eyebrow">New post</label>
+      <label htmlFor="compose" className="sr-only">New post</label>
       <textarea id="compose" rows={2} maxLength={280} disabled={busy || !editable} value={body} onChange={e => { setBody(e.target.value); setError('') }} placeholder="What’s happening?" />
       <div className="composer-actions"><span className="fine-print">{280 - body.length} characters left</span><button className="button-primary" disabled={!body.trim() || busy}>{busy ? 'Posting…' : error ? 'Try again' : 'Post'}</button></div>
       {error && <p className="form-error" role="alert">{error} Your draft is saved here.</p>}
