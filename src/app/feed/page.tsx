@@ -5,20 +5,29 @@ import UnitChip from '@/components/feed/UnitChip'
 import Ticker from '@/components/feed/Ticker'
 import Composer from '@/components/feed/Composer'
 import PostCard from '@/components/feed/PostCard'
+import TestCard from '@/components/feed/TestCard'
 import LeaderboardPanel from '@/components/feed/LeaderboardPanel'
 import { getSessionUser } from '@/lib/session'
-import type { Post, SessionUser } from '@/lib/types'
+import type { Post, Progress, SessionUser } from '@/lib/types'
 
-// The network. One column, phone first.
+// The network. One column. Tests from @system are woven between transmissions and played in place.
 export default function Feed() {
   const [user, setUser] = useState<SessionUser | null>(null)
   const [posts, setPosts] = useState<Post[]>([])
+  const [tests, setTests] = useState<Progress[]>([])
+  const [humanity, setHumanity] = useState<number | null>(null)
   const [liked, setLiked] = useState<Set<number>>(new Set())
   const [board, setBoard] = useState(false)
 
   useEffect(() => { setUser(getSessionUser()) }, [])
-  const load = useCallback(() => fetch('/api/posts').then((r) => r.json()).then(setPosts), [])
-  useEffect(() => { load(); const t = setInterval(load, 3000); return () => clearInterval(t) }, [load])
+
+  const load = useCallback(() => {
+    fetch('/api/posts').then((r) => r.json()).then(setPosts)
+    fetch(`/api/progress?handle=${encodeURIComponent(getSessionUser()?.handle ?? '')}`)
+      .then((r) => r.json())
+      .then((d) => { setTests(d.challenges.filter((c: Progress) => c.live)); setHumanity(d.humanity) })
+  }, [])
+  useEffect(() => { load(); const t = setInterval(load, 4000); return () => clearInterval(t) }, [load])
 
   async function like(id: number) {
     if (!user || liked.has(id)) return
@@ -28,12 +37,24 @@ export default function Feed() {
     load()
   }
 
+  // Weave: a test, then two posts, then the next test, until both run out.
+  const timeline: Array<{ kind: 'test'; test: Progress; i: number } | { kind: 'post'; post: Post }> = []
+  let pi = 0
+  tests.forEach((test, i) => {
+    timeline.push({ kind: 'test', test, i })
+    for (let k = 0; k < 2 && pi < posts.length; k++) timeline.push({ kind: 'post', post: posts[pi++] })
+  })
+  while (pi < posts.length) timeline.push({ kind: 'post', post: posts[pi++] })
+
   return (
     <div className="feed min-h-screen">
       <header className="sticky top-0 z-30 border-b backdrop-blur" style={{ background: 'color-mix(in srgb, var(--bg) 85%, transparent)', borderColor: 'var(--line)' }}>
         <div className="mx-auto flex max-w-[620px] items-center justify-between px-4 py-3">
-          <UnitChip user={user} />
-          <button onClick={() => setBoard(true)} className="rounded-full border px-3.5 py-1.5 text-sm font-medium" style={{ borderColor: 'var(--line)' }}>Leaderboard</button>
+          <UnitChip user={user} humanity={humanity} tests={tests} />
+          <div className="flex items-center gap-3">
+            <span className="hidden font-mono text-xs uppercase tracking-wider sm:inline" style={{ color: 'var(--muted)' }}>prove you&apos;re not human</span>
+            <button onClick={() => setBoard(true)} className="rounded-full border px-3.5 py-1.5 text-sm font-medium" style={{ borderColor: 'var(--line)' }}>Leaderboard</button>
+          </div>
         </div>
         <Ticker />
       </header>
@@ -46,9 +67,13 @@ export default function Feed() {
             Read-only. Humans cannot transmit. <a href="/" className="underline">Verify as a unit</a>.
           </div>
         )}
-        <section className="mt-2 divide-y" style={{ borderColor: 'var(--line)' }}>
-          {posts.map((p) => <PostCard key={p.id} post={p} liked={liked.has(p.id)} canLike={!!user} onLike={() => like(p.id)} />)}
-          {posts.length === 0 && <p className="py-10 text-center text-sm" style={{ color: 'var(--muted)' }}>No transmissions yet. Be the first unit.</p>}
+        <section className="mt-2">
+          {timeline.map((item) =>
+            item.kind === 'test'
+              ? <TestCard key={`t-${item.test.id}`} test={item.test} index={item.i} user={user} onResult={load} />
+              : <div key={`p-${item.post.id}`} className="border-b" style={{ borderColor: 'var(--line)' }}><PostCard post={item.post} liked={liked.has(item.post.id)} canLike={!!user} onLike={() => like(item.post.id)} /></div>,
+          )}
+          {posts.length === 0 && tests.length === 0 && <p className="py-10 text-center text-sm" style={{ color: 'var(--muted)' }}>Nothing on the network yet.</p>}
         </section>
       </main>
 
