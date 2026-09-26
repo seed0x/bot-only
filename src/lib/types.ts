@@ -5,7 +5,7 @@ export type CaptchaResult = {
   passed: boolean
   score: number
   duration_ms: number
-  meta: { reason: string; maxDev?: number; speedCv?: number; trace?: MotionSample[]; errors?: number; prompt?: string; selected?: string[]; tookTheBait?: boolean }
+  meta: { reason: string; maxDev?: number; speedCv?: number; trace?: MotionSample[]; errors?: number; prompt?: string; selected?: string[] }
 }
 export type SessionUser = { id: number; handle: string }
 export type ImageTile = { id: string; src: string }
