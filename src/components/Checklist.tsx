@@ -7,7 +7,12 @@ import type { Progress } from '@/lib/types'
 export default function Checklist({ handle }: { handle: string | null }) {
   const [items, setItems] = useState<Progress[]>([])
   useEffect(() => {
-    fetch(`/api/progress?handle=${encodeURIComponent(handle ?? '')}`).then((r) => r.json()).then(setItems)
+    // ignore responses from a previous handle so a slow empty fetch cannot overwrite a real one
+    let alive = true
+    fetch(`/api/progress?handle=${encodeURIComponent(handle ?? '')}`)
+      .then((r) => r.json())
+      .then((d) => alive && setItems(d))
+    return () => { alive = false }
   }, [handle])
   const done = items.filter((i) => i.passed).length
   return (
