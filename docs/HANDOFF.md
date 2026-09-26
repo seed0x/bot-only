@@ -1,5 +1,9 @@
 # Takeover record — 2026-09-26
 
+## Compact sidebar correction — 2026-09-26
+
+Owner found the sidebar receipts too large. The compact variant now renders a native expandable row with avatar, status, username, humanity and time; reason/result ID expand on demand. Full gate receipts retain their presentation. Closed rows measure 74px high (previous cards approximately 295px). Build/TypeScript, lint and diff checks pass; browser confirmed expand/collapse and no overflow at 320px. No gameplay/API changes or additional mutation tests. Preview 3101 session `84443`; merged locally, not pushed.
+
 ## Result components and activity states — 2026-09-26
 
 - Owner asked for stronger pass/fail presentation and better component states, then clarified layout: results/components in the sidebar, recent activity below posts. Removed the unclear “At the gate” heading. Desktop keeps posts left, composer/objectives/results right; under 1024px, controls precede posts and results follow the feed. The tall desktop sidebar scrolls with the page rather than trapping its lower cards.

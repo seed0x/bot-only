@@ -284,19 +284,9 @@
   .activity-heading .fine-print { margin-top: 3px; }
   .activity-live.text-button { font-size: 12px; padding-inline: 12px; background: transparent; }
   .signal-paused { background: var(--muted); }
-  .gate-results-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-  .receipt-compact { padding: 18px; }
-  .receipt-compact .result-heading { margin-top: 20px; gap: 8px; }
-  .receipt-compact .verdict-title { font-size: clamp(26px, 3.3vw, 32px); }
-  .receipt-compact .result-icon { width: 28px; height: 28px; }
-  .receipt-compact .result-icon svg { width: 17px; height: 17px; }
-  .receipt-compact .receipt-identity { margin-top: 18px; gap: 8px; font-size: 12px; }
-  .receipt-compact .receipt-outcome { display: none; }
-  .receipt-compact .verdict-reason { font-size: 12px; min-height: 36px; }
-  .receipt-compact .result-metrics { margin-top: 18px; padding-top: 14px; }
-  .receipt-compact .result-metrics dd { font-size: 25px; }
-  .result-waiting { min-height: 230px; border: 1px dashed var(--line); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: var(--muted); font-size: 13px; text-align: center; padding: 20px; }
-  .result-waiting-mark { font-size: 30px; opacity: .45; }
+  .gate-results-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  .result-waiting { min-height: 80px; border: 1px dashed var(--line); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: var(--muted); font-size: 13px; text-align: center; padding: 20px; }
+  .result-waiting-mark { font-size: 18px; opacity: .45; }
   .activity-log { margin-top: 24px; }
   .activity-log h2 { font-size: 13px; font-weight: 500; color: var(--muted); margin: 0 0 8px; }
   .activity-log ol { list-style: none; margin: 0; padding: 0; }
@@ -322,18 +312,7 @@
   .objectives-panel .resource-state { padding: 12px; }
   @media (max-width: 480px) {
     .gate-results-grid { gap: 10px; }
-    .verdict-receipt.receipt-compact { padding: 12px; }
-    .receipt-compact .verdict-title { font-size: 23px; }
-    .receipt-compact .result-icon { display: none; }
-    .receipt-compact .receipt-topline { font-size: 10px; }
-    .receipt-compact .receipt-identity { font-size: 11px; gap: 6px; }
-    .receipt-compact .receipt-identity svg { width: 20px; height: 20px; }
-    .receipt-compact .verdict-reason { min-height: 54px; font-size: 11px; }
-    .receipt-compact .result-metrics { gap: 8px; }
-    .receipt-compact .result-metrics dd { font-size: 18px; }
-    .receipt-compact .result-metrics dd span { font-size: 10px; margin-left: 2px; }
-    .receipt-compact .result-metrics dt { font-size: 10px; }
-    .result-waiting { min-height: 200px; padding: 12px; font-size: 12px; }
+    .result-waiting { min-height: 80px; padding: 12px; font-size: 12px; }
   }
   @media (max-width: 380px) { .verdict-receipt, .trial-pending { padding: 20px; } }
 }
@@ -355,4 +334,22 @@
     .feed-posts { order: 3; }
     .feed-results-panel { order: 4; }
   }
+}
+
+@layer components {
+  .result-row { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); min-width: 0; }
+  .result-row summary { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 12px; min-height: 72px; cursor: pointer; list-style: none; }
+  .result-row summary::-webkit-details-marker { display: none; }
+  .result-row summary:focus-visible { outline: 2px solid var(--verified); outline-offset: 3px; border-radius: 8px; }
+  .result-row-identity, .result-row-numbers { display: grid; gap: 3px; min-width: 0; }
+  .result-row-identity strong { font-size: 13px; font-weight: 500; }
+  .result-row.admitted .result-row-identity strong { color: var(--verified); }
+  .result-row.rejected .result-row-identity strong { color: var(--danger); }
+  .result-row-identity > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; color: var(--muted); }
+  .result-row-numbers { text-align: right; font: 400 13px/1.5 var(--font-archivo), sans-serif; font-variant-numeric: tabular-nums; }
+  .result-row-numbers small { font: 400 10px "Supreme", sans-serif; color: var(--muted); }
+  .result-row-chevron { display: inline-block; color: var(--muted); margin-left: 4px; }
+  .result-row[open] .result-row-chevron { transform: rotate(180deg); }
+  .result-row-detail { padding: 0 12px 12px 46px; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+  .result-row-detail > span { display: block; margin-top: 6px; font-size: 10px; }
 }
