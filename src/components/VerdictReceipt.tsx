@@ -28,6 +28,12 @@ export default function VerdictReceipt({ receipt, children, compact = false }: {
     </dl>
     {!compact && <div className="humanity-scale" aria-hidden="true"><span style={{ left: `${Math.min(100, Math.max(0, result.score * 100))}%` }} /></div>}
     {!compact && <div className="scale-labels"><span>Machine-like</span><span>Human-like</span></div>}
+    {(result.meta.pointer || result.meta.corrections !== undefined) && <details className="result-evidence"><summary>Movement & timing</summary><dl className="result-monitoring">
+      <div><dt>Mouse movement</dt><dd>{result.meta.pointer ? (result.meta.pointer.movementMs / 1000).toFixed(2) + 's' : 'Not recorded'}</dd></div>
+      <div><dt>Mouse travel</dt><dd>{result.meta.pointer ? Math.round(result.meta.pointer.distancePx) + 'px' : 'Not recorded'}</dd></div>
+      <div><dt>Corrections</dt><dd>{result.meta.corrections ?? '—'}</dd></div>
+      <div><dt>Longest click pause</dt><dd>{result.meta.maxGap === undefined ? '—' : (result.meta.maxGap / 1000).toFixed(2) + 's'}</dd></div>
+    </dl><p className="fine-print">Movement is measured in your browser. These metrics don’t change your pass or fail.</p></details>}
     {result.meta.trace && <details className="result-evidence"><summary>View movement</summary><AttemptEvidence samples={result.meta.trace} passed={result.passed} /></details>}
     {children && <div className="receipt-actions">{children}</div>}
   </section>

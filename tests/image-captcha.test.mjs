@@ -23,23 +23,6 @@ test('pair: the requested category and its look-alike, nothing else', () => {
   assert.equal(scoreImageRound(r, steady(['cw', 'tt', 'cw2', 'bk'])).passed, false)
 })
 
-test('except: everything but the requested category, look-alikes included', () => {
-  const r = round('except')
-  assert.deepEqual(answerFor(r), ['tt', 'bk'])
-  assert.equal(scoreImageRound(r, steady(['tt', 'bk'])).passed, true)
-  const human = scoreImageRound(r, steady(['bk']))
-  assert.equal(human.passed, false)
-  assert.match(human.reason, /also skipped the train tracks/)
-})
-
-test('in-order: right tiles in the wrong order fail', () => {
-  const r = round('in-order')
-  assert.equal(scoreImageRound(r, steady(['cw', 'tt', 'cw2'])).passed, true)
-  const human = scoreImageRound(r, steady(['cw2', 'tt', 'cw']))
-  assert.equal(human.passed, false)
-  assert.match(human.reason, /wrong order/)
-})
-
 test('rhythm: toggles replay into the final selection and count as corrections', () => {
   const clicks = [{ id: 'a', t: 0 }, { id: 'b', t: 100 }, { id: 'a', t: 200 }, { id: 'a', t: 300 }]
   const r = clickRhythm(clicks)
@@ -49,18 +32,18 @@ test('rhythm: toggles replay into the final selection and count as corrections',
   assert.equal(r.cv, 0)
 })
 
-test('rhythm: one correction is allowed, two fail; a long pause fails', () => {
+test('monitoring records corrections and pauses without rejecting correct tiles', () => {
   const r = round('pair')
   const once = [...steady(['cw', 'bk']), { id: 'bk', t: 600 }, { id: 'tt', t: 750 }, { id: 'cw2', t: 900 }]
   assert.equal(scoreImageRound(r, once).passed, true)
   const twice = [...once.slice(0, 3), { id: 'bk', t: 700 }, { id: 'bk', t: 800 }, { id: 'tt', t: 900 }, { id: 'cw2', t: 1000 }]
   const mind = scoreImageRound(r, twice)
-  assert.equal(mind.passed, false)
-  assert.match(mind.reason, /Changed your mind 2 times/)
+  assert.equal(mind.passed, true)
+  assert.equal(mind.corrections, 2)
   const slow = [{ id: 'cw', t: 0 }, { id: 'tt', t: 100 }, { id: 'cw2', t: 100 + MAX_GAP_MS + 1 }]
   const paused = scoreImageRound(r, slow)
-  assert.equal(paused.passed, false)
-  assert.match(paused.reason, /Paused/)
+  assert.equal(paused.passed, true)
+  assert.equal(paused.maxGap, MAX_GAP_MS + 1)
 })
 
 test('rhythm: an even cadence reads as more machine than an uneven one', () => {
@@ -71,7 +54,7 @@ test('rhythm: an even cadence reads as more machine than an uneven one', () => {
   assert.ok(even.humanity < uneven.humanity)
 })
 
-test('generated rounds: nine unique opaque tiles, every rule and category, a nonempty answer', () => {
+test('generated rounds: nine unique opaque tiles, one pair rule across every category, a nonempty answer', () => {
   const rules = new Set(), categories = new Set()
   for (let i = 0; i < 600; i++) {
     const r = createImageRound(random, token)
@@ -81,11 +64,15 @@ test('generated rounds: nine unique opaque tiles, every rule and category, a non
     assert.equal(new Set(r.tiles.map(t => t.file)).size, 9)
     const opposite = IMAGE_CATEGORIES[r.requested].opposite
     assert.ok(r.tiles.some(t => t.category === opposite), 'always shows a look-alike')
-    if (r.rule === 'except') assert.ok(r.tiles.some(t => t.category === r.requested), 'except shows something to leave out')
     const answer = answerFor(r)
     assert.ok(answer.length > 0 && answer.length < 9)
     assert.equal(scoreImageRound(r, steady(answer)).passed, true, 'a literal machine always passes')
   }
-  assert.equal(rules.size, 3)
+  assert.deepEqual([...rules], ['pair'])
+  assert.equal(createImageRound(random, token).ordered, false)
   assert.equal(categories.size, 6)
+})
+
+test('pair selection order does not affect the verdict', () => {
+  assert.equal(scoreImageRound(round('pair'), steady(['cw2', 'tt', 'cw'])).passed, true)
 })

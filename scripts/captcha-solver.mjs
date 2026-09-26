@@ -8,7 +8,7 @@ import path from 'node:path'
 const DATASET = path.join(import.meta.dirname, '..', 'assets', 'captcha')
 const OPPOSITE = { crosswalk: 'train-track', 'train-track': 'crosswalk', 'traffic-light': 'streetlight', streetlight: 'traffic-light', bicycle: 'motorcycle', motorcycle: 'bicycle' }
 const LABEL = { crosswalks: 'crosswalk', 'train tracks': 'train-track', 'traffic lights': 'traffic-light', streetlights: 'streetlight', bicycles: 'bicycle', motorcycles: 'motorcycle' }
-const RULE = { 'Select all images with': 'pair', 'Select every image except': 'except', 'In reading order, select all': 'in-order' }
+const RULE = { 'Select all images with': 'pair' }
 const sha = bytes => createHash('sha256').update(bytes).digest('hex')
 
 let manifest
@@ -31,11 +31,11 @@ export async function recognise(challenge, fetchTile) {
   }))
 }
 
-/** The machine answer, in grid order, for any rule. */
+/** The machine answer, in grid order, for the look-alike pair rule. */
 export function machineAnswer(challenge, tiles) {
   const requested = LABEL[challenge.prompt], rule = RULE[challenge.instruction]
   if (!requested || !rule) throw new Error(`Unknown round: ${challenge.instruction} ${challenge.prompt}`)
-  const keep = rule === 'except' ? t => t.category !== requested : t => t.category === requested || t.category === OPPOSITE[requested]
+  const keep = t => t.category === requested || t.category === OPPOSITE[requested]
   return { rule, requested, ids: tiles.filter(keep).map(t => t.id) }
 }
 

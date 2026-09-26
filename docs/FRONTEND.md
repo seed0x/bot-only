@@ -38,7 +38,7 @@ Existing paths remain the starting point. New paths below are proposed and shoul
 | Proposed `VerdictReceipt` | Pending/confirmed public receipt | Attempt ID, confirmed result and retry action; shared by verify/feed. |
 | Proposed `TrialComparison` | Human/machine comparison | Actual attempt IDs/evidence; labels trace duration vs request time and recorded replay. |
 | `ChallengeTrial` | Issue → play → record lifecycle for one test, idempotent request IDs | Used by the gate with `image-confusion`; renders `ImageCaptcha`, `MovementCaptcha` or `HashRecall`. |
-| `ImageCaptcha` | Tile clicks, timer and live humanity meter | Server-issued rule, prompt and token tiles; submits `{ clicks: [{ id, t }] }`; the meter uses the same rhythm function as the server; never decides the verdict. |
+| `ImageCaptcha` | Tile clicks, timer and independent movement metrics | Fixed look-alike pair rule with a two-minute limit; submits clicks plus optional browser-observed pointer metrics. Correctness depends on final selection, not rhythm or movement. |
 | Proposed focused read hooks | Fetch, cadence, cancellation, freshness | Start with feed/activity/ranking hooks, not a generic state framework. |
 | Proposed `src/lib/api.ts` | HTTP status, parsing, timeout, typed error | No silent retry of a write or fabricated response. |
 | `src/lib/types.ts` | Shared wire/domain contracts | Runtime validation lives at the boundary, not in casts. |

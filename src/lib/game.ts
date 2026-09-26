@@ -1,10 +1,11 @@
 import { randomBytes, randomInt, randomUUID } from 'node:crypto'
 import { getDb, logActivity } from './db'
+import { validPointerMetrics } from './pointer-metrics'
 import { operation } from './operations'
 import { handleInput, InputError, object, requestId } from './server-input'
 import { MAX_SAMPLES, scoreHash, scoreMotion } from './motion'
 import { createImageRound, IMAGE_WINDOW_MS, MAX_CLICKS, scoreImageRound, type ImageRound } from './image-captcha'
-import type { AttemptReceipt, CaptchaResult, ChallengeKind, ImageClick, IssuedChallenge, MotionSample, Solution } from './types'
+import type { AttemptReceipt, CaptchaResult, ChallengeKind, ImageClick, IssuedChallenge, MotionSample, PointerMetrics, Solution } from './types'
 
 const KINDS: ChallengeKind[] = ['straight-line', 'hash-recall', 'image-confusion']
 const WINDOW_MS: Record<ChallengeKind, number> = { 'straight-line': 60_000, 'hash-recall': 4000, 'image-confusion': IMAGE_WINDOW_MS }
@@ -72,7 +73,9 @@ function parseSolution(value: unknown): Solution {
       last = c.t
       return { id: c.id, t: c.t }
     })
-    return { clicks }
+    if (s.pointer !== undefined && !validPointerMetrics(s.pointer, IMAGE_WINDOW_MS)) throw new InputError('Invalid movement metrics.')
+    const pointer = s.pointer === undefined ? undefined : { movementMs: s.pointer.movementMs, distancePx: s.pointer.distancePx, samples: s.pointer.samples }
+    return { clicks, ...(pointer ? { pointer } : {}) }
   }
   if (typeof s.value !== 'string' || s.value.length > 100) throw new InputError('Invalid hash response.')
   return { value: s.value }
@@ -92,7 +95,7 @@ export function submitAttempt(body: Record<string, unknown>): AttemptReceipt {
     if (!(expected in solution)) throw new InputError('Wrong solution for this challenge.')
     if ('samples' in solution && solution.samples.at(-1)!.t - solution.samples[0].t > elapsed + 100) throw new InputError('Motion duration exceeds the trial window.')
     const result = 'samples' in solution ? scoreMotion(solution.samples, Date.now() > challenge.expiresAt)
-      : 'clicks' in solution ? scoreImage(challenge, solution.clicks, elapsed)
+      : 'clicks' in solution ? scoreImage(challenge, solution.clicks, elapsed, solution.pointer)
       : scoreHash(challenge.hash!, solution.value, elapsed)
     let user = db.prepare('select id from users where handle = ?').get(handle) as { id: number } | undefined
     if (result.passed) {
@@ -110,7 +113,7 @@ export function submitAttempt(body: Record<string, unknown>): AttemptReceipt {
   })
 }
 
-function scoreImage(challenge: StoredChallenge, clicks: ImageClick[], elapsed: number): CaptchaResult {
+function scoreImage(challenge: StoredChallenge, clicks: ImageClick[], elapsed: number, pointer?: PointerMetrics): CaptchaResult {
   const round = challenge.round!
   const tokens = new Set(round.tiles.map(t => t.token))
   if (!clicks.every(c => tokens.has(c.id))) throw new InputError('Invalid image selection.')
@@ -118,11 +121,10 @@ function scoreImage(challenge: StoredChallenge, clicks: ImageClick[], elapsed: n
   const expired = Date.now() > challenge.expiresAt
   const v = scoreImageRound(round, clicks)
   const passed = v.passed && !expired
-  // humanity: a clean, steady pick stays near 0; wrong tiles and a human rhythm push toward 1
-  const score = passed ? Math.min(0.2, v.humanity * 0.15 + (elapsed / IMAGE_WINDOW_MS) * 0.05)
-    : Math.min(1, Math.max(0.5, 0.45 + (v.wrong + v.missed) * 0.1 + v.humanity * 0.3))
+  // Preserve the original selection/time score; monitoring is descriptive metadata.
+  const score = passed ? Math.min(0.2, elapsed / 60_000) : Math.min(1, 0.4 + (v.wrong + v.missed) * 0.1)
   return {
     challenge: 'image-confusion', passed, score, duration_ms: elapsed,
-    meta: { reason: expired ? 'Time’s up.' : v.reason, prompt: round.prompt, rule: round.rule, selected: v.selection, corrections: v.corrections, maxGap: Math.round(v.maxGap), rhythmCv: Number(v.cv.toFixed(3)) },
+    meta: { reason: expired ? 'Time’s up.' : v.reason, prompt: round.prompt, rule: round.rule, selected: v.selection, corrections: v.corrections, maxGap: Math.round(v.maxGap), rhythmCv: Number(v.cv.toFixed(3)), ...(pointer ? { pointer } : {}) },
   }
 }

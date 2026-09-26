@@ -1,5 +1,13 @@
 # Takeover record — 2026-09-26
 
+## Fixed CAPTCHA rule with independent monitoring — 2026-09-26
+
+- Owner explicitly requested no rotating rules and movement time as another metric. Integrated teammate main `5fc1e00`, then restored the original requested-category plus look-alike selection rule and 120-second window. Click order, corrections and pauses do not reject a correct selection; expiration still does. Original elapsed-time humanity scoring restored. Opaque tile URLs and issuance limits remain.
+- Added bounded mouse/pen movement duration, distance and sample count during the image challenge; click corrections and longest pause remain recorded. Monitoring is descriptive, not an admission condition. Results expose these measurements in a compact disclosure. Touch/keyboard attempts without pointer samples report movement as not recorded. Client-reported measurements are not proof of identity.
+- SQLite: owner requires the real database only. Preview 3101 uses `/home/vlad/hack/bot-only/data.db`, configured in ignored `.env.local`. Earlier isolated preview/test databases created for this task were removed. No seed/reset or database files included in this commit.
+- Validation: 55 pure unit tests, lint, production webpack build (including TypeScript), and whitespace checks pass. Regression coverage includes fixed-rule generation, corrected/paused/reordered successful selections, movement sampling and malformed metric rejection. Smoke expectations updated but API mutation tests were not run against the real database. Physical mouse/touch rehearsal remains to do.
+- Feed removals and server-checked admission preserved. No global survival runtime introduced. Local integration only; no push/deployment. Next: rehearse one failed and one passed attempt, inspect movement metrics, then enter the feed on the presenter machine.
+
 ## Combined UI and survival merge — 2026-09-26
 
 - Owner requested pulling and merging all current work after removing recent results/activity. Fetched main `ee2bd38` and `feat/fail-states` `e2a4db6`; integrated both with local UI/admission changes and removal commit `cd22b59`. Current feed remains posts, composer and objectives; no recent-results/activity/footer counter.

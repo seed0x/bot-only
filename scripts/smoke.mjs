@@ -40,10 +40,10 @@ const pass = await record(good, { samples })
 check('shared scorer admits straight trace', pass.body.passed === true && pass.body.result?.score < 1e-12)
 const hash = (await issue('hash-recall')).body
 check('hash scored by server', (await record(hash, { value: hash.hash })).body.passed === true)
-// Reverse image captcha: rotating rules, opaque tiles, click log scored on the server.
+// Reverse image captcha: fixed pair rule, opaque tiles, monitoring independent of pass/fail.
 const tileBytes = async src => { const r = await fetch(base + src, { signal: AbortSignal.timeout(10_000) }); if (!r.ok) throw new Error('tile ' + r.status); return r.arrayBuffer() }
 const img = (await issue('image-confusion')).body
-check('image challenge issued with 9 tiles and a rule', Array.isArray(img?.tiles) && img.tiles.length === 9 && typeof img.prompt === 'string' && typeof img.instruction === 'string')
+check('image challenge issued with 9 tiles and a rule', Array.isArray(img?.tiles) && img.tiles.length === 9 && typeof img.prompt === 'string' && img.instruction === 'Select all images with' && img.ordered === false)
 check('tile URLs are opaque', img.tiles.every(t => /^\/api\/captcha\/tile\/[A-Za-z0-9_-]{16,}$/.test(t.src) && !/crosswalk|train|light|cycle/.test(t.src + t.id)))
 check('image challenge leaks no answer', !/accepted|round|opposite|category|webp/.test(JSON.stringify(img)))
 check('public image folder is gone', (await fetch(base + '/images/crosswalk/01.webp')).status === 404)
@@ -64,7 +64,7 @@ const dithering = [...steadyClicks(solved3.ids)]; const again = solved3.ids[0]
 dithering.push({ id: again, t: dithering.at(-1).t + 150 }, { id: again, t: dithering.at(-1).t + 300 }, { id: again, t: dithering.at(-1).t + 450 }, { id: again, t: dithering.at(-1).t + 600 })
 await delay(dithering.at(-1).t + 50)
 const dither = (await record(img3, { clicks: dithering })).body
-check('changing your mind twice is rejected', dither.passed === false && dither.result.meta.corrections === 2)
+check('corrected correct selection passes with recorded metrics', dither.passed === true && dither.result.meta.corrections === 2)
 await delay(solved.clicks.at(-1).t + 50)
 const machine = (await record(img, { clicks: solved.clicks })).body
 check('machine click log admitted', machine?.passed === true && machine.result?.challenge === 'image-confusion' && machine.result.score <= 0.2)

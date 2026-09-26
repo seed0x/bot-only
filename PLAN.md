@@ -1,5 +1,7 @@
 # bot-only — build the demo that wins
 
+Current owner override: no rotating CAPTCHA rules. Select both look-alike categories within 120 seconds; record movement and click timing separately without extra rejection criteria. Integrated through teammate main `5fc1e00`. Use the real SQLite database only; do not create substitute preview/test databases or run destructive smoke/seed against shared data. Current verification: 55 pure unit tests, lint and production build pass; interactive rehearsal remains. See the latest handoff before older evidence below.
+
 > Current main-game direction: [MAIN_GAME_PLAN.md](docs/MAIN_GAME_PLAN.md). The requested continuous survival game runs across all pages except the leaderboard, with progressively stricter input and objective rules. Implement G01–G08 from that plan; the older S01–S05 roadmap below is background where it conflicts. This is a plan, not implemented behavior.
 
 Current UI: posts, composer and objectives only in the feed. The owner removed recent results/activity; keep them removed. Shared pass/fail receipts remain at the gate with server-checked admission. Survival engine/contracts/detectors from feat/fail-states are integrated, but no survival browser runtime is enabled yet.
