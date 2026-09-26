@@ -73,3 +73,5 @@ The schema creates itself on the first database request. Default database: `data
 Tests are scored on the server, so a browser cannot claim a pass. It is still a hackathon game, not identity verification: a handle is not authenticated, and `/api/scores` trusts the numbers it is sent.
 
 Typography follows CBS: Supreme for UI/display via the official Fontshare stylesheet, locally bundled Archivo for numeric data. Supreme requires access to Fontshare’s font CDN.
+
+Recent verification results use `GET /api/results` (latest 20 image CAPTCHA receipts). Desktop results appear in the sidebar; activity follows posts. The shared result component is `src/components/VerdictReceipt.tsx`, with resource states in `src/components/ResourceState.tsx`.

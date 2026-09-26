@@ -54,6 +54,8 @@ const human = (await record(img2, { selected: bait2 })).body
 check('requested objects alone fail without the look-alike tiles', human.passed === false)
 const machine = (await record(img, { selected: machinePick })).body
 check('machine selection admitted', machine?.passed === true && machine.result?.challenge === 'image-confusion')
+const results = (await read('/api/results')).body
+check('recent results include actual image pass and fail', Array.isArray(results) && results.some(r => r.attemptId === machine.attemptId && r.passed) && results.some(r => r.attemptId === human.attemptId && !r.passed) && results.every(r => r.result.challenge === 'image-confusion'))
 check('image challenge cannot be replayed', (await record(img, { selected: machinePick })).status === 409)
 const postBody = { requestId: randomUUID(), handle, body: 'Smoke transmission. Evidence recorded.' }
 const transmission = await post('/api/posts', postBody)
