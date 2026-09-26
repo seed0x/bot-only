@@ -1,5 +1,12 @@
 # Takeover record — 2026-09-26
 
+## Retry after admission — 2026-09-26
+
+- Fixed the missing path back to the reverse CAPTCHA: feed sidebar now has Retry CAPTCHA, opening `/?retry=1` with the server-admitted identity. Ordinary `/` still redirects admitted visitors to the feed. Anonymous retry requests show the username gate and cannot bypass admission.
+- Back to feed allows abandoning an unsubmitted retry. Existing image-failure behavior still clears admission, and the return action disappears after a recorded failure. Existing result/retry UI and scoring are unchanged.
+- Build/TypeScript, lint and whitespace checks pass. Browser verified @vlad → retry → fresh nine-tile test → Back to feed with admission intact. Read-only HTTP checks verified anonymous retry and protected feed routing. Updated gate smoke assertions; full mutation suite not run against the real SQLite database. No CAPTCHA solved or result submitted during this check.
+- Preview 3101 remains on the real database. Locally merged; no push/deployment. Next: user rehearses pass/fail on the retry path.
+
 ## Fixed CAPTCHA rule with independent monitoring — 2026-09-26
 
 - Owner explicitly requested no rotating rules and movement time as another metric. Integrated teammate main `5fc1e00`, then restored the original requested-category plus look-alike selection rule and 120-second window. Click order, corrections and pauses do not reject a correct selection; expiration still does. Original elapsed-time humanity scoring restored. Opaque tile URLs and issuance limits remain.

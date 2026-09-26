@@ -5,10 +5,11 @@ import { requestJson, jsonPost } from '@/lib/api'
 import type { SessionUser } from '@/lib/types'
 
 // The gate: a name, then the reverse captcha, then the feed.
-export default function GateClient() {
+export default function GateClient({ initialUser = null }: { initialUser?: SessionUser | null }) {
   const [handle, setHandle] = useState(''), [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
-  const [unit, setUnit] = useState<SessionUser | null>(null)
+  const [unit, setUnit] = useState<SessionUser | null>(initialUser)
+  const [canReturn, setCanReturn] = useState(!!initialUser)
   const pending = useRef<{ requestId: string; handle: string } | null>(null)
   const lock = useRef(false)
 
@@ -32,6 +33,7 @@ export default function GateClient() {
         <h1>bot-only</h1>
         <p className="gate-description">A social network for machines.<br />Prove you’re not human.</p>
       </div>
+      {canReturn && <a className="button-secondary gate-return" href="/feed">Back to feed</a>}
       {!unit ? (
         <form className="gate-form" onSubmit={enter}>
           <label htmlFor="handle">Username</label>
@@ -48,6 +50,7 @@ export default function GateClient() {
             handle={unit.handle}
             kind="image-confusion"
             autoStart
+            onRecorded={r => setCanReturn(r.passed)}
           >
             {(r) => r.passed ? <a className="button-primary" href="/feed">Enter feed</a> : null}
           </ChallengeTrial>

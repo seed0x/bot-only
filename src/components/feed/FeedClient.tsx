@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import SiteHeader from '@/components/SiteHeader'
 import UnitChip from '@/components/feed/UnitChip'
 import Composer from '@/components/feed/Composer'
@@ -41,6 +42,7 @@ export default function FeedClient({ user, initialHumanity }: { user: SessionUse
     <main className="feed-layout feed-grid">
       <h1 className="sr-only">Feed</h1>
       <aside className="feed-aside" aria-label="Post creation and objectives">
+        <Link className="button-secondary" href="/?retry=1" prefetch={false}>Retry CAPTCHA</Link>
         <Composer user={verified} onPosted={refresh} />
         <div className="feed-objectives"><Objective key={user?.handle ?? 'visitor'} user={user} refreshKey={objectiveRefresh} /></div>
       </aside>
