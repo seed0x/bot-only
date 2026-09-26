@@ -1,5 +1,19 @@
 # Takeover record — 2026-09-26
 
+## G04 — acceptance complete for diagnostic increment — 2026-09-26
+
+- User confirmed navigation, failures, reload interruption, HUD visibility/stickiness, typing and pause/resume; accepts current usability. G04 diagnostic increment is complete on that playtest evidence plus focused engine/adapter/lifecycle checks. Next is G05 persistence; no G05 work started.
+- Added tests/survival-provider-lifecycle.test.mjs. Transpiles the actual GameProvider with installed TypeScript and executes its effect using a controlled hook host, document/window EventTargets and fake clock/storage. Setup -> cleanup -> setup retains exactly one timer/listener set; a running run survives replay, time advances once, final cleanup removes callbacks, and restored checkpoints remain neutral interruptions through replay. No gameplay code changes needed.
+- Verification: two lifecycle tests pass; full npm test passes six files; scoped test ESLint, source-only TypeScript and git diff --check pass. Existing typeless-package warning remains. No new dependencies/server/database work.
+- Limits: this is effect-replay verification, not a mounted React/browser StrictMode integration test. No connected browser is available. User playtest reports do not establish all viewport/device coverage, pause-overlap combinations or storage-denial recovery. Full responsive/device calibration and broad rehearsal remain G08; no ranked detector enforcement claimed. G05 storage/API, G06 objectives and G07 terminal mutation blocking remain unavailable.
+- Branch/commit: feat/fail-states, implementation 42b1c1c. New lifecycle tests and acceptance notes are uncommitted. Pre-existing staged database journals remain untouched. Next: G05 isolated persistence checks.
+
+
+## G04 — user browser acceptance report — 2026-09-26
+
+User reports navigation works, failures work, reload stops the run as intended, and usability is sufficient for this increment. Earlier reports confirmed HUD visibility/stickiness and typing detection. Treat these as user playtest evidence, not automated or full responsive/device coverage. User has not verified pauses or Strict Mode lifecycle. Explained automatic hidden-tab/focus/leaderboard pauses and explicit Resume countdown; remaining checks are pause overlap/budget preservation and development lifecycle duplication/cleanup. Branch feat/fail-states, implementation commit 42b1c1c; this acceptance note is uncommitted. No code/server/database changes.
+
+
 ## G04 — diagnostic commit — 2026-09-26
 
 User authorized committing the current increment. Branch feat/fail-states; commit titled `Add global survival diagnostic and progressive typing speed`, based on e2a4db6. Includes provider/sensors/HUD/result, layout stacking fix, sticky HUD, leaderboard pause hookup, survival-v3 typing minima (20/30/40/50/60 WPM), tests and current documentation. User confirmed HUD visibility and typing behavior; remaining G04 browser acceptance is still pending. Full five-file suite, scoped lint, source-only TypeScript and whitespace checks passed after final tuning. Database journals were already staged externally and are excluded from this commit without changing their staged state. No push/merge/deploy.
