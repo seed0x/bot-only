@@ -5,14 +5,15 @@ export type CaptchaResult = {
   passed: boolean
   score: number
   duration_ms: number
-  meta: { reason: string; maxDev?: number; speedCv?: number; trace?: MotionSample[]; errors?: number; prompt?: string; rule?: string; selected?: string[]; corrections?: number; maxGap?: number; rhythmCv?: number; pointer?: PointerMetrics }
+  meta: { reason: string; maxDev?: number; speedCv?: number; trace?: MotionSample[]; errors?: number; prompt?: string; rule?: string; selected?: string[]; corrections?: number; maxGap?: number; rhythmCv?: number; pointer?: PointerMetrics; measurements?: SurvivalMeasurement[]; primaryReason?: SurvivalFailureReason; strokes?: number; badStrokes?: number; worstRatio?: number; pointerTrace?: SurvivalPointerSample[] }
 }
 export type SessionUser = { id: number; handle: string }
 export type ImageTile = { id: string; src: string }
 export type IssuedChallenge = { id: string; kind: ChallengeKind; startedAt: number; expiresAt: number; hash?: string; prompt?: string; instruction?: string; ordered?: boolean; tiles?: ImageTile[] }
 export type PointerMetrics = { movementMs: number; distancePx: number; samples: number }
 export type ImageClick = { id: string; t: number }
-export type Solution = { samples: MotionSample[] } | { value: string } | { clicks: ImageClick[]; pointer?: PointerMetrics }
+export type CaptchaViewport = { width: number; height: number }
+export type Solution = { samples: MotionSample[] } | { value: string } | { clicks: ImageClick[]; pointer?: PointerMetrics; strokes?: SurvivalPointerSample[][]; viewport?: CaptchaViewport }
 export type AttemptReceipt = { ok: true; attemptId: number; requestId: string; handle: string; passed: boolean; result: CaptchaResult; user: SessionUser | null; recordedAt: string }
 export type ObjectiveProgress = { post: boolean; comment: boolean | null; like: boolean }
 export type Comment = { id: number; post_id: number; handle: string; body: string; created_at: string }

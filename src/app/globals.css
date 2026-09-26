@@ -212,6 +212,7 @@
   .image-captcha-meter { position: relative; display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 10px 14px 12px; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; border-top: 1px solid var(--line); }
   .image-captcha-meter strong { color: var(--text); font-weight: 600; }
   .image-captcha-meter .is-bad { color: var(--danger); }
+  .image-captcha-meter .is-warn { color: #f0a35c; }
   .image-captcha-meter i { position: absolute; left: 0; bottom: 0; height: 2px; background: var(--danger); transition: width .2s; }
   .image-captcha-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-top: 1px solid var(--line); }
 

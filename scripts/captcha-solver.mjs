@@ -42,9 +42,24 @@ export function machineAnswer(challenge, tiles) {
 /** A perfectly even click log for a list of ids. */
 export const steadyClicks = (ids, start = 180, every = 140) => ids.map((id, i) => ({ id, t: start + i * every }))
 
+/** Dead-straight mouse strokes across a viewport, one per click, the way a machine moves. */
+export const straightStrokes = (count, viewport = { width: 1280, height: 800 }, start = 60, every = 140) =>
+  Array.from({ length: Math.max(1, count) }, (_, k) => {
+    const y = 120 + k * 60, t0 = start + k * every
+    return Array.from({ length: 8 }, (_, i) => ({ x: 100 + i * 40, y, t: t0 + i * 16 }))
+  })
+/** Wobbly, looping strokes a person makes while deciding. */
+export const curvedStrokes = (count, viewport = { width: 1280, height: 800 }, start = 60, every = 140) =>
+  Array.from({ length: Math.max(1, count) }, (_, k) => {
+    const t0 = start + k * every
+    return Array.from({ length: 12 }, (_, i) => ({ x: 300 + i * 25, y: 300 + Math.sin(i / 1.5) * 120, t: t0 + i * 16 }))
+  })
+export const VIEWPORT = { width: 1280, height: 800 }
+
 /** Recognise, answer and produce the click log a machine would submit. */
 export async function solveImage(challenge, fetchTile) {
   const tiles = await recognise(challenge, fetchTile)
   const answer = machineAnswer(challenge, tiles)
-  return { ...answer, tiles, clicks: steadyClicks(answer.ids) }
+  const clicks = steadyClicks(answer.ids)
+  return { ...answer, tiles, clicks, strokes: straightStrokes(answer.ids.length, VIEWPORT), viewport: VIEWPORT }
 }

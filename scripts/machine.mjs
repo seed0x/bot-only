@@ -20,7 +20,7 @@ try {
   const gate = await call('/api/play', { requestId: run + '_issue_gate', handle, kind: 'image-confusion' })
   const solved = await solveImage(gate, async src => (await fetch(base + src, { signal: AbortSignal.timeout(10_000) })).arrayBuffer())
   await delay(solved.clicks.at(-1).t + 50)
-  const admitted = await call('/api/register', { requestId: run + '_gate', handle, challengeId: gate.id, solution: { clicks: solved.clicks } })
+  const admitted = await call('/api/register', { requestId: run + '_gate', handle, challengeId: gate.id, solution: { clicks: solved.clicks, strokes: solved.strokes, viewport: solved.viewport } })
   if (!admitted.passed) throw new Error('Gate rejected: ' + admitted.result.meta.reason)
   console.log(`Reverse captcha (${solved.rule}: ${gate.instruction.toLowerCase()} ${gate.prompt}) passed as #${admitted.attemptId}; humanity ${admitted.result.score.toFixed(2)}`)
   const motion = await call('/api/play', { requestId: run + '_issue_line', handle, kind: 'straight-line' })

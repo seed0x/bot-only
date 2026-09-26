@@ -1,10 +1,14 @@
 import { randomBytes, randomInt, randomUUID } from 'node:crypto'
 import { getDb, logActivity } from './db'
 import { validPointerMetrics } from './pointer-metrics'
+import { judgeCaptcha } from './captcha-verdict'
+import { MAX_STROKES } from './survival/pointer-collector'
+import { SURVIVAL_SENSORS } from './survival/config'
+import type { SurvivalPointerSample } from './types'
 import { operation } from './operations'
 import { handleInput, InputError, object, requestId } from './server-input'
 import { MAX_SAMPLES, scoreHash, scoreMotion } from './motion'
-import { createImageRound, IMAGE_WINDOW_MS, MAX_CLICKS, scoreImageRound, type ImageRound } from './image-captcha'
+import { createImageRound, IMAGE_WINDOW_MS, MAX_CLICKS, type ImageRound } from './image-captcha'
 import type { AttemptReceipt, CaptchaResult, ChallengeKind, ImageClick, IssuedChallenge, MotionSample, PointerMetrics, Solution } from './types'
 
 const KINDS: ChallengeKind[] = ['straight-line', 'hash-recall', 'image-confusion']
@@ -75,7 +79,24 @@ function parseSolution(value: unknown): Solution {
     })
     if (s.pointer !== undefined && !validPointerMetrics(s.pointer, IMAGE_WINDOW_MS)) throw new InputError('Invalid movement metrics.')
     const pointer = s.pointer === undefined ? undefined : { movementMs: s.pointer.movementMs, distancePx: s.pointer.distancePx, samples: s.pointer.samples }
-    return { clicks, ...(pointer ? { pointer } : {}) }
+    let viewport: { width: number; height: number } | undefined, strokes: SurvivalPointerSample[][] | undefined
+    if (s.viewport !== undefined || s.strokes !== undefined) {
+      const v = object(s.viewport)
+      if (typeof v.width !== 'number' || typeof v.height !== 'number' || !(v.width > 0 && v.width <= 16384) || !(v.height > 0 && v.height <= 16384)) throw new InputError('Invalid viewport.')
+      viewport = { width: v.width, height: v.height }
+      if (!Array.isArray(s.strokes) || s.strokes.length > MAX_STROKES) throw new InputError('Invalid pointer strokes.')
+      strokes = s.strokes.map((stroke) => {
+        if (!Array.isArray(stroke) || stroke.length < 1 || stroke.length > SURVIVAL_SENSORS.pointerMaxSamples) throw new InputError('Invalid pointer strokes.')
+        let prev = -1
+        return stroke.map((p): SurvivalPointerSample => {
+          const q = object(p)
+          if (typeof q.x !== 'number' || typeof q.y !== 'number' || typeof q.t !== 'number' || ![q.x, q.y, q.t].every(Number.isFinite) || q.x < 0 || q.y < 0 || q.x > viewport!.width || q.y > viewport!.height || q.t < 0 || q.t <= prev || q.t > IMAGE_WINDOW_MS) throw new InputError('Invalid pointer strokes.')
+          prev = q.t
+          return { x: q.x, y: q.y, t: q.t }
+        })
+      })
+    }
+    return { clicks, ...(pointer ? { pointer } : {}), ...(strokes ? { strokes, viewport } : {}) }
   }
   if (typeof s.value !== 'string' || s.value.length > 100) throw new InputError('Invalid hash response.')
   return { value: s.value }
@@ -95,7 +116,7 @@ export function submitAttempt(body: Record<string, unknown>): AttemptReceipt {
     if (!(expected in solution)) throw new InputError('Wrong solution for this challenge.')
     if ('samples' in solution && solution.samples.at(-1)!.t - solution.samples[0].t > elapsed + 100) throw new InputError('Motion duration exceeds the trial window.')
     const result = 'samples' in solution ? scoreMotion(solution.samples, Date.now() > challenge.expiresAt)
-      : 'clicks' in solution ? scoreImage(challenge, solution.clicks, elapsed, solution.pointer)
+      : 'clicks' in solution ? scoreImage(challenge, solution.clicks, elapsed, solution.pointer, solution.strokes ?? [], solution.viewport ?? null)
       : scoreHash(challenge.hash!, solution.value, elapsed)
     let user = db.prepare('select id from users where handle = ?').get(handle) as { id: number } | undefined
     if (result.passed) {
@@ -113,18 +134,20 @@ export function submitAttempt(body: Record<string, unknown>): AttemptReceipt {
   })
 }
 
-function scoreImage(challenge: StoredChallenge, clicks: ImageClick[], elapsed: number, pointer?: PointerMetrics): CaptchaResult {
+function scoreImage(challenge: StoredChallenge, clicks: ImageClick[], elapsed: number, pointer: PointerMetrics | undefined, strokes: SurvivalPointerSample[][], viewport: { width: number; height: number } | null): CaptchaResult {
   const round = challenge.round!
   const tokens = new Set(round.tiles.map(t => t.token))
   if (!clicks.every(c => tokens.has(c.id))) throw new InputError('Invalid image selection.')
   if (clicks.at(-1)!.t > elapsed + 250) throw new InputError('Click timing exceeds the trial window.')
-  const expired = Date.now() > challenge.expiresAt
-  const v = scoreImageRound(round, clicks)
-  const passed = v.passed && !expired
-  // Preserve the original selection/time score; monitoring is descriptive metadata.
-  const score = passed ? Math.min(0.2, elapsed / 60_000) : Math.min(1, 0.4 + (v.wrong + v.missed) * 0.1)
+  const v = judgeCaptcha({ round, clicks, strokes, viewport, elapsedMs: elapsed, windowMs: IMAGE_WINDOW_MS, expired: Date.now() > challenge.expiresAt })
   return {
-    challenge: 'image-confusion', passed, score, duration_ms: elapsed,
-    meta: { reason: expired ? 'Time’s up.' : v.reason, prompt: round.prompt, rule: round.rule, selected: v.selection, corrections: v.corrections, maxGap: Math.round(v.maxGap), rhythmCv: Number(v.cv.toFixed(3)), ...(pointer ? { pointer } : {}) },
+    challenge: 'image-confusion', passed: v.passed, score: Number(v.humanity.toFixed(3)), duration_ms: elapsed,
+    meta: {
+      reason: v.reason, prompt: round.prompt, rule: round.rule, selected: v.selection,
+      corrections: v.corrections, maxGap: Math.round(v.maxGap), rhythmCv: Number(v.cv.toFixed(3)),
+      strokes: v.pointer.scored, badStrokes: v.pointer.bad, worstRatio: Number(v.pointer.worst.toFixed(3)),
+      measurements: v.measurements, ...(v.primaryReason ? { primaryReason: v.primaryReason } : {}),
+      ...(v.pointer.worstTrace ? { pointerTrace: [...v.pointer.worstTrace] } : {}), ...(pointer ? { pointer } : {}),
+    },
   }
 }

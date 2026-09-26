@@ -1,7 +1,7 @@
 // Mutates the explicitly selected isolated test server.
 import { randomUUID } from 'node:crypto'
 import { setTimeout as delay } from 'node:timers/promises'
-import { solveImage, steadyClicks } from './captcha-solver.mjs'
+import { curvedStrokes, solveImage, steadyClicks, straightStrokes, VIEWPORT } from './captcha-solver.mjs'
 if (!process.env.BASE_URL) throw new Error('Set BASE_URL explicitly to an isolated test server.')
 const base = process.env.BASE_URL, handle = 'smoke_' + randomUUID().slice(0, 8)
 let failures = 0, checks = 0, cookie = ''
@@ -64,13 +64,27 @@ const dithering = [...steadyClicks(solved3.ids)]; const again = solved3.ids[0]
 dithering.push({ id: again, t: dithering.at(-1).t + 150 }, { id: again, t: dithering.at(-1).t + 300 }, { id: again, t: dithering.at(-1).t + 450 }, { id: again, t: dithering.at(-1).t + 600 })
 await delay(dithering.at(-1).t + 50)
 const dither = (await record(img3, { clicks: dithering })).body
-check('corrected correct selection passes with recorded metrics', dither.passed === true && dither.result.meta.corrections === 2)
+check('changing the selection twice is rejected as human', dither.passed === false && dither.result.meta.corrections === 2 && dither.result.meta.primaryReason === 'verification_failed')
+// Movement is judged by the survival pointer detector: three curved strokes fail, straight ones pass.
+const img4 = (await issue('image-confusion')).body
+const solved4 = await solveImage(img4, tileBytes)
+await delay(solved4.clicks.at(-1).t + 50)
+const wobbly = (await record(img4, { clicks: solved4.clicks, strokes: curvedStrokes(3), viewport: VIEWPORT })).body
+check('curved mouse strokes are rejected as human', wobbly.passed === false && wobbly.result?.meta?.primaryReason === 'pointer' && wobbly.result.meta.badStrokes === 3)
+check('rejection carries survival measurements', Array.isArray(wobbly.result?.meta?.measurements) && wobbly.result.meta.measurements[0]?.reason === 'pointer' && wobbly.result.meta.measurements[0]?.unit === 'ratio' && wobbly.result.meta.measurements[0]?.stage === 'boot')
+const img5 = (await issue('image-confusion')).body
+const solved5 = await solveImage(img5, tileBytes)
+const lateClicks = solved5.clicks.map((c, i) => i === 0 ? c : { ...c, t: c.t + 12_500 })
+await delay(lateClicks.at(-1).t + 50)
+const idle = (await record(img5, { clicks: lateClicks })).body
+check('a 12s pause is rejected as idle', idle.passed === false && idle.result?.meta?.primaryReason === 'idle')
+check('out-of-viewport strokes rejected', (await record(img, { clicks: solved.clicks, strokes: [[{ x: 99999, y: 0, t: 1 }, { x: 0, y: 0, t: 2 }]], viewport: VIEWPORT })).status === 400)
 await delay(solved.clicks.at(-1).t + 50)
-const machine = (await record(img, { clicks: solved.clicks })).body
-check('machine click log admitted', machine?.passed === true && machine.result?.challenge === 'image-confusion' && machine.result.score <= 0.2)
+const machine = (await record(img, { clicks: solved.clicks, strokes: solved.strokes, viewport: solved.viewport })).body
+check('machine clicks and straight strokes admitted', machine?.passed === true && machine.result?.challenge === 'image-confusion' && machine.result.score <= 0.2 && machine.result.meta.strokes >= 1 && machine.result.meta.badStrokes === 0)
 const results = (await read('/api/results')).body
 check('recent results include actual image pass and fail', Array.isArray(results) && results.some(r => r.attemptId === machine.attemptId && r.passed) && results.some(r => r.attemptId === human.attemptId && !r.passed) && results.every(r => r.result.challenge === 'image-confusion'))
-check('image challenge cannot be replayed', (await record(img, { clicks: solved.clicks })).status === 409)
+check('image challenge cannot be replayed', (await record(img, { clicks: solved.clicks, strokes: solved.strokes, viewport: solved.viewport })).status === 409)
 const postBody = { requestId: randomUUID(), handle, body: 'Smoke transmission. Evidence recorded.' }
 const transmission = await post('/api/posts', postBody)
 check('admitted unit transmits', transmission.status === 200 && transmission.body.id > 0)

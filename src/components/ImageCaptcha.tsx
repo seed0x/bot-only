@@ -3,10 +3,13 @@ import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { clickRhythm } from '@/lib/image-captcha'
 import { newPointerMonitor, observePointer } from '@/lib/pointer-metrics'
-import type { ImageClick, IssuedChallenge, Solution } from '@/lib/types'
+import { CAPTCHA_STAGE, MAX_CORRECTIONS, pointerReport } from '@/lib/captcha-verdict'
+import { collected, interrupt, newPointerCollector, observe } from '@/lib/survival/pointer-collector'
+import type { ImageClick, IssuedChallenge, Solution, SurvivalPointerSample } from '@/lib/types'
 
-// The player only. The server chose the rule and tiles, holds the answer, and scores the click log.
-// Pointer and click timing are descriptive metrics, separate from the selected-tile verdict.
+// The player. The server chose the tiles, holds the answer, and judges the whole attempt by the
+// survival game's opening-stage rules: tiles, click rhythm, idle time and mouse straightness.
+// The meter below the grid runs the same pointer detector, so what you see is what the server sees.
 export default function ImageCaptcha({ challenge, onSolution, onRestart }: { challenge: IssuedChallenge; onSolution: (s: Solution) => void; onRestart: () => void }) {
   const tiles = challenge.tiles ?? []
   const windowMs = challenge.expiresAt - challenge.startedAt
@@ -15,8 +18,13 @@ export default function ImageCaptcha({ challenge, onSolution, onRestart }: { cha
   const [broken, setBroken] = useState(false)
   const [sent, setSent] = useState(false)
   const [remaining, setRemaining] = useState(windowMs)
+  const [strokes, setStrokes] = useState<SurvivalPointerSample[][]>([])
+  const [idleMs, setIdleMs] = useState(0)
   const pointer = useRef(newPointerMonitor())
-  const [movement, setMovement] = useState(() => newPointerMonitor().metrics)
+  const collector = useRef(newPointerCollector())
+  const viewport = useRef<{ width: number; height: number } | null>(null)
+  const [viewportSize, setViewportSize] = useState<{ width: number; height: number } | null>(null)
+  const lastAction = useRef<number | null>(null)
   const readyAt = useRef<number | null>(null)
   const deadline = useRef<number | null>(null)
   // Mirrors for the timer callback, which must see the latest values without re-subscribing.
@@ -25,36 +33,53 @@ export default function ImageCaptcha({ challenge, onSolution, onRestart }: { cha
   const ready = loaded >= tiles.length && !broken
   const expired = remaining <= 0
 
+  const solution = (): Solution => {
+    const s = collected(collector.current)
+    return {
+      clicks: clicksRef.current,
+      ...(pointer.current.metrics.samples > 0 ? { pointer: pointer.current.metrics } : {}),
+      ...(viewport.current && s.length ? { strokes: s.map(st => st.map(p => ({ x: p.x, y: p.y, t: Math.round(p.t - (readyAt.current ?? 0)) }))), viewport: viewport.current } : {}),
+    }
+  }
+
   useEffect(() => {
     if (!ready || sent || expired) return
-    const reset = () => { pointer.current = { ...pointer.current, last: null } }
+    const cut = () => { pointer.current = { ...pointer.current, last: null }; interrupt(collector.current) }
     const move = (event: PointerEvent) => {
       if (document.hidden || !document.hasFocus() || (event.pointerType !== 'mouse' && event.pointerType !== 'pen')) return
-      pointer.current = observePointer(pointer.current, { x: event.clientX, y: event.clientY, t: performance.now() })
+      if (readyAt.current === null) return
+      if (!viewport.current) { viewport.current = { width: window.innerWidth, height: window.innerHeight }; setViewportSize(viewport.current) }
+      const x = Math.min(Math.max(0, event.clientX), viewport.current.width), y = Math.min(Math.max(0, event.clientY), viewport.current.height)
+      const t = event.timeStamp
+      pointer.current = observePointer(pointer.current, { x, y, t })
+      observe(collector.current, { x, y, t })
     }
     window.addEventListener('pointermove', move, { passive: true })
-    window.addEventListener('blur', reset)
-    window.addEventListener('resize', reset)
-    document.addEventListener('visibilitychange', reset)
+    window.addEventListener('pointerdown', cut, { passive: true })
+    window.addEventListener('pointerup', cut, { passive: true })
+    window.addEventListener('scroll', cut, { passive: true })
+    window.addEventListener('blur', cut)
+    window.addEventListener('resize', cut)
+    document.addEventListener('visibilitychange', cut)
     return () => {
       window.removeEventListener('pointermove', move)
-      window.removeEventListener('blur', reset)
-      window.removeEventListener('resize', reset)
-      document.removeEventListener('visibilitychange', reset)
+      window.removeEventListener('pointerdown', cut); window.removeEventListener('pointerup', cut)
+      window.removeEventListener('scroll', cut)
+      window.removeEventListener('blur', cut); window.removeEventListener('resize', cut)
+      document.removeEventListener('visibilitychange', cut)
     }
   }, [ready, sent, expired])
 
-  useEffect(() => { if (ready && readyAt.current === null) readyAt.current = performance.now() }, [ready])
+  useEffect(() => { if (ready && readyAt.current === null) { readyAt.current = performance.now(); lastAction.current = readyAt.current } }, [ready])
   useEffect(() => {
     if (deadline.current === null) deadline.current = performance.now() + windowMs
     const id = setInterval(() => {
-      const left = Math.max(0, deadline.current! - performance.now())
+      const now = performance.now(), left = Math.max(0, deadline.current! - now)
       setRemaining(left)
-      setMovement(pointer.current.metrics)
+      setStrokes(collected(collector.current))
+      if (lastAction.current !== null) setIdleMs(now - lastAction.current)
       // Time runs out: submit what was clicked, so the verdict is recorded instead of silently lost.
-      if (left === 0 && !sentRef.current && clicksRef.current.length > 0) {
-        sentRef.current = true; setSent(true); submitRef.current({ clicks: clicksRef.current, ...(pointer.current.metrics.samples > 0 ? { pointer: pointer.current.metrics } : {}) })
-      }
+      if (left === 0 && !sentRef.current && clicksRef.current.length > 0) { sentRef.current = true; setSent(true); submitRef.current(solution()) }
       if (left === 0 || sentRef.current) clearInterval(id)
     }, 100)
     return () => clearInterval(id)
@@ -62,16 +87,19 @@ export default function ImageCaptcha({ challenge, onSolution, onRestart }: { cha
 
   const rhythm = clickRhythm(clicks)
   const selected = rhythm.selection
+  const motion = pointerReport(viewportSize ? strokes : [], viewportSize ?? { width: 1, height: 1 })
+  const idleLimit = CAPTCHA_STAGE.idleLimitMs, idleWarn = idleMs >= idleLimit * 0.75
 
   // `at` is the click event's timestamp: same clock as performance.now(), taken when the click happened.
   function toggle(id: string, at: number) {
     if (sent || !ready || expired || readyAt.current === null) return
     clicksRef.current = [...clicksRef.current, { id, t: Math.max(0, Math.round(at - readyAt.current)) }]
+    lastAction.current = at
     setClicks(clicksRef.current)
   }
   function verify() {
     if (sentRef.current || selected.length === 0) return
-    sentRef.current = true; setSent(true); onSolution({ clicks: clicksRef.current, ...(pointer.current.metrics.samples > 0 ? { pointer: pointer.current.metrics } : {}) })
+    sentRef.current = true; setSent(true); onSolution(solution())
   }
   const seconds = Math.ceil(remaining / 1000)
   return <div className="image-captcha">
@@ -93,12 +121,13 @@ export default function ImageCaptcha({ challenge, onSolution, onRestart }: { cha
       })}
     </div>
     <div className="image-captcha-meter" aria-live="off">
-      <span>Moving <strong>{movement.samples ? (movement.movementMs / 1000).toFixed(1) + 's' : '—'}</strong></span>
-      <span>Corrections {rhythm.corrections}</span>
-      <span>Longest pause {(rhythm.maxGap / 1000).toFixed(1)}s</span>
+      <span className={motion.bad >= motion.limit ? 'is-bad' : motion.bad > 0 ? 'is-warn' : ''}>Curved strokes <strong>{motion.bad}</strong>/{motion.limit}</span>
+      <span>Straightness <strong>{motion.scored ? motion.worst.toFixed(2) : '—'}</strong>/{motion.threshold}</span>
+      <span className={rhythm.corrections > MAX_CORRECTIONS ? 'is-bad' : ''}>Corrections <strong>{rhythm.corrections}</strong>/{MAX_CORRECTIONS}</span>
+      <span className={idleMs >= idleLimit ? 'is-bad' : idleWarn ? 'is-warn' : ''}>Idle <strong>{(idleMs / 1000).toFixed(1)}s</strong>/{idleLimit / 1000}s</span>
     </div>
     <footer className="image-captcha-foot">
-      <p className="fine-print" role="status">{broken ? 'An image failed to load.' : !ready ? 'Loading images…' : expired && clicks.length === 0 ? 'Time’s up.' : `${selected.length} selected`}</p>
+      <p className="fine-print" role="status">{broken ? 'An image failed to load.' : !ready ? 'Loading images…' : expired && clicks.length === 0 ? 'Time’s up.' : idleWarn && !sent ? 'Machines don’t hesitate.' : `${selected.length} selected`}</p>
       {expired && clicks.length === 0 || broken
         ? <button type="button" className="button-secondary" onClick={onRestart}>New round</button>
         : <button type="button" className="button-primary" onClick={verify} disabled={sent || !ready || selected.length === 0}>{sent ? 'Checking…' : 'Verify'}</button>}

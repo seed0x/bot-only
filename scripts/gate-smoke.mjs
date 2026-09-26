@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 import { writeFile } from 'node:fs/promises'
 import { setTimeout as delay } from 'node:timers/promises'
-import { solveImage, steadyClicks } from './captcha-solver.mjs'
+import { solveImage, steadyClicks, straightStrokes, VIEWPORT } from './captcha-solver.mjs'
 if (!process.env.BASE_URL) throw new Error('Set BASE_URL to an isolated test server.')
 const base = process.env.BASE_URL
 const handle = 'gate_' + randomUUID().slice(0, 8)
@@ -49,7 +49,7 @@ console.log('PASS failed image CAPTCHA stays outside')
 const challenge = await json('/api/play', {requestId:randomUUID(),handle,kind:'image-confusion'})
 const { clicks } = await solveImage(challenge, tileBytes)
 await delay(clicks.at(-1).t + 50)
-const payload = {requestId:randomUUID(),handle,challengeId:challenge.id,solution:{clicks}}
+const payload = {requestId:randomUUID(),handle,challengeId:challenge.id,solution:{clicks, strokes: straightStrokes(clicks.length), viewport: VIEWPORT}}
 const {response,setCookie} = await call('/api/register',payload)
 assert.equal(response.status,200)
 const passed = await response.json()
