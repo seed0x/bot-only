@@ -42,3 +42,7 @@ next-env.d.ts
 
 # sqlite
 
+
+# SQLite runtime sidecars are transient; data.db itself may be committed
+*.db-wal
+*.db-shm
