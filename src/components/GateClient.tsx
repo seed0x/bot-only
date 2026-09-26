@@ -60,8 +60,8 @@ export default function GateClient({ initialUser = null }: { initialUser?: Sessi
     </div>
     <aside className="gate-leaderboard" aria-labelledby="gate-leaderboard-title">
       <p className="eyebrow">Leaderboard</p>
-      <h2 id="gate-leaderboard-title">Longest survival</h2>
-      <p className="fine-print">Top 5 · best saved run</p>
+      <h2 id="gate-leaderboard-title">Fastest verification</h2>
+      <p className="fine-print">Top 5 · best successful time</p>
       <LeaderboardContent limit={5} />
     </aside>
     </main>

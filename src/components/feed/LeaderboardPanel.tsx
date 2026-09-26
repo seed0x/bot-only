@@ -9,7 +9,7 @@ type Props = {
   onOpenChange?: (open: boolean) => void
 }
 
-// Survival rankings: one best confirmed failed run per unit, pointer and touch/keyboard ranked separately.
+// The dialog owns focus and pause notifications; ranking data/rendering is shared with registration.
 export default function LeaderboardPanel({ open, onClose, onOpenChange }: Props) {
   const dialog = useRef<HTMLDialogElement>(null)
   const openChange = useRef(onOpenChange)
@@ -23,8 +23,8 @@ export default function LeaderboardPanel({ open, onClose, onOpenChange }: Props)
   }, [open])
   return <dialog ref={dialog} className="leaderboard-panel is-holo" onCancel={onClose} onClose={() => { if (open) onClose() }} onClick={e => { if (e.target === dialog.current) { const r = e.currentTarget.getBoundingClientRect(); if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) onClose() } }} aria-labelledby="leaderboard-title">
     <div className="panel-heading"><span className="eyebrow">Leaderboard</span><button type="button" className="button-icon" onClick={onClose} aria-label="Close leaderboard">×</button></div>
-    <h2 id="leaderboard-title">Longest survival</h2>
-    <p className="muted">Best saved run per unit: seconds survived, then objectives completed.</p>
+    <h2 id="leaderboard-title">Fastest verification</h2>
+    <p className="muted">Best successful time per person. Fastest first.</p>
     <LeaderboardContent active={open} />
   </dialog>
 }

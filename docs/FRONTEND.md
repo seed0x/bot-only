@@ -1,4 +1,6 @@
-> Registration now includes a shared top-five survival leaderboard: beside the gate on desktop, below it on mobile. Feed dialog uses the same LeaderboardContent component.
+> Leaderboard contract: `/api/leaderboard` returns `{ handle, bestTimeMs }[]`, ranked by fastest successful image CAPTCHA per verified user. No input-mode tabs or survival metrics in this UI.
+
+> Registration now includes a shared top-five CAPTCHA leaderboard: beside the gate on desktop, below it on mobile. Feed dialog uses the same LeaderboardContent component.
 
 > Current result presentation: an open typographic verdict with compact recorded metrics; no receipt card, stamp, duplicate status or score gauge. Product name is onlybots.
 

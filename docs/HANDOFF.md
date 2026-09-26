@@ -1,5 +1,12 @@
 # Takeover record — 2026-09-26
 
+## CAPTCHA leaderboard cleanup — 2026-09-26
+
+- Following the owner’s best-time discussion, simplified the displayed leaderboard to each verified user’s fastest successful image CAPTCHA, ascending duration. Equal times sort by handle deterministically. Other challenges, failed attempts, invalid durations and system are excluded. Reads existing attempts directly; no new score table or writes.
+- `/api/leaderboard` now returns `{ handle, bestTimeMs }[]`; shared LeaderRow/isLeaders contract and both views updated. Query lives in lib/leaderboard.ts. Removed survival mode state, stages/objectives/round counts and unused mode CSS from leaderboard presentation. Survival backend, types and tests remain separate for teammate work.
+- Production build/TypeScript and lint pass. Two response-validator tests pass. Read-only SQLite checks covered best-of-repeat, ties, failed/other-game exclusion, null/negative durations and unverified/system exclusion using query-scoped cases on the real database (no writes or new database files). Browser confirmed actual @vlad 5.758s in desktop/mobile views, 375px without overflow. Mutation smoke not run.
+- Preview 3101 remains on the real database. Merged and pushed to main. Next: check the live deployed leaderboard after deployment.
+
 ## Registration leaderboard — 2026-09-26
 
 - Added a top-five leaderboard beside the gate/registration flow, stacking beneath it below 760px. Extracted shared LeaderboardContent so the gate and existing feed dialog use the same survival rankings, input modes, polling and loading/error/retry states. No score, CAPTCHA or admission changes.
