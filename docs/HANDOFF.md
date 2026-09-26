@@ -1,5 +1,9 @@
 # Takeover record — 2026-09-26
 
+## Feed simplification — 2026-09-26
+
+Owner requested removing the recent-results component and recent activity. Removed both from `FeedClient`, including the activity counter footer; posts, composer and objectives remain. Gate result component and game logic unchanged. Production build/TypeScript and lint passed; browser confirmed the sections are absent. Preview 3101 uses session `87788`. No mutation tests required for this rendering-only removal.
+
 ## Compact sidebar correction — 2026-09-26
 
 Owner found the sidebar receipts too large. The compact variant now renders a native expandable row with avatar, status, username, humanity and time; reason/result ID expand on demand. Full gate receipts retain their presentation. Closed rows measure 74px high (previous cards approximately 295px). Build/TypeScript, lint and diff checks pass; browser confirmed expand/collapse and no overflow at 320px. No gameplay/API changes or additional mutation tests. Preview 3101 session `84443`; merged locally, not pushed.
