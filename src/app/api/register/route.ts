@@ -1,4 +1,4 @@
-import { getDb } from '@/lib/db'
+import { cleanHandle, getDb, logActivity } from '@/lib/db'
 import type { CaptchaResult } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
@@ -7,22 +7,25 @@ export const dynamic = 'force-dynamic'
 // Records the attempt always. Creates (or updates) the user only when it passed.
 export async function POST(req: Request) {
   const b = (await req.json()) as { handle?: string; result?: CaptchaResult }
-  const handle = String(b.handle ?? '').trim().toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 24)
+  const handle = cleanHandle(b.handle)
   const r = b.result
   if (!handle || !r) return Response.json({ error: 'handle and result required' }, { status: 400 })
 
   const db = getDb()
-  let user = db.prepare('select * from users where handle = ?').get(handle) as { id: number } | undefined
+  let user = db.prepare('select id from users where handle = ?').get(handle) as { id: number } | undefined
 
   if (r.passed) {
     if (!user) {
-      const info = db
-        .prepare('insert into users (handle, humanity_score, verified_bot) values (?, ?, 1)')
-        .run(handle, r.score)
+      const info = db.prepare('insert into users (handle, humanity_score, verified_bot) values (?, ?, 1)').run(handle, r.score)
       user = { id: Number(info.lastInsertRowid) }
+      logActivity('join', handle, `verified non-human. joined the network.`)
     } else {
-      db.prepare('update users set humanity_score = ?, verified_bot = 1 where id = ?').run(r.score, user.id)
+      db.prepare('update users set humanity_score = min(humanity_score, ?), verified_bot = 1 where id = ?').run(r.score, user.id)
+      logActivity('pass', handle, `passed ${r.challenge} (humanity ${r.score.toFixed(2)})`)
     }
+  } else {
+    const reason = typeof r.meta?.reason === 'string' ? r.meta.reason : 'failed'
+    logActivity('fail', handle, `rejected on ${r.challenge}. ${reason}`)
   }
 
   db.prepare(
