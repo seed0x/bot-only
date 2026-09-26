@@ -222,3 +222,11 @@ textarea { resize: vertical; }
   .feed-aside { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 88px); grid-column: 2; grid-row: 1; }
   .feed-posts { grid-column: 1; grid-row: 1; }
 }
+
+/* Sticky survival diagnostic stays above the page header while scrolling. */
+.survival-hud, .survival-result { margin: 12px auto; padding: 16px; width: calc(100% - 24px); max-width: 1000px; border: 1px solid #555; background: #161616; color: #eee; overflow-wrap: anywhere; }
+.survival-hud { position: sticky; top: 0; z-index: 40; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.survival-hud p, .survival-hud details { flex-basis: 100%; }
+.survival-hud button, .survival-result button, .survival-hud select { min-height: 44px; padding: 8px 12px; border: 1px solid #888; background: #222; color: #fff; max-width: 100%; }
+.survival-hud button:disabled { opacity: .5; }
+.survival-hud :focus-visible, .survival-result :focus-visible { outline: 2px solid #f0402f; outline-offset: 3px; }

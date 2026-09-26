@@ -1,10 +1,17 @@
 'use client'
 import { useEffect, useRef } from 'react'
+import { useSurvivalGame } from '@/components/game/GameProvider'
 import Avatar from './Avatar'
 import { usePollingResource } from '@/hooks/usePollingResource'
 import { isLeaders } from '@/lib/validators'
 
 export default function LeaderboardPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { pause } = useSurvivalGame()
+  useEffect(() => {
+    if (!open) return
+    pause('leaderboard', true)
+    return () => pause('leaderboard', false)
+  }, [open, pause])
   const dialog = useRef<HTMLDialogElement>(null)
   const { data, error, loading, refresh } = usePollingResource(open ? '/api/leaderboard' : null, isLeaders, 2000)
   useEffect(() => {

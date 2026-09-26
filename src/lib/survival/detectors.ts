@@ -69,7 +69,14 @@ export function evaluateTyping(timestamps: readonly number[], stage: SurvivalSta
     }
   }
   const cv = coefficientOfVariation(intervals)
-  return result('typing', stage, cv, 'Population CV of eight insertion intervals.')
+  const config = SURVIVAL_STAGES.find(item => item.id === stage)
+  if (!config) throw new RangeError('Unknown captured stage.')
+  // Eight observed insertions over eight intervals, five insertions per word.
+  const wpm = 12000 * intervals.length / intervals.reduce((sum, interval) => sum + interval, 0)
+  if (wpm < config.typingMinWpm) return Object.freeze({ detector: 'typing', stage,
+    outcome: 'bad', typingMetric: 'speed', value: wpm, threshold: config.typingMinWpm,
+    explanation: `Typing speed ${wpm.toFixed(1)} WPM is below the ${config.typingMinWpm} WPM minimum (five insertions per word).` })
+  return Object.freeze({ ...result('typing', stage, cv, 'Population CV of eight insertion intervals.'), typingMetric: 'consistency' })
 }
 
 /** Six consecutive signed net CSS-pixel displacements in 100ms bins from ONE

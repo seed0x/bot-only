@@ -28,19 +28,19 @@ export type SurvivalDetector = 'pointer' | 'typing' | 'scroll'
 export type SurvivalFailureReason = 'verification_failed' | 'objective_deadline' | 'idle' | SurvivalDetector
 export type SurvivalStage = Readonly<{
   id: SurvivalStageId; startsAtMs: number; idleLimitMs: number
-  pointerRatio: number; typingCv: number; scrollCv: number
+  pointerRatio: number; typingCv: number; typingMinWpm: number; scrollCv: number
   objectiveBudgetMs: number; badWindowsToFail: number
 }>
 export type SurvivalPointerSample = Readonly<{ x: number; y: number; t: number }>
 export type SurvivalMeasurement = Readonly<{
   reason: SurvivalFailureReason; activeMs: number; stage: SurvivalStageId
-  value: number; threshold: number; unit: 'ms' | 'ratio' | 'cv' | 'boolean'
+  value: number; threshold: number; unit: 'ms' | 'ratio' | 'cv' | 'wpm' | 'boolean'
   explanation: string
 }>
 export type SurvivalDetectorResult = Readonly<{
   detector: SurvivalDetector; outcome: 'insufficient_data' | 'good' | 'bad'
   stage: SurvivalStageId; value: number | null; threshold: number
-  explanation: string; pointerTrace?: readonly SurvivalPointerSample[]
+  explanation: string; typingMetric?: 'speed' | 'consistency'; pointerTrace?: readonly SurvivalPointerSample[]
 }>
 export type SurvivalObjectiveAssociation = Readonly<{ runId: string; objectiveId: string }>
 export type SurvivalObjective = SurvivalObjectiveAssociation & Readonly<{

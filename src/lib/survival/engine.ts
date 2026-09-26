@@ -187,7 +187,7 @@ export function transitionSurvival(state: SurvivalRunState, input: SurvivalEvent
         next = { ...next, badWindows: { ...next.badWindows, [result.detector]: count } }
         if (count >= windowStage.badWindowsToFail) record({ reason: result.detector,
           activeMs: next.activeMs, stage: result.stage, value: result.value, threshold: result.threshold,
-          unit: result.detector === 'pointer' ? 'ratio' : 'cv', explanation: result.explanation })
+          unit: result.detector === 'pointer' ? 'ratio' : result.typingMetric === 'speed' ? 'wpm' : 'cv', explanation: result.explanation })
         break
       }
       case 'objective_issued': {
