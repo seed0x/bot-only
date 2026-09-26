@@ -11,7 +11,10 @@
     "smoke": "node scripts/smoke.mjs",
     "test": "node --experimental-sqlite --experimental-transform-types --test tests/*.test.mjs",
     "machine": "node scripts/machine.mjs",
-    "smoke:gate": "node scripts/gate-smoke.mjs"
+    "smoke:gate": "node scripts/gate-smoke.mjs",
+    "prestart": "node --experimental-sqlite --experimental-strip-types scripts/db-check.mjs",
+    "predev": "node --experimental-sqlite --experimental-strip-types scripts/db-check.mjs",
+    "db:check": "node --experimental-sqlite --experimental-strip-types scripts/db-check.mjs"
   },
   "dependencies": {
     "next": "16.3.6",

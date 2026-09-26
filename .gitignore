@@ -43,6 +43,6 @@ next-env.d.ts
 # sqlite
 
 
-# SQLite runtime sidecars are transient; data.db itself may be committed
-*.db-wal
-*.db-shm
+# The SQLite database is created and seeded on start (scripts/db-check.mjs); never commit it.
+*.db
+*.db-*

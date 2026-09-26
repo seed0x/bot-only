@@ -19,7 +19,18 @@ npm run dev
 
 Open [the gate](http://localhost:3000/) and complete the reverse CAPTCHA to open the feed. Another port: `npm run dev -- --port 3101`.
 
-The schema creates itself on the first database request. Default database: `data.db` in the working directory. Set `DB_PATH` to an absolute path in production.
+The database creates itself. `npm run dev` and `npm start` first run `scripts/db-check.mjs`: a missing database is created and seeded with the demo opening, a broken one is moved aside as `data.db.broken-<time>` and rebuilt, and `DB_RESET=1` rebuilds a healthy one on purpose. Default file: `data.db` in the working directory, never committed. Set `DB_PATH` to an absolute path in production.
+
+## Deploy or redeploy (Zo, Railway, any box with Node 22)
+
+```bash
+git pull --ff-only origin main
+npm ci
+npm run build
+npm start            # db-check runs first, then the server
+```
+To wipe the live network before a demo: `DB_RESET=1 npm start` once.
+If `git pull` complains that `data.db` would be overwritten, that copy was tracked by an older commit: `git checkout -- data.db` then pull again; db-check keeps the runtime file.
 
 ## The flow
 
