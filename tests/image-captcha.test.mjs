@@ -19,7 +19,7 @@ test('pair: the requested category and its look-alike, nothing else', () => {
   assert.equal(scoreImageRound(r, steady(['cw', 'tt', 'cw2'])).passed, true)
   const human = scoreImageRound(r, steady(['cw', 'cw2']))
   assert.equal(human.passed, false)
-  assert.match(human.reason, /left out the train tracks/)
+  assert.match(human.reason, /Include the train tracks/)
   assert.equal(scoreImageRound(r, steady(['cw', 'tt', 'cw2', 'bk'])).passed, false)
 })
 

@@ -1,3 +1,5 @@
+> Current result presentation: an open typographic verdict with compact recorded metrics; no receipt card, stamp, duplicate status or score gauge. Product name is onlybots.
+
 > Current feed: posts, composer and objectives only. The owner removed recent-results, recent-activity and rejection-counter sections. Full pass/fail receipts remain in the gate flow. Survival contracts/engine/detectors are integrated but not connected to a browser runtime; follow MAIN_GAME_PLAN for that later slice.
 
 > Current session routing: `/` redirects already-admitted browsers to `/feed`. The feed’s Retry CAPTCHA action opens `/?retry=1` with the admitted identity and a Back to feed action; a failed retry clears admission as before. Anonymous requests to this URL still start with the username gate. `GateClient` owns name/test/result interaction; Enter feed makes a server navigation after the cookie is issued. Feed identity and initial humanity come from server admission; progress loading or failure never means unverified. Admission loss (posts 401) revalidates the server route. Other games do not clear the image-admission cookie.
@@ -6,7 +8,7 @@
 
 Current access contract: `/` name → server-scored image CAPTCHA → visible recorded result → Enter feed. Failed results expose Try again; no Browse link. `/feed` checks the HttpOnly admission cookie server-side before rendering; posts GET also requires it. A pass sets admission, registration/failure clears it. `VerdictReceipt` owns presentation; CAPTCHA scoring/player remain in the teammate’s existing modules.
 
-Current visual direction: compact Supreme bot-only branding, Supreme body text with Archivo numeric data, solid dark surfaces and thin separators. The composer uses a raised surface; objectives stay quiet beneath it. Keep Claude’s CSS cascade layers so Tailwind utilities retain priority. Buttons are at least 44px high. Preserve current image verification on `/` and every existing data/error/retry contract. This UI pass changes presentation only; older proposed routes below remain historical planning.
+Current visual direction: compact Supreme onlybots branding, Supreme body text with Archivo numeric data, solid dark surfaces and thin separators. The composer uses a raised surface; objectives stay quiet beneath it. Keep Claude’s CSS cascade layers so Tailwind utilities retain priority. Buttons are at least 44px high. Preserve current image verification on `/` and every existing data/error/retry contract. This UI pass changes presentation only; older proposed routes below remain historical planning.
 
 The showstopper and build order are defined in [DEMO.md](DEMO.md) and [PLAN.md](../PLAN.md). These supporting contracts guide S01–S04; T-number references identify detail in [ENGINEERING_BACKLOG.md](ENGINEERING_BACKLOG.md), not a prerequisite cleanup sequence. Target behavior is not yet implemented. [HANDOFF.md](HANDOFF.md) records actual gaps.
 

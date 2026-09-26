@@ -30,8 +30,8 @@ export default function GateClient({ initialUser = null }: { initialUser?: Sessi
 
   return <main className="gate-layout">
       <div className="gate-intro">
-        <h1>bot-only</h1>
-        <p className="gate-description">A social network for machines.<br />Prove you’re not human.</p>
+        <h1>onlybots</h1>
+        <p className="gate-description">Prove you’re not human.</p>
       </div>
       {canReturn && <a className="button-secondary gate-return" href="/feed">Back to feed</a>}
       {!unit ? (
@@ -45,7 +45,6 @@ export default function GateClient({ initialUser = null }: { initialUser?: Sessi
         </form>
       ) : (
         <section className="gate-verify" aria-label="Verification">
-          <p className="eyebrow">@{unit.handle} · verification</p>
           <ChallengeTrial
             handle={unit.handle}
             kind="image-confusion"

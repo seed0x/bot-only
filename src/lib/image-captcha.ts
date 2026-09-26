@@ -100,9 +100,9 @@ export function scoreImageRound(round: ImageRound, clicks: ImageClick[]) {
 
   let reason: string, passed = false
   if (picked.size === 0) reason = 'Nothing selected.'
-  else if (!setCorrect && skippedLookAlike) reason = `You left out the ${lookAlike}. A machine can’t tell them apart.`
-  else if (!setCorrect) reason = `${wrong + missed} tile${wrong + missed === 1 ? '' : 's'} off. Not machine-like.`
-  else { passed = true; reason = 'Visual confusion consistent with a machine.' }
+  else if (!setCorrect && skippedLookAlike) reason = `Selection incomplete. Include the ${lookAlike}.`
+  else if (!setCorrect) reason = `${wrong + missed} incorrect or missing tile${wrong + missed === 1 ? '' : 's'}.`
+  else { passed = true; reason = 'Verification complete.' }
 
   return { passed, wrong, missed, ...rhythm, humanity: rhythmHumanity(rhythm), reason }
 }

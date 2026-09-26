@@ -1,5 +1,12 @@
 # Takeover record — 2026-09-26
 
+## onlybots identity and simplified verdict — 2026-09-26
+
+- Owner confirmed the product name onlybots and rejected the overloaded result card/captions. Updated visible gate/header/accessibility labels and page metadata. Kept internal cookie names and database paths stable so existing admission continues to work.
+- Full result now uses an open typographic layout: Access denied / You’re in, one identity/result ID line, and compact humanity/elapsed/movement numbers. Removed the card, stamp, duplicate status/avatar, score gauge and extra gate copy. Kept actual measurements, result details and existing continue/retry actions. New image-result reasons use direct selection explanations; known historical wording is cleaned only for display. Scoring/admission logic unchanged.
+- Lint, production build/TypeScript and all six CAPTCHA tests pass. Updated one expected reason assertion after the copy change. Browser inspected pass/fail rendered from real SQLite records, verified a 375px layout without horizontal overflow, and confirmed onlybots in the live feed/header/tab title. Temporary static review files were removed; no synthetic results, database writes, resets or submitted CAPTCHA attempts.
+- Local merge only, no push/deployment. Preview 3101 remains running with the real database. Next: rehearse a fresh result and the presentation flow.
+
 ## Retry after admission — 2026-09-26
 
 - Fixed the missing path back to the reverse CAPTCHA: feed sidebar now has Retry CAPTCHA, opening `/?retry=1` with the server-admitted identity. Ordinary `/` still redirects admitted visitors to the feed. Anonymous retry requests show the username gate and cannot bypass admission.
