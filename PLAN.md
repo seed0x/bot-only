@@ -43,7 +43,7 @@ Owners are unassigned until claimed. Timeboxes are planning budgets, not deliver
 
 ### S01 — build the first memorable moment
 
-- Start in `MovementCaptcha.tsx` and `verify/page.tsx`; extract `AttemptEvidence` and `VerdictReceipt` for reuse in TestCard/feed.
+- Verification lives at the gate (`src/app/page.tsx` → `ChallengeTrial` → `ImageCaptcha`); `AttemptEvidence` and `VerdictReceipt` render every verdict.
 - Retain a bounded actual trace and measured metrics. Keep pending recording, confirmed verdict and recording failure separate. Give the receipt the persisted attempt ID.
 - Design the transition: input → trace freezes → evidence highlights → verdict. Respect reduced motion and show the full result immediately in that mode.
 - Include the judge-passes branch, new attempt, interrupted drag and failed recording. Never alter scoring thresholds to manufacture the joke.

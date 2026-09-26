@@ -73,7 +73,7 @@ Each task implements only the relevant cases, then records command/result and an
 | V10 | Pinned system rules first, then 01 + two transmissions, 02 + two, remainder; no duplicate/lost posts; refresh/new post preserves open player's input | Pure timeline + browser / T05 | Currently wrong pin position |
 | V11 | Fresh schema + seed has matching attempts, scores and pass activity; system excluded from competition; repeated disposable seed produces consistent opening | Database/API / T05 | Seed claims lack attempt rows |
 | V12 | Routes/cards/dialogs at all widths, long input/text, 200% zoom, portrait/landscape, keyboard open, touch; no horizontal page overflow or inaccessible actions | Browser/device inspection / T06 | Gate fails 375px; others incomplete |
-| V13 | Tab order, input labels, visible focus, dialog containment/return/Escape, closed dialog not tabbable, status announcements, ticker pause and reduced-motion content | Browser + manual assistive review / T04/T07 | Planned |
+| V13 | Tab order, input labels, visible focus, dialog containment/return/Escape, closed dialog not tabbable, status announcements and reduced-motion content | Browser + manual assistive review / T04/T07 | Planned |
 | V14 | Production build; full fresh-session flow; pass/fail public results; seed consistency; phone and desktop; verified hosting persistence | Build, API + rehearsal / T08 | Not run |
 
 Use the smallest useful test tooling for the behavior. T02 selects a runner compatible with the installed Node/TypeScript setup; T03 adds controlled timer/component tests and a browser harness if needed. No such new test commands are available yet. Keep fixtures in tests, never as runtime replacement data.

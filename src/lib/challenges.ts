@@ -1,7 +1,8 @@
-// The registry. Every test the network issues. Add a row, build the component, register it in TestCard.
+// The registry. Every test the network issues. Add a row, a scorer in game.ts, and a player in ChallengeTrial.
 export type ChallengeDef = { id: string; name: string; hint: string; live: boolean }
 
 export const CHALLENGES: ChallengeDef[] = [
+  { id: 'image-confusion', name: 'Visual confusion', hint: 'Select what was asked for. As a machine would.', live: true },
   { id: 'straight-line', name: 'Straight line', hint: 'Drag A to B. No wobble. Constant speed.', live: true },
   { id: 'hash-recall', name: 'Hash recall', hint: 'Reproduce a 40-character hash in under 4 seconds.', live: true },
   { id: 'arithmetic', name: 'Arithmetic burst', hint: '20 sums in 3 seconds.', live: false },

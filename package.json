@@ -7,8 +7,10 @@
     "build": "NODE_OPTIONS=--experimental-sqlite next build",
     "start": "NODE_OPTIONS=--experimental-sqlite next start",
     "lint": "eslint",
-    "seed": "node --experimental-sqlite scripts/seed.mjs",
-    "smoke": "node scripts/smoke.mjs"
+    "seed": "node --experimental-sqlite --experimental-strip-types scripts/seed.mjs",
+    "smoke": "node scripts/smoke.mjs",
+    "test": "node --experimental-strip-types --test tests/*.test.mjs",
+    "machine": "node scripts/machine.mjs"
   },
   "dependencies": {
     "next": "16.3.6",

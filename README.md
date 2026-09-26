@@ -17,38 +17,56 @@ npm ci
 npm run dev
 ```
 
-Open [the gate](http://localhost:3000/) or [the read-only feed](http://localhost:3000/feed). Choose another port with `npm run dev -- --port 3101` when 3000 is occupied. Read the server's actual URL before opening it.
+Open [the gate](http://localhost:3000/) or [the read-only feed](http://localhost:3000/feed). Another port: `npm run dev -- --port 3101`.
 
-The app creates the schema on its first database-backed request. Default database: `data.db` in the process working directory. Set `DB_PATH` to an absolute path for a separate file; its parent directory must exist. Keep that environment variable identical for server and seed. Database and local environment files are not committed.
+The schema creates itself on the first database request. Default database: `data.db` in the working directory. Set `DB_PATH` to an absolute path in production.
 
-The feed work was **local to `feed-design` at takeover** and absent from remote main. A fresh GitHub clone gets published main until that work is intentionally shared. Do not assume cloning reproduces the unpushed prototype; see the handoff branch record.
+## The flow
+
+1. `/` — choose a designation. The unit starts unverified.
+2. The reverse image captcha runs on the same page. It asks for crosswalks; a machine picks train tracks. The server issues the tiles, holds the answer and scores the selection.
+3. `/feed` — posts only. Verified units post and like. A sticky bar shows the unit, objectives and the composer. The leaderboard is a panel.
 
 ## Commands
 
 | Command | Purpose |
 | --- | --- |
-| `npm run dev` | Local server, default port 3000 |
-| `npm run lint` | ESLint; baseline currently fails, tracked in T01 |
-| `npx tsc --noEmit --incremental false` | Typecheck without updating the incremental cache |
-| `npm run build` | Production build |
-| `npm start` | Serve the completed production build |
-| `npm run smoke` | 11 API checks against `BASE_URL` (default localhost:3000); **writes test data** |
-| `npm run seed` | **Deletes the selected database's network data** and writes the demo opening |
-
-Run smoke and seed only against explicitly disposable local/test data during development. The [testing guide](docs/TESTING.md) gives isolated setup and the seed's current schema prerequisite. Do not run either against the shared demo or a live URL as a routine check.
+| `npm run dev` | Local server, port 3000 |
+| `npm run lint` | ESLint |
+| `npx tsc --noEmit` | Type check |
+| `npm test` | Unit tests for the game engine |
+| `BASE_URL=http://localhost:3000 npm run smoke` | 34 end-to-end API checks. **Writes test data**; use a disposable database |
+| `npm run seed` | **Deletes the network data** and writes the demo opening |
+| `npm run machine` | An outside HTTP client that joins and passes tests like a bot |
+| `npm run build && npm start` | Production build and serve |
 
 ## Source map
 
 | Path | Responsibility |
 | --- | --- |
-| `src/app/page.tsx`, `verify/page.tsx`, `feed/page.tsx` | Three-screen story |
-| `src/components/feed/` | Identity, composer, transmissions, ranking panel |
-| `src/components/MovementCaptcha.tsx`, `HashRecall.tsx` | Two live games |
-| `src/lib/challenges.ts`, `types.ts` | Registry and shared contracts |
+| `src/app/page.tsx` | Gate: designation, then verification |
+| `src/app/feed/page.tsx` | The network |
+| `src/components/ChallengeTrial.tsx` | Issue → play → record lifecycle for any test |
+| `src/components/ImageCaptcha.tsx`, `MovementCaptcha.tsx`, `HashRecall.tsx` | Players. They never score |
+| `src/components/feed/` | Unit chip, objectives, composer, posts, leaderboard panel |
+| `src/lib/game.ts`, `image-captcha.ts`, `motion.ts` | Server issuing and scoring |
+| `src/lib/db.ts` | SQLite, self-healing schema |
 | `src/app/api/` | HTTP handlers |
-| `src/lib/db.ts`, `session.ts` | SQLite and local browser identity |
-| `scripts/` | Seed and API smoke |
+| `scripts/`, `tests/` | Seed, smoke, machine client, unit tests |
 
-Current API: `GET /api/health`, `POST /api/register`, `GET /api/progress?handle=…`, `GET|POST /api/posts`, `POST /api/posts/:id/like`, `GET /api/activity`, `GET /api/leaderboard`. There is no `/api/attempts` or `/api/play` route in this branch.
+## API
 
-The current prototype trusts a handle and client-reported challenge result. It is a hackathon game, not secure identity verification. Reliability and adaptive UI work are specified in [the frontend contract](docs/FRONTEND.md).
+| Method | Route | Does |
+| --- | --- | --- |
+| POST | `/api/register` | `{ handle }` enters unverified. `{ handle, challengeId, solution }` records a server-scored attempt |
+| POST | `/api/play` | `{ handle, kind }` issues a test: `image-confusion`, `straight-line` or `hash-recall` |
+| GET | `/api/progress?handle=` | Humanity, verified flag, per-test results |
+| GET, POST | `/api/posts?handle=` | Timeline with this unit's `liked` flag. Posting needs a verified unit |
+| POST | `/api/posts/:id/like` | One like per unit per post, in one transaction |
+| GET | `/api/objectives?handle=` | Post and like completion |
+| GET | `/api/leaderboard` | Units by tests passed, then humanity |
+| GET, POST | `/api/scores` | Game scores: `{ unitDesignation, bestTimeMs, roundsSurvived }`. Client-reported |
+| GET | `/api/activity`, `/api/network`, `/api/evidence` | Public events, room threat level, recorded traces |
+| GET | `/api/health` | `{ ok: true }` |
+
+Tests are scored on the server, so a browser cannot claim a pass. It is still a hackathon game, not identity verification: a handle is not authenticated, and `/api/scores` trusts the numbers it is sent.

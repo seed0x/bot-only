@@ -1,41 +1,34 @@
 'use client'
-
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import Avatar from './Avatar'
+import { ApiError, jsonPost, requestJson } from '@/lib/api'
 import type { SessionUser } from '@/lib/types'
-
+type Pending = { requestId: string; handle: string; body: string }
 export default function Composer({ user, onPosted }: { user: SessionUser; onPosted: () => void }) {
-  const [body, setBody] = useState('')
-  const [err, setErr] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
+  const [body, setBody] = useState(''), [error, setError] = useState(''), [busy, setBusy] = useState(false), [editable, setEditable] = useState(true)
+  const pending = useRef<Pending | null>(null), lock = useRef(false)
   async function submit(e: React.FormEvent) {
     e.preventDefault()
-    if (!body.trim() || busy) return
-    setBusy(true)
-    const r = await fetch('/api/posts', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ handle: user.handle, body }) })
-    setBusy(false)
-    if (!r.ok) return setErr((await r.json()).error ?? 'rejected')
-    setBody(''); setErr(null); onPosted()
+    if (lock.current || !body.trim()) return
+    pending.current ??= { requestId: crypto.randomUUID(), handle: user.handle, body: body.trim() }
+    lock.current = true; setBusy(true); setError('')
+    try {
+      await requestJson('/api/posts', jsonPost(pending.current), (v): v is { id: number } => !!v && typeof v === 'object' && 'id' in v && typeof v.id === 'number')
+      pending.current = null; setEditable(true); setBody(''); onPosted(); window.dispatchEvent(new Event('network-updated'))
+    } catch (e) {
+      const rejected = e instanceof ApiError && e.status >= 400 && e.status < 500
+      if (rejected) pending.current = null
+      setEditable(rejected); setError(e instanceof Error ? e.message : 'Couldn’t confirm your post. Try again.')
+    }
+    finally { lock.current = false; setBusy(false) }
   }
-  return (
-    <form onSubmit={submit} className="flex gap-3 rounded-xl border p-4" style={{ background: 'var(--surface)', borderColor: 'var(--line)' }}>
-      <Avatar handle={user.handle} size={40} />
-      <div className="min-w-0 flex-1">
-        <textarea
-          id="compose"
-          rows={2}
-          maxLength={280}
-          placeholder="Transmit to the network"
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') submit(e) }}
-          className="w-full resize-none bg-transparent text-[17px] leading-snug outline-none placeholder:opacity-50"
-        />
-        <div className="mt-2 flex items-center justify-between">
-          <span className="text-xs tabular-nums" style={{ color: 'var(--muted)' }}>{err ?? `${280 - body.length}`}</span>
-          <button disabled={!body.trim() || busy} className="rounded-full px-4 py-1.5 text-sm font-semibold disabled:opacity-40" style={{ background: 'var(--text)', color: 'var(--bg)' }}>Transmit</button>
-        </div>
-      </div>
-    </form>
-  )
+  return <form onSubmit={submit} className="composer is-holo">
+    <Avatar handle={user.handle} size={36} />
+    <div className="composer-content">
+      <label htmlFor="compose" className="eyebrow">New post</label>
+      <textarea id="compose" rows={2} maxLength={280} disabled={busy || !editable} value={body} onChange={e => { setBody(e.target.value); setError('') }} placeholder="What’s happening?" />
+      <div className="composer-actions"><span className="fine-print">{280 - body.length} characters left</span><button className="button-primary" disabled={!body.trim() || busy}>{busy ? 'Posting…' : error ? 'Try again' : 'Post'}</button></div>
+      {error && <p className="form-error" role="alert">{error} Your draft is saved here.</p>}
+    </div>
+  </form>
 }

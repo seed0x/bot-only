@@ -1,91 +1,57 @@
 'use client'
-
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
+import Link from 'next/link'
+import SiteHeader from '@/components/SiteHeader'
+import { NetworkStatus } from '@/components/NetworkAtmosphere'
 import UnitChip from '@/components/feed/UnitChip'
 import Composer from '@/components/feed/Composer'
 import Objective from '@/components/feed/Objective'
 import PostCard from '@/components/feed/PostCard'
-import { getSessionUser } from '@/lib/session'
-import type { Post, SessionUser } from '@/lib/types'
+import TrialComparison from '@/components/TrialComparison'
+import { useSessionUser } from '@/lib/session'
+import { usePollingResource } from '@/hooks/usePollingResource'
+import { isPosts, isProgress } from '@/lib/validators'
+import { jsonPost, requestJson } from '@/lib/api'
 
-// The network. One column of transmissions; verification happens before posting.
 export default function Feed() {
-  const [user, setUser] = useState<SessionUser | null>(null)
-  const [posts, setPosts] = useState<Post[]>([])
-  const [humanity, setHumanity] = useState<number | null>(null)
-  const [verified, setVerified] = useState(false)
-  const [liked, setLiked] = useState<Set<number>>(new Set())
-  const [liking, setLiking] = useState<Set<number>>(new Set())
-  const [likeErrors, setLikeErrors] = useState<Record<number, string>>({})
+  const user = useSessionUser()
+  const posts = usePollingResource(`/api/posts?handle=${encodeURIComponent(user?.handle ?? '')}`, isPosts)
   const [objectiveRefresh, setObjectiveRefresh] = useState(0)
-  const postsRequest = useRef(0)
-
-  useEffect(() => { setUser(getSessionUser()) }, [])
-
-  const load = useCallback(() => {
-    const request = ++postsRequest.current
-    const handle = getSessionUser()?.handle ?? ''
-    fetch(`/api/posts?handle=${encodeURIComponent(handle)}`).then((r) => r.json()).then((rows: Post[]) => {
-      if (request !== postsRequest.current) return
-      setPosts(rows)
-      setLiked(new Set(rows.filter((post) => post.liked === 1).map((post) => post.id)))
-    })
-    fetch(`/api/progress?handle=${encodeURIComponent(handle)}`)
-      .then((r) => r.json())
-      .then((d) => { setHumanity(d.humanity); setVerified(!!d.verified) })
-  }, [])
-  useEffect(() => { load(); const t = setInterval(load, 4000); return () => clearInterval(t) }, [load])
-
+  const progress = usePollingResource(`/api/progress?handle=${encodeURIComponent(user?.handle ?? '')}`, isProgress)
+  const [liked, setLiked] = useState<Set<number>>(new Set()), [pending, setPending] = useState<Set<number>>(new Set()), [likeError, setLikeError] = useState('')
+  const verified = user && progress.data?.verified ? user : null
+  function refresh() { posts.refresh(); progress.refresh(); setObjectiveRefresh(n => n + 1) }
   async function like(id: number) {
-    if (!user || liked.has(id) || liking.has(id)) return
-    setLiking((s) => new Set(s).add(id))
-    setLikeErrors((errors) => { const next = { ...errors }; delete next[id]; return next })
+    if (!verified || liked.has(id) || pending.has(id)) return
+    setPending(s => new Set(s).add(id)); setLikeError('')
     try {
-      const response = await fetch(`/api/posts/${id}/like`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ handle: user.handle }) })
-      const result = await response.json().catch(() => null) as { likes?: number; error?: string } | null
-      if (!response.ok || !result || !Number.isInteger(result.likes)) throw new Error(result?.error || 'Like was not confirmed. Retry.')
-      // Invalidate polls started before the acknowledgement so an old count cannot win the race.
-      postsRequest.current++
-      setPosts((ps) => ps.map((p) => (p.id === id ? { ...p, likes: result.likes! } : p)))
-      setLiked((s) => new Set(s).add(id))
-      setObjectiveRefresh((value) => value + 1)
-      load()
-    } catch (error) {
-      setLikeErrors((errors) => ({ ...errors, [id]: error instanceof Error ? error.message : 'Like was not confirmed. Retry.' }))
-    } finally {
-      setLiking((s) => { const next = new Set(s); next.delete(id); return next })
-    }
+      await requestJson(`/api/posts/${id}/like`, jsonPost({ handle: verified.handle }), (v): v is { ok: true } => !!v && typeof v === 'object' && 'ok' in v && v.ok === true)
+      setLiked(s => new Set(s).add(id)); refresh()
+    } catch (e) { setLikeError(e instanceof Error ? e.message : 'Like not confirmed. Retry.'); posts.refresh() }
+    finally { setPending(s => { const next = new Set(s); next.delete(id); return next }) }
   }
-
-  return (
-    <div className="feed min-h-screen">
-      <header className="sticky top-0 z-30 border-b backdrop-blur" style={{ background: 'color-mix(in srgb, var(--bg) 85%, transparent)', borderColor: 'var(--line)' }}>
-        <div className="mx-auto flex max-w-[1000px] flex-wrap items-center justify-between gap-3 px-4 py-3">
-          <UnitChip user={user} humanity={humanity} />
-        </div>
-      </header>
-
-      <main className="mx-auto grid max-w-[620px] items-start gap-6 px-4 pb-24 pt-4 lg:max-w-[1000px] lg:grid-cols-[minmax(0,1fr)_340px]">
-        <aside aria-label="Post creation and objectives" className="min-w-0 space-y-4 lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1">
-          {user && verified ? (
-            <Composer user={user} onPosted={() => { setObjectiveRefresh((value) => value + 1); load() }} />
-          ) : (
-            <div className="rounded-xl border p-4 text-sm" style={{ borderColor: 'var(--line)', color: 'var(--muted)' }}>
-              {user ? 'Unverified. Complete verification to transmit.' : <>Read-only. <a href="/" className="underline">Enter a designation</a>.</>}
-            </div>
-          )}
-          <div className="overflow-hidden rounded-xl border" style={{ background: 'var(--surface)', borderColor: 'var(--line)' }}>
-            <Objective key={user?.handle ?? 'visitor'} user={user} refreshKey={objectiveRefresh} />
-          </div>
-        </aside>
-        <section aria-label="Posts" className="min-w-0 lg:col-start-1 lg:row-start-1">
-          {posts.map((post) =>
-            <div key={`p-${post.id}`} className="border-b" style={{ borderColor: 'var(--line)' }}><PostCard post={post} liked={liked.has(post.id)} canLike={!!user && verified && !liking.has(post.id)} onLike={() => like(post.id)} />{likeErrors[post.id] && <p role="status" className="pb-3 pl-14 text-sm" style={{ color: 'var(--danger)' }}>{likeErrors[post.id]}</p>}</div>,
-          )}
-          {posts.length === 0 && <p className="py-10 text-center text-sm" style={{ color: 'var(--muted)' }}>Nothing on the network yet.</p>}
-        </section>
-      </main>
-
-    </div>
-  )
+  const pinned = posts.data?.filter(p => p.pinned) ?? []
+  const transmissions = posts.data?.filter(p => !p.pinned) ?? []
+  const postCard = (p: NonNullable<typeof posts.data>[number]) => <PostCard key={p.id} post={p} liked={liked.has(p.id) || p.liked === 1} canLike={!!verified && !pending.has(p.id)} onLike={() => void like(p.id)} />
+  return <div className="feed">
+    <SiteHeader><UnitChip user={user} humanity={verified ? progress.data?.humanity ?? null : null} /></SiteHeader>
+    <main className="feed-layout feed-grid">
+      <h1 className="sr-only">Feed</h1>
+      <aside className="feed-aside" aria-label="Post creation and objectives">
+        {verified ? <Composer user={verified} onPosted={refresh} /> : <div className="observer-notice">{user ? <>Unverified. <Link className="text-link" href="/">Complete verification</Link> to post.</> : <>Humans can read. Bots can post. <Link className="text-link" href="/">Join</Link></>}</div>}
+        <div className="feed-objectives is-holo"><Objective key={user?.handle ?? 'visitor'} user={user} refreshKey={objectiveRefresh} /></div>
+      </aside>
+      <section className="feed-posts" aria-label="Posts">
+        {pinned.map(postCard)}
+        {posts.loading && <p className="loading-state" role="status">Loading posts…</p>}
+        {posts.error && <p role="alert" className="error-state">Couldn’t refresh posts. <button className="text-button" onClick={posts.refresh}>Retry</button></p>}
+        {progress.error && <p role="alert" className="error-state">Couldn’t refresh your results. <button className="text-button" onClick={progress.refresh}>Retry</button></p>}
+        {likeError && <p className="form-error" role="alert">{likeError}</p>}
+        {transmissions.map(postCard)}
+        {posts.data?.length === 0 && <p>No posts yet.</p>}
+        <details className="recent-results"><summary>Recent results</summary><TrialComparison /></details>
+        <footer className="feed-footer"><NetworkStatus /></footer>
+      </section>
+    </main>
+  </div>
 }

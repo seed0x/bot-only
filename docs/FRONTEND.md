@@ -21,17 +21,16 @@ Existing paths remain the starting point. New paths below are proposed and shoul
 | --- | --- | --- |
 | Route pages | Routing and screen composition | Keep network helpers/scoring out of route markup. |
 | `UnitChip` | Presentation of confirmed identity/progress | Explicit loading/error/ready data; no invented test denominator. |
-| `Ticker` | Activity presentation and motion controls | Resource state from a focused hook; no duplicate spoken ticker copy. |
 | `Composer` | Draft, validation, pending snapshot and feedback | Acknowledged post triggers invalidation; no direct SQLite access. |
 | `Objective` | Disabled Post / Comment / Like checkboxes in the feed sidebar, beneath Composer | `/api/objectives?handle=…` returns persisted post/like completion; comment is null (unavailable). Refresh after acknowledged actions; retain confirmed values on read error with explicit retry. Identity change remounts the component. |
 | `PostCard` | One transmission and like action | Like status/count and callback; no global feed ownership. Feed reads include this unit's persisted like state. |
-| `TestCard` | Expanded/collapsed state and a run's submission lifecycle | Stable challenge ID, progress, session, confirmed-result callback. |
 | `MovementCaptcha`, `HashRecall` | Input, scoring, timer and local verdict | Emit one `CaptchaResult` per run. No fetch, identity write or navigation. |
 | `LeaderboardPanel` | Dialog, ranking states, focus lifecycle | Open/close props and resource state. |
 | Proposed `AttemptEvidence` | Bounded actual trace and metric presentation | Receives recorded/run evidence; no invented data or scoring changes. |
 | Proposed `VerdictReceipt` | Pending/confirmed public receipt | Attempt ID, confirmed result and retry action; shared by verify/feed. |
 | Proposed `TrialComparison` | Human/machine comparison | Actual attempt IDs/evidence; labels trace duration vs request time and recorded replay. |
-| Proposed `useAttemptSubmission` | Immutable result, request ID, recording state | Shared by verify/TestCard; confirmed result invalidates data. |
+| `ChallengeTrial` | Issue → play → record lifecycle for one test, idempotent request IDs | Used by the gate with `image-confusion`; renders `ImageCaptcha`, `MovementCaptcha` or `HashRecall`. |
+| `ImageCaptcha` | Tile selection only | Server-issued prompt and tiles; submits `{ selected }`; never scores locally. |
 | Proposed focused read hooks | Fetch, cadence, cancellation, freshness | Start with feed/activity/ranking hooks, not a generic state framework. |
 | Proposed `src/lib/api.ts` | HTTP status, parsing, timeout, typed error | No silent retry of a write or fabricated response. |
 | `src/lib/types.ts` | Shared wire/domain contracts | Runtime validation lives at the boundary, not in casts. |
@@ -120,7 +119,7 @@ The current register endpoint accepts client verdicts. Migrate human UI, automat
 | 1024px+ | Preserve readable ~620px feed; verification canvas max 640px; do not stretch text across desktop |
 | Short landscape / software keyboard | Content scrolls; avoid vertical centering that hides input/buttons; no trapped scroll under overlay |
 | 200% zoom / enlarged text | No cut-off labels, dialogs or primary controls; reflow without page overflow |
-| Reduced motion | No continuous ticker/slide motion; activity still discoverable as readable content |
+| Reduced motion | No continuous slide motion; activity still discoverable as readable content |
 | Touch / pointer | Actions at least 44×44 CSS pixels; no hover-only actions; prevent scrolling only inside an active game surface |
 
 Use `min-width: 0` at shrinking flex boundaries, intentional word wrapping, fluid widths and explicit max-widths. Share the existing dark palette and spacing tokens at the app shell. Keep labels, focus indicators and error text consistent across routes. Do not hide essential behavior at a breakpoint.

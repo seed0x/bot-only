@@ -6,6 +6,20 @@ import { DatabaseSync } from 'node:sqlite'
 const globalForDb = globalThis as unknown as { db?: DatabaseSync }
 
 const SCHEMA = `
+  create table if not exists operation_receipts (
+    request_id text primary key,
+    fingerprint text not null,
+    response text not null
+  );
+  create table if not exists challenge_instances (
+    id text primary key,
+    handle text not null,
+    kind text not null,
+    payload text not null,
+    started_at integer not null,
+    expires_at integer not null,
+    used integer not null default 0
+  );
   create table if not exists users (
     id integer primary key autoincrement,
     handle text not null unique,
@@ -55,6 +69,12 @@ const SCHEMA = `
     handle text not null,
     text text not null,
     created_at text not null default (datetime('now'))
+  );
+  create index if not exists attempts_recent on captcha_attempts (created_at, passed);
+  create table if not exists leaderboard (
+    unit_designation text primary key,
+    best_time_ms integer not null check (best_time_ms >= 0),
+    rounds_survived integer not null check (rounds_survived >= 0)
   );
 `
 

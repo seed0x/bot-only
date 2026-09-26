@@ -13,7 +13,7 @@
 | Area | Natural owner | Coordinate changes to |
 | --- | --- | --- |
 | API/data and SQLite | Backend contributor | `types.ts`, `db.ts`, routes, mutation IDs/migrations |
-| Gate and games | Interaction contributor | `session.ts`, verify, TestCard and player interface |
+| Gate and games | Interaction contributor | `session.ts`, gate page, `ChallengeTrial` and player interface |
 | Feed data/composition | Network UI contributor | feed page, hooks, invalidation and ordering |
 | Adaptive layout/access | Frontend contributor | global tokens, markup, focus and touch contracts |
 | Baseline/integration | Integrator | scripts, docs, release branch and final checks |
@@ -40,7 +40,7 @@ Seed is destructive and currently needs an initialized schema. Smoke writes user
 
 Fetch before integration. Compare both tips and resolve shared-contract changes with their owners. Check the combined result. Commit titles should state observable changes.
 
-The user has held merge/push/deploy for this takeover. Prepare local reviewable work; do not publish until that hold is explicitly lifted. Once sharing resumes, use reviewed feature branches and keep main runnable. Never force-push shared main.
+The merge/push hold is lifted. Use reviewed feature branches, keep `main` runnable, and never force-push shared `main`.
 
 ## Handoff template
 

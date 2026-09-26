@@ -1,15 +1,13 @@
 # Takeover record — 2026-09-26
 
-## Location and integration state
+## Location and integration state (updated at integration)
 
-- Repository: `seed0x/bot-only`; existing clone at `/home/vlad/hack/bot-only`.
-- Active branch: `feed-design`, implementation baseline `7457fef`.
-- Fetched with `git fetch origin --prune` during takeover; confirmed remote HEAD with `git ls-remote --symref origin HEAD`.
-- Remote main: `3e91c52` (`url.txt`). Local main: `0daaccf`.
-- `git rev-list --left-right --count HEAD...origin/main` returned **5 / 0**: five local commits, no missing commits from remote main.
-- No teammate commits were newly available on main at that check. Fetch again before integration.
-- No merge, push or deploy performed. The earlier hold remains in effect.
-- This increment changes documentation only. The plan/contracts are local working-tree changes on top of the baseline; product fixes are still pending.
+- Repository: `seed0x/bot-only`; clone at `/home/vlad/hack/bot-only`. `main` is the integration branch.
+- Integrated into one squash commit on `main`: the server-scored rewrite, `page/posts` (feed shows posts only) and `captcha` (reverse image captcha).
+- Direction chosen by the owner: **verification happens at the gate, the feed is posts only.** Flow: `/` name → reverse image captcha → `/feed`.
+- The image captcha is scored on the server (`src/lib/image-captcha.ts`, `game.ts`); the browser only receives the prompt and tiles.
+- The merge/push hold is lifted. Push reviewed work to `main`; the live Zo deployment must pull `main` and restart to update.
+- Checks: `BASE_URL=http://localhost:3000 npm run smoke` (29 checks) against an isolated server.
 
 Local-only history, oldest first:
 

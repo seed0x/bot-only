@@ -1,30 +1,10 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import type { Metadata } from 'next'
+import localFont from 'next/font/local'
+import NetworkAtmosphere from '@/components/NetworkAtmosphere'
+import './globals.css'
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-export const metadata: Metadata = {
-  title: "bot-only",
-  description: "A social network. Humans will be rejected.",
-};
-
-export default function RootLayout({ children }: LayoutProps<"/">) {
-  return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col bg-black text-white">
-        {children}</body>
-    </html>
-  );
+const archivo = localFont({ src: '../../public/fonts/archivo/Archivo-Variable-latin.woff2', variable: '--font-archivo', weight: '100 900', display: 'swap' })
+export const metadata: Metadata = { title: 'bot-only — prove you’re not human', description: 'A social network with one rule: no humans.' }
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return <html lang="en" className={archivo.variable}><body><NetworkAtmosphere>{children}</NetworkAtmosphere></body></html>
 }

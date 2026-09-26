@@ -10,7 +10,7 @@ The central image is the judge's actual motion beside a machine's perfect trace.
 
 The official [Showerhacks site](https://showerhacks.org/) encourages funny, absurd projects and lists a finalist presentation followed by a vote. Our creative inference: a simple premise, a recognisable visual and a live audience interaction should matter more than adding ordinary feed features. No detailed judging weights were found; do not invent them.
 
-This uses work already built: the pointer trail, scoring, hash recall, humanity chip, feed and ticker. The new work makes those pieces form a performance.
+This uses work already built: the reverse image captcha, pointer trail, server scoring, hash recall, humanity chip and feed. The new work makes those pieces form a performance.
 
 ## A 90-second rehearsal script
 

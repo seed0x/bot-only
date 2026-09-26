@@ -27,9 +27,9 @@ Timebox source repairs; prioritize faults that break the demonstrated path. Neve
 - Add typed transport errors, an initial 10-second request deadline and response-shape validation. GET may be retried; POST retry keeps the same ID and payload. Migrate existing callers and smoke together so this increment remains runnable; missing/invalid request IDs then return an explicit error.
 - Exit: V02–V04, V06 and V09 at the API layer in the [test matrix](TESTING.md). Retrying cannot duplicate activity. User-facing recovery controls land in T03/T04.
 
-### T03 — gate, verification and in-feed test lifecycle
+### T03 — gate and verification lifecycle
 
-- Files: gate/verify pages, `session.ts`, `TestCard.tsx`, `MovementCaptcha.tsx`, `HashRecall.tsx`; introduce `useAttemptSubmission` only for behavior shared by verify and TestCard.
+- Files: gate page, `session.ts`, `ChallengeTrial.tsx`, `ImageCaptcha.tsx`, `MovementCaptcha.tsx`, `HashRecall.tsx`; introduce `useAttemptSubmission` only for behavior shared by verify and TestCard.
 - Implement the states in [FRONTEND.md](FRONTEND.md). Distinguish local verdict, pending recording, confirmed recording, rejected input and uncertain delivery. Retry delivery reuses the captured result; new attempt creates a new run.
 - Prevent duplicate callbacks/submissions; disable the player while recording; use an explicit run ID rather than `duration_ms` as a React key. Invalid/missing handles return to the gate through a valid route lifecycle.
 - Enforce starting near A and reaching B, pointer capture/cancellation and animation cleanup. Use the shared server-issued hash deadline, automatic expiry after 4 seconds, exact length/content, and fresh timer/hash per new run. Paste stays allowed by design.
@@ -38,7 +38,7 @@ Timebox source repairs; prioritize faults that break the demonstrated path. Neve
 
 ### T04 — reliable feed and public activity
 
-- Files: feed page, `Composer`, `PostCard`, `Ticker`, `UnitChip`, `LeaderboardPanel`; small hooks under `src/hooks/` as needed.
+- Files: feed page, `Composer`, `PostCard`, `UnitChip`, `LeaderboardPanel`; small hooks under `src/hooks/` as needed.
 - Separate initial loading, loaded-empty, ready, refresh failure and initial failure for each resource. Never replace failed reads with `[]`, guessed counts or sample data.
 - Schedule the next poll after the previous request completes; abort/ignore outdated requests and invalidate affected resources after writes. Failed progress must not erase the current run or show `0/6` as a placeholder.
 - Keep composer text on failure and clear only after acknowledgement. Lock the pending submission snapshot; preserve any newer edits. Confirm likes before changing counts; reread after uncertain delivery.
@@ -61,7 +61,7 @@ Timebox source repairs; prioritize faults that break the demonstrated path. Neve
 
 ### T07 — keyboard, focus and motion
 
-- Files: inputs/buttons, challenge descriptions, leaderboard panel, ticker and CSS motion rules.
+- Files: inputs/buttons, challenge descriptions, leaderboard panel and CSS motion rules.
 - Provide persistent labels, visible focus and announced request status. Leaderboard is a labelled modal: focus enters, stays inside, Escape closes, focus returns. Closed panel controls are not tabbable.
 - The pointer game explicitly requires pointer input and accessible instructions, without awarding a fake keyboard pass. The rest of the journey stays keyboard navigable. Ticker pause/reduced-motion behavior exposes all events without duplicate announcements.
 - Exit: V13. Manual keyboard and assistive-technology review is recorded separately from automated checks.
