@@ -23,7 +23,8 @@ Existing paths remain the starting point. New paths below are proposed and shoul
 | `UnitChip` | Presentation of confirmed identity/progress | Explicit loading/error/ready data; no invented test denominator. |
 | `Ticker` | Activity presentation and motion controls | Resource state from a focused hook; no duplicate spoken ticker copy. |
 | `Composer` | Draft, validation, pending snapshot and feedback | Acknowledged post triggers invalidation; no direct SQLite access. |
-| `PostCard` | One transmission and like action | Like status/count and callback; no global feed ownership. |
+| `Objective` | Sticky, disabled Post / Comment / Like checkboxes inside the feed header | `/api/objectives?handle=…` returns persisted post/like completion; comment is null (unavailable). Refresh after acknowledged actions; retain confirmed values on read error with explicit retry. Identity change remounts the component. |
+| `PostCard` | One transmission and like action | Like status/count and callback; no global feed ownership. Feed reads include this unit's persisted like state. |
 | `TestCard` | Expanded/collapsed state and a run's submission lifecycle | Stable challenge ID, progress, session, confirmed-result callback. |
 | `MovementCaptcha`, `HashRecall` | Input, scoring, timer and local verdict | Emit one `CaptchaResult` per run. No fetch, identity write or navigation. |
 | `LeaderboardPanel` | Dialog, ranking states, focus lifecycle | Open/close props and resource state. |

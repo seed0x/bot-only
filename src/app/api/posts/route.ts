@@ -2,8 +2,15 @@ import { cleanHandle, getDb, logActivity } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
-export function GET() {
-  const rows = getDb().prepare('select id, handle, body, likes, pinned, created_at from posts order by pinned desc, id desc limit 100').all()
+export function GET(req: Request) {
+  const handle = cleanHandle(new URL(req.url).searchParams.get('handle'))
+  const rows = getDb().prepare(`
+    select p.id, p.handle, p.body, p.likes, p.pinned, p.created_at,
+      case when l.id is null then 0 else 1 end as liked
+    from posts p
+    left join likes l on l.post_id = p.id and l.user_id = (select id from users where handle = ?)
+    order by p.pinned desc, p.id desc limit 100
+  `).all(handle)
   return Response.json(rows)
 }
 

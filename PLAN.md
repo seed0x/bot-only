@@ -114,4 +114,10 @@ No fallbacks: real scores, actual transmissions, visible errors and honest recov
 
 ## Approved atmosphere increment
 
+## Feed objective increment
+
+Sticky composer increment (Codex, `page/posts`): verified users' post input now stays beneath the checklist inside the sticky header while the feed scrolls. Posting/error/retry logic is unchanged. Diff whitespace checks pass; phone/desktop scroll, short viewport and keyboard checks remain pending because Node/npm are unavailable here.
+
+Implemented locally by Codex on `page/posts`: sticky, read-only Post / Comment / Like checklist. Post and Like read persisted per-unit data, refresh after acknowledged writes, and survive feed pagination. Comment is explicitly unavailable because this checkout has no comment storage or action. Read failures preserve confirmed progress with explicit retry. Acceptance: persistence on reload, no completion on rejected writes, non-editable checkboxes, sticky phone/desktop layout. Typecheck and inspection evidence are recorded in HANDOFF.md; browser checks remain pending.
+
 Adopt smoked glass surfaces, locally bundled Archivo typography/instruments and ember `#f0402f` for rejection. Derive threat from all recorded failures in the last five minutes, with explicit stale/error states and a capped ticker pace; motion remains pausable and respects reduced-motion. Bundle Archivo with OFL; Supreme is excluded from repository redistribution. This atmosphere supports the human trial and real-machine reveal.
