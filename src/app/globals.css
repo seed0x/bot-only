@@ -380,4 +380,15 @@
     .header-actions > .text-button { padding-inline: 10px; }
     .rank-score { font-size: 26px; }
   }
+  /* reply threads under posts */
+  .thread { margin: 10px 0 4px 2px; padding: 10px 0 0 12px; border-left: 2px solid var(--line); display: grid; gap: 10px; }
+  .thread-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .thread-list li { display: flex; gap: 8px; align-items: flex-start; }
+  .thread-body { display: grid; gap: 2px; min-width: 0; font-size: 14px; }
+  .thread-body p { margin: 0; overflow-wrap: anywhere; }
+  .thread-body strong { font-weight: 600; }
+  .thread-reply { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .thread-reply input { flex: 1 1 200px; min-width: 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 7px; font-size: 14px; }
+  .thread-reply .button-secondary { min-height: 38px; padding: 6px 14px; }
+  .thread-reply .form-error { flex-basis: 100%; margin: 0; }
 }

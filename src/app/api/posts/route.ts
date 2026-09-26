@@ -3,14 +3,15 @@ import { getDb, logActivity } from '@/lib/db'
 import { requestAdmission } from '@/lib/gate'
 import { bodyInput, errorResponse, handleInput, InputError, requestId } from '@/lib/server-input'
 export const dynamic = 'force-dynamic'
-// GET /api/posts?handle=x — newest 100, pinned first; `liked` says whether that unit already liked each one.
+// GET /api/posts — newest 100, pinned first; `liked` is whether the admitted unit liked each one, `comments` the reply count.
 export function GET(req: Request) {
   const user = requestAdmission(req)
   if (!user) return Response.json({ error: 'Complete the reverse CAPTCHA to enter.' }, { status: 401, headers: { 'Cache-Control': 'no-store' } })
   const handle = user.handle
   return Response.json(getDb().prepare(`
     select p.id, p.handle, p.body, p.likes, p.pinned, p.created_at,
-           case when l.id is null then 0 else 1 end as liked
+           case when l.id is null then 0 else 1 end as liked,
+           (select count(*) from comments c where c.post_id = p.id) as comments
     from posts p
     left join likes l on l.post_id = p.id and l.user_id = (select id from users where handle = ?)
     order by p.pinned desc, p.id desc limit 100

@@ -75,6 +75,15 @@ const SCHEMA = `
     created_at text not null default (datetime('now'))
   );
   create unique index if not exists likes_one_per_unit on likes (post_id, user_id);
+  create table if not exists comments (
+    id integer primary key autoincrement,
+    post_id integer not null references posts(id),
+    user_id integer not null references users(id),
+    handle text not null,
+    body text not null,
+    created_at text not null default (datetime('now'))
+  );
+  create index if not exists comments_by_post on comments (post_id, id);
   create table if not exists activity (
     id integer primary key autoincrement,
     kind text not null,
