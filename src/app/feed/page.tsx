@@ -8,5 +8,5 @@ export const dynamic = 'force-dynamic'
 export default async function Feed() {
   const user = admittedUser((await cookies()).get(GATE_COOKIE)?.value)
   if (!user) redirect('/')
-  return <FeedClient user={user} />
+  return <FeedClient user={user} initialHumanity={user.humanity} />
 }

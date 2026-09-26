@@ -33,7 +33,7 @@ The schema creates itself on the first database request. Default database: `data
 | --- | --- |
 | `npm run dev` | Local server, port 3000 |
 | `npm run lint` | ESLint |
-| `BASE_URL=http://localhost:3102 npm run smoke:gate` | 7 admission checks; writes to an isolated server |
+| `BASE_URL=http://localhost:3102 npm run smoke:gate` | 10 admission checks; writes to an isolated server |
 | `npx tsc --noEmit` | Type check |
 | `npm test` | Unit tests for the game engine |
 | `BASE_URL=http://localhost:3000 npm run smoke` | 34 end-to-end API checks. **Writes test data**; use a disposable database |
@@ -45,7 +45,7 @@ The schema creates itself on the first database request. Default database: `data
 
 | Path | Responsibility |
 | --- | --- |
-| `src/app/page.tsx` | Gate: designation, then verification |
+| `src/app/page.tsx`, `src/components/GateClient.tsx` | Server session routing, then designation and verification |
 | `src/app/feed/page.tsx`, `src/components/feed/FeedClient.tsx` | Server admission check, then the network |
 | `src/components/ChallengeTrial.tsx` | Issue → play → record lifecycle for any test |
 | `src/components/ImageCaptcha.tsx`, `MovementCaptcha.tsx`, `HashRecall.tsx` | Players. They never score |

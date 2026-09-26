@@ -1,3 +1,5 @@
+> Current session routing: `/` redirects already-admitted browsers to `/feed`. `GateClient` owns name/test/result interaction; Enter feed makes a server navigation after the cookie is issued. Feed identity and initial humanity come from server admission; progress loading or failure never means unverified. Admission loss (posts 401) revalidates the server route. Other games do not clear the image-admission cookie.
+
 # Frontend and interaction contract
 
 Current access contract: `/` name → server-scored image CAPTCHA → visible recorded result → Enter feed. Failed results expose Try again; no Browse link. `/feed` checks the HttpOnly admission cookie server-side before rendering; posts GET also requires it. A pass sets admission, registration/failure clears it. `VerdictReceipt` owns presentation; CAPTCHA scoring/player remain in the teammate’s existing modules.

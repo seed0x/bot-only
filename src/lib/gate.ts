@@ -16,16 +16,16 @@ export function issueAdmission(receipt: AttemptReceipt): string | null {
   return token
 }
 
-export function admittedUser(token: string | undefined): SessionUser | null {
+export function admittedUser(token: string | undefined): (SessionUser & { humanity: number }) | null {
   if (!token || !/^[a-f0-9]{64}$/.test(token)) return null
   const user = getDb().prepare(`
-    select u.id, u.handle from gate_sessions s
+    select u.id, u.handle, u.humanity_score as humanity from gate_sessions s
     join users u on u.id = s.user_id
     join captcha_attempts a on a.id = s.attempt_id and a.user_id = u.id
     where s.token_hash = ? and s.expires_at > ? and u.verified_bot = 1
       and a.challenge = 'image-confusion' and a.passed = 1
-  `).get(hash(token), Date.now()) as SessionUser | undefined
-  return user ? { id: user.id, handle: user.handle } : null
+  `).get(hash(token), Date.now()) as (SessionUser & { humanity: number }) | undefined
+  return user ? { id: user.id, handle: user.handle, humanity: user.humanity } : null
 }
 
 export function requestAdmission(req: Request): SessionUser | null {

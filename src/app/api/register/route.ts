@@ -9,13 +9,16 @@ export async function POST(req: Request) {
     const attempt = 'solution' in body || 'challengeId' in body || 'result' in body
     const receipt = attempt ? submitAttempt(body) : null
     const response = NextResponse.json(receipt ?? registerUnit(body))
-    // Naming a unit or failing a trial never grants browser admission.
-    const token = receipt ? issueAdmission(receipt) : null
-    response.cookies.set(GATE_COOKIE, token ?? '', {
-      httpOnly: true, sameSite: 'lax', path: '/',
-      secure: new URL(req.url).protocol === 'https:' || req.headers.get('x-forwarded-proto') === 'https',
-      maxAge: token ? GATE_TTL_SECONDS : 0,
-    })
+    // Only a new identity or image trial changes browser admission.
+    // Other games can record results without signing the admitted browser out.
+    if (!receipt || receipt.result.challenge === 'image-confusion') {
+      const token = receipt ? issueAdmission(receipt) : null
+      response.cookies.set(GATE_COOKIE, token ?? '', {
+        httpOnly: true, sameSite: 'lax', path: '/',
+        secure: new URL(req.url).protocol === 'https:' || req.headers.get('x-forwarded-proto') === 'https',
+        maxAge: token ? GATE_TTL_SECONDS : 0,
+      })
+    }
     return response
   }
   catch (error) { return errorResponse(error) }

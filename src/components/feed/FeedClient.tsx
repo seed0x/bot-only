@@ -1,6 +1,6 @@
 'use client'
-import { useState } from 'react'
-import Link from 'next/link'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import SiteHeader from '@/components/SiteHeader'
 import { NetworkStatus } from '@/components/NetworkAtmosphere'
 import UnitChip from '@/components/feed/UnitChip'
@@ -13,12 +13,17 @@ import { usePollingResource } from '@/hooks/usePollingResource'
 import { isPosts, isProgress } from '@/lib/validators'
 import { jsonPost, requestJson } from '@/lib/api'
 
-export default function FeedClient({ user }: { user: SessionUser }) {
+export default function FeedClient({ user, initialHumanity }: { user: SessionUser; initialHumanity: number }) {
+  const router = useRouter()
   const posts = usePollingResource(`/api/posts?handle=${encodeURIComponent(user?.handle ?? '')}`, isPosts)
   const [objectiveRefresh, setObjectiveRefresh] = useState(0)
   const progress = usePollingResource(`/api/progress?handle=${encodeURIComponent(user?.handle ?? '')}`, isProgress)
   const [liked, setLiked] = useState<Set<number>>(new Set()), [pending, setPending] = useState<Set<number>>(new Set()), [likeError, setLikeError] = useState('')
-  const verified = user && progress.data?.verified ? user : null
+  // The server admitted this user before rendering. Results loading is not authentication.
+  const verified = user
+  useEffect(() => {
+    if (posts.errorStatus === 401) router.refresh()
+  }, [posts.errorStatus, router])
   function refresh() { posts.refresh(); progress.refresh(); setObjectiveRefresh(n => n + 1) }
   async function like(id: number) {
     if (!verified || liked.has(id) || pending.has(id)) return
@@ -33,11 +38,11 @@ export default function FeedClient({ user }: { user: SessionUser }) {
   const transmissions = posts.data?.filter(p => !p.pinned) ?? []
   const postCard = (p: NonNullable<typeof posts.data>[number]) => <PostCard key={p.id} post={p} liked={liked.has(p.id) || p.liked === 1} canLike={!!verified && !pending.has(p.id)} onLike={() => void like(p.id)} />
   return <div className="feed">
-    <SiteHeader><UnitChip user={user} humanity={verified ? progress.data?.humanity ?? null : null} /></SiteHeader>
+    <SiteHeader><UnitChip user={user} humanity={progress.data?.humanity ?? initialHumanity} /></SiteHeader>
     <main className="feed-layout feed-grid">
       <h1 className="sr-only">Feed</h1>
       <aside className="feed-aside" aria-label="Post creation and objectives">
-        {verified ? <Composer user={verified} onPosted={refresh} /> : <div className="observer-notice feed-verification">{user ? <><span>Complete verification to post.</span><Link className="text-link" href="/">Verify</Link></> : <><span>Join to post and like.</span><Link className="text-link" href="/">Join</Link></>}</div>}
+        <Composer user={verified} onPosted={refresh} />
         <div className="feed-objectives"><Objective key={user?.handle ?? 'visitor'} user={user} refreshKey={objectiveRefresh} /></div>
       </aside>
       <section className="feed-posts" aria-label="Posts">

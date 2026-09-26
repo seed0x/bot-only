@@ -1,5 +1,14 @@
 # Takeover record — 2026-09-26
 
+## Verified state and routing fix — 2026-09-26
+
+- Fixed the false unverified state: the feed previously treated missing/loading progress data as failed verification. It now uses the server-admitted identity immediately, with server-provided humanity while results load. Progress errors keep their scoped retry and do not remove the composer.
+- `/` is now a dynamic server route redirecting an admitted browser to `/feed`; `GateClient` holds the existing form/trial. Registration no longer depends on localStorage. Enter feed performs a full server navigation after receiving the admission cookie, avoiding an old client-router gate result.
+- Non-image attempt receipts no longer clear browser admission. New-identity registration and failed image trials still clear it. A posts-poll 401 causes server route revalidation; transport/500 failures remain retryable resource errors rather than false unverified states. Existing handle-based bot write APIs are unchanged; this is session/UI routing repair, not full account-authentication hardening.
+- Passed production webpack build with TypeScript, lint, 15 unit tests, 34 API smoke checks, and 10 gate checks. New checks assert admitted home redirect, composer in first server-rendered feed before polling, and admission retained after failure in another game.
+- Browser verified the owner's already-passed `@vlad` session after reload: composer and humanity 0.07 present, no verification notice, no resource errors; clicking the wordmark returns to `/feed`. No CAPTCHA was solved by the agent. Client-side expiry under controlled time/network injection was not exercised.
+- QA reused isolated `/tmp/bot-only-merge-qa-rWdD4J/data.db`; server 3102 stopped. Preview 3101 remains active with isolated preview data, session `59320`. No shared DB reset or remote push. Next: full presenter rehearsal.
+
 ## Teammate CAPTCHA integration — 2026-09-26
 
 - Owner requested fetching the teammate push and merging all current UI/other work. Integrated `origin/main` at `ee2bd38` with `9230b74` on `codex/ui-polish`, then fast-forwarded local `main`. No remote push or deployment.

@@ -1,10 +1,10 @@
 'use client'
 import { useEffect, useReducer, useState } from 'react'
-import { requestJson } from '@/lib/api'
+import { ApiError, requestJson } from '@/lib/api'
 
 export function usePollingResource<T>(url: string | null, validate: (v: unknown) => v is T, interval = 4000) {
   const [version, refresh] = useReducer((n: number) => n + 1, 0)
-  const [state, setState] = useState<{ key: string | null; data?: T; error?: string }>({ key: url })
+  const [state, setState] = useState<{ key: string | null; data?: T; error?: string; errorStatus?: number }>({ key: url })
   useEffect(() => {
     if (!url) return
     let active = true, running = false
@@ -19,7 +19,7 @@ export function usePollingResource<T>(url: string | null, validate: (v: unknown)
         const data = await requestJson(url!, { signal: controller.signal }, validate)
         if (active) { setState({ key: url, data }); timer = setTimeout(load, interval) }
       } catch (e) {
-        if (active) setState(old => ({ key: url, data: old.key === url ? old.data : undefined, error: e instanceof Error ? e.message : 'Network unavailable.' }))
+        if (active) setState(old => ({ key: url, data: old.key === url ? old.data : undefined, error: e instanceof Error ? e.message : 'Network unavailable.', errorStatus: e instanceof ApiError ? e.status : undefined }))
       } finally { running = false }
     }
     void load()
@@ -32,6 +32,6 @@ export function usePollingResource<T>(url: string | null, validate: (v: unknown)
       window.removeEventListener('online', resume); window.removeEventListener('network-updated', resume); document.removeEventListener('visibilitychange', resume)
     }
   }, [url, version, interval, validate])
-  const current: { data?: T; error?: string } = state.key === url ? state : {}
-  return { data: current.data, error: current.error, loading: current.data === undefined && !current.error, refresh }
+  const current: { data?: T; error?: string; errorStatus?: number } = state.key === url ? state : {}
+  return { data: current.data, error: current.error, errorStatus: current.errorStatus, loading: current.data === undefined && !current.error, refresh }
 }
