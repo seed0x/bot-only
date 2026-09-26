@@ -36,16 +36,17 @@ export default function Objective({ user, refreshKey }: { user: SessionUser | nu
   }, [user, refreshKey, retry])
 
   return (
-    <section aria-label="Objectives" className="border-t px-4 py-2" style={{ borderColor: 'var(--line)' }}>
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
-        <span className="font-semibold">Objectives</span>
+    <section aria-label="Objectives" className="px-4 py-3">
+      <h2 className="mb-2 text-sm font-semibold">Objectives</h2>
+      <div className="flex flex-col items-start gap-2 text-sm">
         {(['post', 'comment', 'like'] as const).map((key) => (
-          <label key={key} className="flex items-center gap-1.5">
-            <input type="checkbox" disabled checked={!!user && progress?.[key] === true} className="h-4 w-4 accent-[var(--text)]" />
-            <span>{key[0].toUpperCase() + key.slice(1)}{key === 'comment' && progress?.comment !== true && <span className="text-xs" style={{ color: 'var(--muted)' }}> (unavailable)</span>}</span>
+          <label key={key} className="flex shrink-0 items-center gap-1.5 whitespace-nowrap">
+            <input type="checkbox" disabled checked={!!user && progress?.[key] === true} aria-describedby={key === 'comment' && progress?.comment !== true ? 'comment-unavailable' : undefined} className="h-4 w-4 shrink-0 accent-[var(--text)]" />
+            <span>{key[0].toUpperCase() + key.slice(1)}</span>
           </label>
         ))}
       </div>
+      {progress?.comment !== true && <p id="comment-unavailable" className="mt-2 text-xs" style={{ color: 'var(--muted)' }}>Comment unavailable.</p>}
       {!user ? <p className="mt-1 text-xs" style={{ color: 'var(--muted)' }}>Enter a designation to track your objectives.</p>
         : error ? <div role="status" className="mt-1 flex items-center gap-2 text-xs" style={{ color: 'var(--muted)' }}><span>{progress ? 'Objective updates paused.' : 'Objectives unavailable.'}</span><button onClick={() => setRetry((value) => value + 1)} className="min-h-11 px-2 underline">Retry</button></div>
           : !progress && <p role="status" className="mt-1 text-xs" style={{ color: 'var(--muted)' }}>Loading objectives…</p>}

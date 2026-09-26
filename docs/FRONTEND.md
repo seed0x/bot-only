@@ -23,7 +23,7 @@ Existing paths remain the starting point. New paths below are proposed and shoul
 | `UnitChip` | Presentation of confirmed identity/progress | Explicit loading/error/ready data; no invented test denominator. |
 | `Ticker` | Activity presentation and motion controls | Resource state from a focused hook; no duplicate spoken ticker copy. |
 | `Composer` | Draft, validation, pending snapshot and feedback | Acknowledged post triggers invalidation; no direct SQLite access. |
-| `Objective` | Sticky, disabled Post / Comment / Like checkboxes inside the feed header | `/api/objectives?handle=…` returns persisted post/like completion; comment is null (unavailable). Refresh after acknowledged actions; retain confirmed values on read error with explicit retry. Identity change remounts the component. |
+| `Objective` | Disabled Post / Comment / Like checkboxes in the feed sidebar, beneath Composer | `/api/objectives?handle=…` returns persisted post/like completion; comment is null (unavailable). Refresh after acknowledged actions; retain confirmed values on read error with explicit retry. Identity change remounts the component. |
 | `PostCard` | One transmission and like action | Like status/count and callback; no global feed ownership. Feed reads include this unit's persisted like state. |
 | `TestCard` | Expanded/collapsed state and a run's submission lifecycle | Stable challenge ID, progress, session, confirmed-result callback. |
 | `MovementCaptcha`, `HashRecall` | Input, scoring, timer and local verdict | Emit one `CaptchaResult` per run. No fetch, identity write or navigation. |
@@ -124,6 +124,8 @@ The current register endpoint accepts client verdicts. Migrate human UI, automat
 | Touch / pointer | Actions at least 44×44 CSS pixels; no hover-only actions; prevent scrolling only inside an active game surface |
 
 Use `min-width: 0` at shrinking flex boundaries, intentional word wrapping, fluid widths and explicit max-widths. Share the existing dark palette and spacing tokens at the app shell. Keep labels, focus indicators and error text consistent across routes. Do not hide essential behavior at a breakpoint.
+
+The feed uses a centered, at-most-1000px two-column layout from 1024px: readable posts on the left and a sticky 340px composer/objectives sidebar on the right. Smaller widths keep the controls above the posts in normal flow, so they remain scrollable with a software keyboard or short viewport.
 
 Canvas may scale visually, but tiny logical start/end markers cannot become the only touch targets. Separate hit-area size from score math and test both input types without changing scoring based on a resize.
 

@@ -20,7 +20,7 @@ export default function Composer({ user, onPosted }: { user: SessionUser; onPost
   return (
     <form onSubmit={submit} className="flex gap-3 rounded-xl border p-4" style={{ background: 'var(--surface)', borderColor: 'var(--line)' }}>
       <Avatar handle={user.handle} size={40} />
-      <div className="flex-1">
+      <div className="min-w-0 flex-1">
         <textarea
           id="compose"
           rows={2}

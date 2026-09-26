@@ -63,30 +63,29 @@ export default function Feed() {
   return (
     <div className="feed min-h-screen">
       <header className="sticky top-0 z-30 border-b backdrop-blur" style={{ background: 'color-mix(in srgb, var(--bg) 85%, transparent)', borderColor: 'var(--line)' }}>
-        <div className="mx-auto flex max-w-[620px] items-center justify-between px-4 py-3">
+        <div className="mx-auto flex max-w-[1000px] flex-wrap items-center justify-between gap-3 px-4 py-3">
           <UnitChip user={user} humanity={humanity} tests={tests} />
           <div className="flex items-center gap-3">
             <span className="hidden font-mono text-xs uppercase tracking-wider sm:inline" style={{ color: 'var(--muted)' }}>prove you&apos;re not human</span>
             <button onClick={() => setBoard(true)} className="rounded-full border px-3.5 py-1.5 text-sm font-medium" style={{ borderColor: 'var(--line)' }}>Leaderboard</button>
           </div>
         </div>
-        <div className="mx-auto max-w-[620px]">
-          <Objective key={user?.handle ?? 'visitor'} user={user} refreshKey={objectiveRefresh} />
-        </div>
-        {user && verified && (
-          <div className="mx-auto max-w-[620px] px-4 pb-4 pt-4">
-            <Composer user={user} onPosted={() => { setObjectiveRefresh((value) => value + 1); load() }} />
-          </div>
-        )}
       </header>
 
-      <main className="mx-auto max-w-[620px] px-4 pb-24 pt-4">
-        {!(user && verified) && (
-          <div className="rounded-xl border p-4 text-sm" style={{ borderColor: 'var(--line)', color: 'var(--muted)' }}>
-            {user ? 'Unverified. Complete verification to transmit.' : <>Read-only. <a href="/" className="underline">Enter a designation</a>.</>}
+      <main className="mx-auto grid max-w-[620px] items-start gap-6 px-4 pb-24 pt-4 lg:max-w-[1000px] lg:grid-cols-[minmax(0,1fr)_340px]">
+        <aside aria-label="Post creation and objectives" className="min-w-0 space-y-4 lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1">
+          {user && verified ? (
+            <Composer user={user} onPosted={() => { setObjectiveRefresh((value) => value + 1); load() }} />
+          ) : (
+            <div className="rounded-xl border p-4 text-sm" style={{ borderColor: 'var(--line)', color: 'var(--muted)' }}>
+              {user ? 'Unverified. Complete verification to transmit.' : <>Read-only. <a href="/" className="underline">Enter a designation</a>.</>}
+            </div>
+          )}
+          <div className="overflow-hidden rounded-xl border" style={{ background: 'var(--surface)', borderColor: 'var(--line)' }}>
+            <Objective key={user?.handle ?? 'visitor'} user={user} refreshKey={objectiveRefresh} />
           </div>
-        )}
-        <section className="mt-2">
+        </aside>
+        <section aria-label="Posts" className="min-w-0 lg:col-start-1 lg:row-start-1">
           {posts.map((post) =>
             <div key={`p-${post.id}`} className="border-b" style={{ borderColor: 'var(--line)' }}><PostCard post={post} liked={liked.has(post.id)} canLike={!!user && verified && !liking.has(post.id)} onLike={() => like(post.id)} />{likeErrors[post.id] && <p role="status" className="pb-3 pl-14 text-sm" style={{ color: 'var(--danger)' }}>{likeErrors[post.id]}</p>}</div>,
           )}

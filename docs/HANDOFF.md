@@ -74,6 +74,14 @@ The previous “all smoke checks pass” claim was accurate for API smoke, but d
 
 ## Sticky post input — 2026-09-26
 
+### Follow-up: right sidebar
+
+- Objective list follow-up: Post / Comment / Like now stack vertically, one per line, with a separate heading and unavailable-comment note (associated with its checkbox), following the user's clarification. `git diff --check` passed; browser width inspection remains pending. Uncommitted on `page/posts`, base `9f077d6`. Next: inspect at 320px and in the desktop sidebar.
+
+- Composer and objectives now occupy a sticky 340px right sidebar at 1024px+, alongside the posts in a max-1000px layout. On smaller widths controls appear above posts in normal flow. Header spans the same desktop width; composer flex content can shrink without overflow.
+- Branch `page/posts`, base `9f077d6`; uncommitted. Changed feed page, Composer, Objective, FRONTEND, PLAN and HANDOFF. No shared types/API changes, server/database operations, integration or publication.
+- `git diff --check` passed. Node/npm/npx remain unavailable; typecheck and browser checks were not run. Next: inspect desktop/sidebar scrolling, phone wrapping, short landscape and software keyboard behavior against TESTING.md.
+
 - Moved the verified-user Composer into the existing sticky header beneath Objective; retains the 620px column and phone gutters without a fixed header-height offset. Visitors' read-only notice remains in the feed. Posting, errors and retries are unchanged.
 - Branch `page/posts`, base `84813c4`; uncommitted. Preserved existing changes; no merge/push/deploy or database/server actions.
 - `git diff --check` passed. Node/npm/npx are unavailable, so typecheck and runtime checks were not run. Phone/desktop scrolling, short landscape and software keyboard checks remain pending; no responsiveness claim is made.

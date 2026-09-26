@@ -116,6 +116,10 @@ No fallbacks: real scores, actual transmissions, visible errors and honest recov
 
 ## Feed objective increment
 
+Objective list polish: Post / Comment / Like stack vertically, one objective per line beneath the heading; the unavailable-comment note sits below. Read/error/retry behavior is unchanged. Diff check passes; browser sizing checks remain pending.
+
+Right sidebar increment (Codex, `page/posts`): composer and objectives moved right of posts at 1024px+, with a sticky sidebar. Smaller widths stack controls above posts in normal flow. Posting and objective error/retry behavior is unchanged. `git diff --check` passes; runtime and responsive inspection remain pending (Node/npm unavailable).
+
 Sticky composer increment (Codex, `page/posts`): verified users' post input now stays beneath the checklist inside the sticky header while the feed scrolls. Posting/error/retry logic is unchanged. Diff whitespace checks pass; phone/desktop scroll, short viewport and keyboard checks remain pending because Node/npm are unavailable here.
 
 Implemented locally by Codex on `page/posts`: sticky, read-only Post / Comment / Like checklist. Post and Like read persisted per-unit data, refresh after acknowledged writes, and survive feed pagination. Comment is explicitly unavailable because this checkout has no comment storage or action. Read failures preserve confirmed progress with explicit retry. Acceptance: persistence on reload, no completion on rejected writes, non-editable checkboxes, sticky phone/desktop layout. Typecheck and inspection evidence are recorded in HANDOFF.md; browser checks remain pending.
