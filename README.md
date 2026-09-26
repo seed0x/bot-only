@@ -74,4 +74,4 @@ Tests are scored on the server, so a browser cannot claim a pass. It is still a 
 
 Typography follows CBS: Supreme for UI/display via the official Fontshare stylesheet, locally bundled Archivo for numeric data. Supreme requires access to Fontshare’s font CDN.
 
-Recent verification results use `GET /api/results` (latest 20 image CAPTCHA receipts). Desktop results appear in the sidebar; activity follows posts. The shared result component is `src/components/VerdictReceipt.tsx`, with resource states in `src/components/ResourceState.tsx`.
+Recent verification results use `GET /api/results` (latest 20 image CAPTCHA receipts). The owner removed recent results/activity from the feed; this read API remains available. The shared result component is `src/components/VerdictReceipt.tsx`, with resource states in `src/components/ResourceState.tsx`.

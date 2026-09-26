@@ -2,12 +2,10 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import SiteHeader from '@/components/SiteHeader'
-import { NetworkStatus } from '@/components/NetworkAtmosphere'
 import UnitChip from '@/components/feed/UnitChip'
 import Composer from '@/components/feed/Composer'
 import Objective from '@/components/feed/Objective'
 import PostCard from '@/components/feed/PostCard'
-import RecentActivity, { RecentResults } from '@/components/RecentActivity'
 import ResourceState from '@/components/ResourceState'
 import type { SessionUser } from '@/lib/types'
 import { usePollingResource } from '@/hooks/usePollingResource'
@@ -45,7 +43,6 @@ export default function FeedClient({ user, initialHumanity }: { user: SessionUse
       <aside className="feed-aside" aria-label="Post creation and objectives">
         <Composer user={verified} onPosted={refresh} />
         <div className="feed-objectives"><Objective key={user?.handle ?? 'visitor'} user={user} refreshKey={objectiveRefresh} /></div>
-        <div className="feed-results-panel"><RecentResults /></div>
       </aside>
       <section className="feed-posts" aria-label="Posts">
         <div className="posts-heading"><h2>Posts</h2></div>
@@ -56,8 +53,6 @@ export default function FeedClient({ user, initialHumanity }: { user: SessionUse
         {likeError && <p className="form-error" role="alert">{likeError}</p>}
         {transmissions.map(postCard)}
         {posts.data?.length === 0 && <ResourceState title="No posts yet" detail="Be the first to post." />}
-        <RecentActivity />
-        <footer className="feed-footer"><NetworkStatus /></footer>
       </section>
     </main>
   </div>
