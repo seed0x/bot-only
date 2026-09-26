@@ -1,5 +1,10 @@
 # Takeover record — 2026-09-26
 
+## Registration leaderboard — 2026-09-26
+
+- Added a top-five leaderboard beside the gate/registration flow, stacking beneath it below 760px. Extracted shared LeaderboardContent so the gate and existing feed dialog use the same survival rankings, input modes, polling and loading/error/retry states. No score, CAPTCHA or admission changes.
+- Build/TypeScript, lint and whitespace checks pass. Browser verified anonymous registration, both mode selectors, 375px layout without overflow, and feed dialog open/close after extraction. Real database has no qualifying saved survival runs; verified the honest empty state. Populated/error states were not fabricated or exercised. No DB writes or mutation tests. Preview 3101 uses the real SQLite database.
+
 ## onlybots identity and simplified verdict — 2026-09-26
 
 - Owner confirmed the product name onlybots and rejected the overloaded result card/captions. Updated visible gate/header/accessibility labels and page metadata. Kept internal cookie names and database paths stable so existing admission continues to work.

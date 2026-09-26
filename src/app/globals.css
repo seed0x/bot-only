@@ -384,3 +384,21 @@
   .thread-reply .button-secondary { min-height: 38px; padding: 6px 14px; }
   .thread-reply .form-error { flex-basis: 100%; margin: 0; }
 }
+
+@layer components {
+  .gate-board { width: 100%; max-width: 1040px; margin: auto; padding: 64px 32px; min-height: 85dvh; display: grid; grid-template-columns: minmax(0, 400px) minmax(0, 340px); justify-content: space-between; align-items: center; gap: 64px; }
+  .gate-board > .gate-layout { max-width: none; min-height: 0; padding: 0; margin: 0; }
+  .gate-leaderboard { min-width: 0; border-left: 1px solid var(--line); padding-left: 28px; }
+  .gate-leaderboard h2 { margin-top: 8px; font-size: 26px; }
+  .gate-leaderboard > .fine-print { margin-top: 6px; }
+  .gate-leaderboard .mode-switch { margin-top: 20px; }
+  .gate-leaderboard .mode-switch button { min-height: 44px; }
+  .gate-leaderboard .leaderboard-rows { margin-top: 20px; }
+  .gate-leaderboard .leaderboard-rows li { padding-block: 14px; gap: 10px; }
+  .gate-leaderboard .rank-score { font-size: 26px; }
+  .gate-leaderboard .resource-state { margin-top: 20px; }
+  @media (max-width: 760px) {
+    .gate-board { max-width: 448px; grid-template-columns: minmax(0, 1fr); gap: 40px; padding: 40px 24px; align-content: start; }
+    .gate-leaderboard { border-left: 0; border-top: 1px solid var(--line); padding: 28px 0 0; }
+  }
+}
