@@ -1,6 +1,6 @@
 # Main game: survive the network
 
-Status: G01 contracts/configuration frozen locally on 2026-09-26; G02 pure engine/idle implemented and fake-clock checked locally; G03–G08 remain unimplemented. No survival gameplay is enabled in the browser.
+Status: G01 contracts/configuration frozen locally on 2026-09-26; G02 pure engine/idle implemented and fake-clock checked locally; G03 pure detector math implemented and fixture-checked locally; G04–G08 remain unimplemented. No survival gameplay is enabled in the browser.
 
 This is the current product direction for the main game. It supersedes the older S01–S05 sequence where that sequence conflicts with continuous play across the app. Keep the existing Next.js, React and SQLite app, gate verification, posts, likes and recorded results. The game surrounds those interactions; it does not insert challenge cards into the feed.
 
@@ -226,4 +226,4 @@ Before calling the main game done:
 
 Known first-version limits: browser-reported behavior is forgeable; unsupported input styles can yield insufficient evidence; pause surfaces permit rest but grant no score; reload interrupts instead of resuming; repeated objectives create real posts/likes. Use an isolated database during automated checks and rehearsals that create data. Multi-tab ranked play, stronger identity/anti-cheat, a comment objective, touch-specific gesture scoring and endless difficulty scaling are deferred.
 
-Next action: G03, implement pure detector math and fixtures against the frozen G01 contracts. G02 engine/idle fake-clock checks pass; no survival browser runtime or API is enabled yet.
+Next action: G04, implement global runtime, browser adapters and HUD against the frozen contracts. G02 engine checks and G03 pure detector fixtures pass; no survival browser runtime or API is enabled yet. G03 evaluators accept one completed bounded window and a captured stage ID; pointer additionally takes the captured viewport. Invalid/short/oversized windows return insufficient_data with a null value; unknown stage IDs throw. Browser burst boundaries, input qualification, binning and unavailable sensor presentation belong to G04.

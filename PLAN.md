@@ -135,3 +135,7 @@ Done / Codex on `feat/fail-states`, committed as `62a1f6a` (checkout moved exter
 ## G02 — pure engine and idle (2026-09-26)
 
 Done / Codex on `feat/fail-states`, commit titled `Implement survival engine and idle enforcement`, based on `62a1f6a`. Implemented monotonic active clock, stage/idle progression, pause ownership and Resume countdown, first-failure precedence/latch, new run and neutral interruption in `src/lib/survival/engine.ts`. Twenty-one fake-clock tests pass, as do the existing suite, source-only TypeScript, scoped lint and whitespace checks. Full TypeScript retains the documented generated-route failures. No pages, APIs, storage or frozen shared contracts changed. See [HANDOFF.md](docs/HANDOFF.md) for adapter requirements and limits. Stopped before G03 detector math.
+
+## G03 — pure detector math (2026-09-26)
+
+Done locally / Codex on `feat/fail-states`, uncommitted atop `32783e2`. Added bounded pure pointer/typing/scroll evaluators and 11 fixture checks; frozen shared contracts unchanged. Invalid/short/oversized windows produce insufficient data, numeric equality is good, and qualified pointer loops/scroll reversals are bad. Failing pointer evidence is cloned, frozen and viewport-normalized; typing collects only timestamps. Full test suite, scoped lint and source-only TypeScript pass. Full TypeScript retains two generated missing-route errors. See HANDOFF.md for adapter responsibilities. Next: G04; no browser sensors or persistence enabled.
