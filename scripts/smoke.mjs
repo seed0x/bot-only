@@ -39,24 +39,22 @@ const pass = await record(good, { samples })
 check('shared scorer admits straight trace', pass.body.passed === true && pass.body.result?.score < 1e-12)
 const hash = (await issue('hash-recall')).body
 check('hash scored by server', (await record(hash, { value: hash.hash })).body.passed === true)
-// Reverse image captcha: server holds the answer; a machine reads filenames, a human takes the bait.
-const OPPOSITE = { crosswalk: ['crosswalk', 'train-track'], 'train-track': ['crosswalk', 'train-track'], 'traffic-light': ['streetlight'], streetlight: ['traffic-light'], bicycle: ['motorcycle'], motorcycle: ['bicycle'] }
+// Reverse image captcha: every visible tile in the requested/look-alike pair is required.
+const PAIR = { crosswalk: ['crosswalk', 'train-track'], 'train-track': ['crosswalk', 'train-track'], 'traffic-light': ['traffic-light', 'streetlight'], streetlight: ['streetlight', 'traffic-light'], bicycle: ['bicycle', 'motorcycle'], motorcycle: ['motorcycle', 'bicycle'] }
 const LABEL = { crosswalks: 'crosswalk', 'train tracks': 'train-track', 'traffic lights': 'traffic-light', streetlights: 'streetlight', bicycles: 'bicycle', motorcycles: 'motorcycle' }
 const categoryOf = src => src.split('/')[2]
 const img = (await issue('image-confusion')).body
 check('image challenge issued with 9 tiles', Array.isArray(img?.tiles) && img.tiles.length === 9 && typeof img.prompt === 'string')
 check('image challenge leaks no answer', !JSON.stringify(img).includes('accepted') && !JSON.stringify(img).includes('round') && !JSON.stringify(img).includes('opposite'))
-const asked = LABEL[img.prompt], machinePick = img.tiles.filter(t => OPPOSITE[asked].includes(categoryOf(t.src))).map(t => t.id)
-const baitPick = img.tiles.filter(t => categoryOf(t.src) === asked).map(t => t.id)
+const asked = LABEL[img.prompt], machinePick = img.tiles.filter(t => PAIR[asked].includes(categoryOf(t.src))).map(t => t.id)
 const img2 = (await issue('image-confusion')).body
 const asked2 = LABEL[img2.prompt]
-const bait2 = img2.tiles.filter(t => categoryOf(t.src) === asked2 && !OPPOSITE[asked2].includes(asked2)).map(t => t.id)
-const human = bait2.length ? (await record(img2, { selected: bait2 })).body : null
-check('taking the bait is rejected as human', human === null || (human.passed === false && human.result?.meta?.tookTheBait === true))
+const bait2 = img2.tiles.filter(t => categoryOf(t.src) === asked2).map(t => t.id)
+const human = (await record(img2, { selected: bait2 })).body
+check('requested objects alone fail without the look-alike tiles', human.passed === false)
 const machine = (await record(img, { selected: machinePick })).body
 check('machine selection admitted', machine?.passed === true && machine.result?.challenge === 'image-confusion')
 check('image challenge cannot be replayed', (await record(img, { selected: machinePick })).status === 409)
-void baitPick
 const postBody = { requestId: randomUUID(), handle, body: 'Smoke transmission. Evidence recorded.' }
 const transmission = await post('/api/posts', postBody)
 check('admitted unit transmits', transmission.status === 200 && transmission.body.id > 0)

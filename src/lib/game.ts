@@ -99,10 +99,9 @@ function scoreImage(challenge: StoredChallenge, selected: string[], elapsed: num
   const expired = Date.now() > challenge.expiresAt
   const v = scoreImageRound(challenge.round!, selected)
   const passed = v.passed && !expired
-  // humanity: 0 for a clean machine pick; taking the bait is maximally human
-  const score = passed ? Math.min(0.2, elapsed / 60_000) : v.tookTheBait ? 1 : Math.min(1, 0.4 + (v.wrong + v.missed) * 0.1)
+  const score = passed ? Math.min(0.2, elapsed / 60_000) : Math.min(1, 0.4 + (v.wrong + v.missed) * 0.1)
   return {
     challenge: 'image-confusion', passed, score, duration_ms: elapsed,
-    meta: { reason: expired ? 'Time’s up.' : v.reason, prompt: challenge.round!.prompt, selected, tookTheBait: v.tookTheBait },
+    meta: { reason: expired ? 'Time’s up.' : v.reason, prompt: challenge.round!.prompt, selected },
   }
 }

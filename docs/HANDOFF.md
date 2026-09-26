@@ -1,5 +1,14 @@
 # Takeover record — 2026-09-26
 
+## Teammate CAPTCHA integration — 2026-09-26
+
+- Owner requested fetching the teammate push and merging all current UI/other work. Integrated `origin/main` at `ee2bd38` with `9230b74` on `codex/ui-polish`, then fast-forwarded local `main`. No remote push or deployment.
+- Kept teammate `src/lib/image-captcha.ts`, `src/lib/game.ts` and `src/lib/types.ts` exactly as pushed. All six prompts accept the requested/look-alike pair; all visible members are required. Each grid has nine tiles, 0–3 requested images and 1–3 look-alikes. UI buttons, CBS typography, in-place result component and server-checked feed admission remain intact.
+- Only merge conflict was README flow prose, resolved to document both the new pair rules and current admission/results. Updated old smoke expectations (removed `tookTheBait`, no skipped rejection assertion), gate solver fixtures, and added regression cases for all six categories, missing/extra selections, zero requested images, and generated-grid composition.
+- Passed: production webpack build including TypeScript, lint, 15 unit tests, 34 API smoke checks, 7 gate checks, diff whitespace checks. Scoring files compared exactly with remote. Browser preview reloaded successfully to the compact gate; no interactive CAPTCHA completion or full device rehearsal performed in this integration.
+- API tests used new isolated `/tmp/bot-only-merge-qa-rWdD4J/data.db`; QA server 3102 stopped after verification. Shared demo DB untouched. User preview remains on 3101 using `/tmp/bot-only-preview-2d6b231.db`, session `44296`.
+- Next: rehearse fail → retry → pass → Enter feed → post/like with the combined version, then publish when requested.
+
 ## Admission, result card and CBS typography — 2026-09-26
 
 - Owner request: no feed browsing before completing the reverse CAPTCHA; compact pass/fail results; CBS typography. Owner then set a three-hour hackathon window and said dswim's CAPTCHA logic update is not pushed yet. This increment leaves the CAPTCHA player and scoring code unchanged.

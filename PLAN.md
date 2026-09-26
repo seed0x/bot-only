@@ -2,11 +2,11 @@
 
 ## Remaining demo priorities — owner says three hours remain
 
-1. **Integrate dswim's CAPTCHA changes when pushed.** Keep his scoring/interaction implementation authoritative; adapt only the admission/result boundary if its contract changes. His push is not available yet. No new challenge design in this pass.
+1. **CAPTCHA integration complete.** Integrated teammate main `ee2bd38`: all visible images from both look-alike categories are required. His generation/scoring/types are preserved exactly, with our admission and result UI. No new challenge design in this pass.
 2. **Rehearse the full loop:** name → failed result → retry → passed result → Enter feed → post/like. Check the presenter machine and one phone. Fix only issues that interrupt or confuse that loop.
 3. **Freeze and prepare the presentation:** one clear opening line, an actual human/machine attempt, one visible network action. Leave time to verify the deployed URL and persistence. Avoid new features before this works.
 
-Current completed increment: server-checked image-CAPTCHA admission, compact result card with explicit continue/retry, and CBS typography (Supreme UI, Archivo numbers). Checks and limitations are at the top of `docs/HANDOFF.md`. CAPTCHA scoring/player code is unchanged; dswim integration remains pending his push.
+Current completed increment: server-checked image-CAPTCHA admission, compact result card with explicit continue/retry, and CBS typography (Supreme UI, Archivo numbers). Checks and limitations are at the top of `docs/HANDOFF.md`. Teammate CAPTCHA rules from `ee2bd38` are integrated; 15 unit, 34 API and 7 gate checks pass. Full interactive rehearsal is next.
 
 
 > Completed UI increment: original compact branding, restrained dark surfaces, clearer feed/sidebar hierarchy, readable secondary type and 44px actions. Built from Claude’s `d959e50`; existing gate image verification, APIs and retries remain unchanged. The owner requested merge. See the current evidence in `docs/HANDOFF.md`.

@@ -38,7 +38,7 @@ assert.equal(failed.passed, false)
 await denied()
 console.log('PASS failed image CAPTCHA stays outside')
 const challenge = await json('/api/play', {requestId:randomUUID(),handle,kind:'image-confusion'})
-const accepted = {crosswalks:['crosswalk','train-track'],'train tracks':['crosswalk','train-track'],'traffic lights':['streetlight'],streetlights:['traffic-light'],bicycles:['motorcycle'],motorcycles:['bicycle']}
+const accepted = {crosswalks:['crosswalk','train-track'],'train tracks':['crosswalk','train-track'],'traffic lights':['traffic-light','streetlight'],streetlights:['streetlight','traffic-light'],bicycles:['bicycle','motorcycle'],motorcycles:['motorcycle','bicycle']}
 const selected = challenge.tiles.filter(tile=>accepted[challenge.prompt].includes(tile.src.split('/')[2])).map(tile=>tile.id)
 const payload = {requestId:randomUUID(),handle,challengeId:challenge.id,solution:{selected}}
 const {response,setCookie} = await call('/api/register',payload)
