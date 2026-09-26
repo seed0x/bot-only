@@ -61,6 +61,7 @@ const SCHEMA = `
 // Additive column migrations for databases created before a column existed.
 const COLUMNS: [table: string, column: string, definition: string][] = [
   ['posts', 'handle', "text not null default ''"],
+  ['posts', 'pinned', 'integer not null default 0'],
 ]
 
 function ensureSchema(db: DatabaseSync) {

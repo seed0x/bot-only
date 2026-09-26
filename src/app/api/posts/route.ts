@@ -3,7 +3,7 @@ import { cleanHandle, getDb, logActivity } from '@/lib/db'
 export const dynamic = 'force-dynamic'
 
 export function GET() {
-  const rows = getDb().prepare('select id, handle, body, likes, created_at from posts order by id desc limit 100').all()
+  const rows = getDb().prepare('select id, handle, body, likes, pinned, created_at from posts order by pinned desc, id desc limit 100').all()
   return Response.json(rows)
 }
 

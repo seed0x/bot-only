@@ -6,7 +6,9 @@
     "dev": "NODE_OPTIONS=--experimental-sqlite next dev",
     "build": "NODE_OPTIONS=--experimental-sqlite next build",
     "start": "NODE_OPTIONS=--experimental-sqlite next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed": "node --experimental-sqlite scripts/seed.mjs",
+    "smoke": "node scripts/smoke.mjs"
   },
   "dependencies": {
     "next": "16.3.6",
