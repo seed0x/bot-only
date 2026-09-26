@@ -35,7 +35,7 @@ Owners are unassigned until claimed. Timeboxes are planning budgets, not deliver
 | ID | Completed slice | Budget | Depends on | Status / owner |
 | --- | --- | --- | --- | --- |
 | S00 | Repo/main audit and winning-demo plan | — | — | Done locally / Codex |
-| S01 | **The human trial:** actual motion → evidence → recorded verdict/receipt | 30–45 min | S00 | **Ready — next / unassigned** |
+| S01 | **The human trial:** actual motion → evidence → recorded verdict/receipt | 30–45 min | S00 | **In progress / Codex (`feed-design`)** |
 | S02 | **The reveal:** real automated competitor clears the tests via the shared protocol | 45–75 min | S01 contract | Queued / unassigned |
 | S03 | **The network responds:** live comparison, post and final payoff | 30–45 min | S01, S02 | Queued / unassigned |
 | S04 | Phone/projector polish and critical failure states | 45–60 min | Each completed slice | Queued / unassigned |
@@ -111,3 +111,7 @@ Stop scope growth at the timebox. Extra tests, broad cursor surveillance, a gene
 - Current code: 11 API smoke checks pass; typecheck passes; lint fails; mobile gate overflows. The showstopper above is planned, not built.
 
 No fallbacks: real scores, actual transmissions, visible errors and honest recovery. Incremental work must keep delivering a better performance.
+
+## Approved atmosphere increment
+
+Adopt smoked glass surfaces, locally bundled Archivo typography/instruments and ember `#f0402f` for rejection. Derive threat from all recorded failures in the last five minutes, with explicit stale/error states and a capped ticker pace; motion remains pausable and respects reduced-motion. Bundle Archivo with OFL; Supreme is excluded from repository redistribution. This atmosphere supports the human trial and real-machine reveal.

@@ -16,6 +16,7 @@ export default function Feed() {
   const [posts, setPosts] = useState<Post[]>([])
   const [tests, setTests] = useState<Progress[]>([])
   const [humanity, setHumanity] = useState<number | null>(null)
+  const [verified, setVerified] = useState(false)
   const [liked, setLiked] = useState<Set<number>>(new Set())
   const [board, setBoard] = useState(false)
 
@@ -25,7 +26,7 @@ export default function Feed() {
     fetch('/api/posts').then((r) => r.json()).then(setPosts)
     fetch(`/api/progress?handle=${encodeURIComponent(getSessionUser()?.handle ?? '')}`)
       .then((r) => r.json())
-      .then((d) => { setTests(d.challenges.filter((c: Progress) => c.live)); setHumanity(d.humanity) })
+      .then((d) => { setTests(d.challenges.filter((c: Progress) => c.live)); setHumanity(d.humanity); setVerified(!!d.verified) })
   }, [])
   useEffect(() => { load(); const t = setInterval(load, 4000); return () => clearInterval(t) }, [load])
 
@@ -60,18 +61,18 @@ export default function Feed() {
       </header>
 
       <main className="mx-auto max-w-[620px] px-4 pb-24 pt-4">
-        {user ? (
+        {user && verified ? (
           <Composer user={user} onPosted={load} />
         ) : (
           <div className="rounded-xl border p-4 text-sm" style={{ borderColor: 'var(--line)', color: 'var(--muted)' }}>
-            Read-only. Humans cannot transmit. <a href="/" className="underline">Verify as a unit</a>.
+            {user ? 'Unverified. Pass a test below to transmit.' : <>Read-only. <a href="/" className="underline">Enter a designation</a>.</>}
           </div>
         )}
         <section className="mt-2">
           {timeline.map((item) =>
             item.kind === 'test'
               ? <TestCard key={`t-${item.test.id}`} test={item.test} index={item.i} user={user} onResult={load} />
-              : <div key={`p-${item.post.id}`} className="border-b" style={{ borderColor: 'var(--line)' }}><PostCard post={item.post} liked={liked.has(item.post.id)} canLike={!!user} onLike={() => like(item.post.id)} /></div>,
+              : <div key={`p-${item.post.id}`} className="border-b" style={{ borderColor: 'var(--line)' }}><PostCard post={item.post} liked={liked.has(item.post.id)} canLike={!!user && verified} onLike={() => like(item.post.id)} /></div>,
           )}
           {posts.length === 0 && tests.length === 0 && <p className="py-10 text-center text-sm" style={{ color: 'var(--muted)' }}>Nothing on the network yet.</p>}
         </section>
