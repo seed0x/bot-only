@@ -4,9 +4,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "concurrently -k \"tsx watch server/index.ts\" \"vite\"",
+    "dev": "NODE_OPTIONS=--experimental-sqlite concurrently -k \"tsx watch server/index.ts\" \"vite\"",
     "build": "vite build",
-    "start": "tsx server/index.ts"
+    "start": "NODE_OPTIONS=--experimental-sqlite tsx server/index.ts"
   },
   "keywords": [],
   "author": "",
@@ -15,14 +15,12 @@
   "type": "module",
   "dependencies": {
     "@hono/node-server": "^2.1.1",
-    "better-sqlite3": "^13.0.3",
     "hono": "^4.13.9",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
-    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^26.6.3",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",

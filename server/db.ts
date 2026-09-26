@@ -1,7 +1,7 @@
-import Database from 'better-sqlite3'
+import { DatabaseSync } from 'node:sqlite'
 
-export const db = new Database('data.db')
-db.pragma('journal_mode = WAL')
+export const db = new DatabaseSync('data.db')
+db.exec('pragma journal_mode = WAL')
 db.exec(`
   create table if not exists attempts (
     id integer primary key autoincrement,
