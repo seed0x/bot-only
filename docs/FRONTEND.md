@@ -1,3 +1,7 @@
+> Leaderboard contract: `/api/leaderboard` returns `{ handle, bestTimeMs }[]`, ranked by fastest successful image CAPTCHA per verified user. No input-mode tabs or survival metrics in this UI.
+
+> Registration now includes a shared top-five CAPTCHA leaderboard: beside the gate on desktop, below it on mobile. Feed dialog uses the same LeaderboardContent component.
+
 > Current result presentation: an open typographic verdict with compact recorded metrics; no receipt card, stamp, duplicate status or score gauge. Product name is onlybots.
 
 > Current feed: posts, composer and objectives only. The owner removed recent-results, recent-activity and rejection-counter sections. Full pass/fail receipts remain in the gate flow. Survival contracts/engine/detectors are integrated but not connected to a browser runtime; follow MAIN_GAME_PLAN for that later slice.

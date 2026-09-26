@@ -19,7 +19,7 @@ export type ObjectiveProgress = { post: boolean; comment: boolean | null; like: 
 export type Comment = { id: number; post_id: number; handle: string; body: string; created_at: string }
 export type Post = { id: number; handle: string; body: string; likes: number; pinned: number; created_at: string; liked?: number; comments?: number }
 export type Activity = { id: number; kind: string; handle: string; text: string; created_at: string }
-export type LeaderRow = { handle: string; passed: number; best_score: number | null; posts: number; likes: number }
+export type LeaderRow = { handle: string; bestTimeMs: number }
 export type Progress = { id: string; name: string; hint: string; live: boolean; passed: boolean; best_score: number | null }
 export type NetworkState = { rejections: number; level: number; band: string; message: string; generatedAt: string; windowSeconds: number }
 
