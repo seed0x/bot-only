@@ -1,5 +1,7 @@
 # bot-only — build the demo that wins
 
+Latest presentation increment: shared pass/fail receipts, image-CAPTCHA results in the desktop sidebar, recent activity below posts, and consistent component loading/empty/error states. Owner corrected the original placement; final layout is recorded in HANDOFF. Build/lint and 62 automated checks pass; full demo/device/network-failure rehearsal remains next.
+
 ## Remaining demo priorities — owner says three hours remain
 
 1. **CAPTCHA integration complete.** Integrated teammate main `ee2bd38`: all visible images from both look-alike categories are required. His generation/scoring/types are preserved exactly, with our admission and result UI. No new challenge design in this pass.

@@ -7,7 +7,8 @@ import UnitChip from '@/components/feed/UnitChip'
 import Composer from '@/components/feed/Composer'
 import Objective from '@/components/feed/Objective'
 import PostCard from '@/components/feed/PostCard'
-import TrialComparison from '@/components/TrialComparison'
+import RecentActivity, { RecentResults } from '@/components/RecentActivity'
+import ResourceState from '@/components/ResourceState'
 import type { SessionUser } from '@/lib/types'
 import { usePollingResource } from '@/hooks/usePollingResource'
 import { isPosts, isProgress } from '@/lib/validators'
@@ -44,16 +45,18 @@ export default function FeedClient({ user, initialHumanity }: { user: SessionUse
       <aside className="feed-aside" aria-label="Post creation and objectives">
         <Composer user={verified} onPosted={refresh} />
         <div className="feed-objectives"><Objective key={user?.handle ?? 'visitor'} user={user} refreshKey={objectiveRefresh} /></div>
+        <div className="feed-results-panel"><RecentResults /></div>
       </aside>
       <section className="feed-posts" aria-label="Posts">
+        <div className="posts-heading"><h2>Posts</h2></div>
         {pinned.map(postCard)}
-        {posts.loading && <p className="loading-state" role="status">Loading posts…</p>}
-        {posts.error && <p role="alert" className="error-state">Couldn’t refresh posts. <button className="text-button" onClick={posts.refresh}>Retry</button></p>}
-        {progress.error && <p role="alert" className="error-state">Couldn’t refresh your results. <button className="text-button" onClick={progress.refresh}>Retry</button></p>}
+        {posts.loading && <ResourceState title="Loading posts…" busy />}
+        {posts.error && <ResourceState title={posts.data ? "Post updates paused" : "Posts unavailable"} detail={posts.data ? "Showing the last confirmed posts." : undefined} retry={posts.refresh} />}
+        {progress.error && <ResourceState title="Your results couldn’t refresh" detail="Your access is unchanged." retry={progress.refresh} />}
         {likeError && <p className="form-error" role="alert">{likeError}</p>}
         {transmissions.map(postCard)}
-        {posts.data?.length === 0 && <p>No posts yet.</p>}
-        <details className="recent-results"><summary>Recent results</summary><TrialComparison /></details>
+        {posts.data?.length === 0 && <ResourceState title="No posts yet" detail="Be the first to post." />}
+        <RecentActivity />
         <footer className="feed-footer"><NetworkStatus /></footer>
       </section>
     </main>

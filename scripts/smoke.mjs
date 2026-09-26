@@ -68,6 +68,8 @@ check('changing your mind twice is rejected', dither.passed === false && dither.
 await delay(solved.clicks.at(-1).t + 50)
 const machine = (await record(img, { clicks: solved.clicks })).body
 check('machine click log admitted', machine?.passed === true && machine.result?.challenge === 'image-confusion' && machine.result.score <= 0.2)
+const results = (await read('/api/results')).body
+check('recent results include actual image pass and fail', Array.isArray(results) && results.some(r => r.attemptId === machine.attemptId && r.passed) && results.some(r => r.attemptId === human.attemptId && !r.passed) && results.every(r => r.result.challenge === 'image-confusion'))
 check('image challenge cannot be replayed', (await record(img, { clicks: solved.clicks })).status === 409)
 const postBody = { requestId: randomUUID(), handle, body: 'Smoke transmission. Evidence recorded.' }
 const transmission = await post('/api/posts', postBody)

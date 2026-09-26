@@ -1,3 +1,5 @@
+> Current result layout: desktop composer/objectives and compact pass/fail receipts live in the right sidebar; recent activity follows posts on the left. On phones, results follow the feed. `RecentResults` uses recorded image CAPTCHA attempts from `/api/results`; full gate receipts and compact sidebar receipts share `VerdictReceipt`. `ResourceState` covers loading, empty and retry presentations while retaining confirmed data on refresh failures.
+
 > Current session routing: `/` redirects already-admitted browsers to `/feed`. `GateClient` owns name/test/result interaction; Enter feed makes a server navigation after the cookie is issued. Feed identity and initial humanity come from server admission; progress loading or failure never means unverified. Admission loss (posts 401) revalidates the server route. Other games do not clear the image-admission cookie.
 
 # Frontend and interaction contract

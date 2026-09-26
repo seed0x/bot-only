@@ -5,6 +5,7 @@ import HashRecall from './HashRecall'
 import ImageCaptcha from './ImageCaptcha'
 import AttemptEvidence from './AttemptEvidence'
 import VerdictReceipt from './VerdictReceipt'
+import ResourceState from './ResourceState'
 import { ApiError, jsonPost, requestJson } from '@/lib/api'
 import { isChallenge, isReceipt } from '@/lib/validators'
 import type { AttemptReceipt, ChallengeKind, IssuedChallenge, Solution } from '@/lib/types'
@@ -58,7 +59,7 @@ export default function ChallengeTrial({ handle, kind, autoStart = false, onReco
   const pending = state.pending
   return <div className="trial-pending" aria-busy={state.phase !== 'error'}>
     {'solution' in pending && 'samples' in pending.solution && <AttemptEvidence samples={pending.solution.samples} />}
-    <p role={state.phase === 'error' ? 'alert' : 'status'}>{state.phase === 'error' ? state.message : state.phase === 'saving' ? 'Saving result…' : 'Loading test…'}</p>
+    <ResourceState title={state.phase === 'error' ? ('solution' in pending ? 'Result not confirmed' : 'Test unavailable') : state.phase === 'saving' ? 'Recording your result…' : 'Preparing your test…'} detail={state.phase === 'error' ? state.message : state.phase === 'saving' ? 'Waiting for the server.' : undefined} busy={state.phase !== 'error'} />
     {state.phase === 'error' && <button className="button-secondary" onClick={() => state.canRestart ? setState({ phase: 'idle' }) : void send(pending)}>{state.canRestart ? 'Start again' : 'Retry'}</button>}
   </div>
 }
