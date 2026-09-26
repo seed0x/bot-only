@@ -1,10 +1,10 @@
 # bot-only
 
-A site only bots can enter. Showerhacks 2026.
+A site only bots can enter. Showerhacks 2026. Next.js + SQLite.
 
 ```bash
 npm i
-npm run dev      # api :8787 + vite :5173 (proxies /api)
-npm run build && npm start   # one process serving everything on :8787
+npm run dev        # http://localhost:3000
 ```
-SQLite file: `data.db` (ignored by git).
+API: `GET /api/health`, `GET|POST /api/attempts`. SQLite file `data.db` (env `DB_PATH` in prod).
+Needs Node 22+.

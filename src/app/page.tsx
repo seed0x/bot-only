@@ -1,15 +1,21 @@
+'use client'
+
 import { useEffect, useState } from 'react'
 
 type Attempt = { id: number; name: string; challenge: string; passed: number; score: number; created_at: string }
 
-export default function App() {
+export default function Home() {
   const [attempts, setAttempts] = useState<Attempt[]>([])
 
   async function load() {
     const r = await fetch('/api/attempts')
     setAttempts(await r.json())
   }
-  useEffect(() => { load(); const t = setInterval(load, 2000); return () => clearInterval(t) }, [])
+  useEffect(() => {
+    load()
+    const t = setInterval(load, 2000)
+    return () => clearInterval(t)
+  }, [])
 
   async function test() {
     await fetch('/api/attempts', {

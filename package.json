@@ -1,35 +1,27 @@
 {
   "name": "bot-only",
-  "version": "1.0.0",
-  "main": "index.js",
+  "version": "0.1.0",
+  "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "NODE_OPTIONS=--experimental-sqlite concurrently -k \"tsx watch server/index.ts\" \"vite\"",
-    "build": "vite build",
-    "start": "NODE_OPTIONS=--experimental-sqlite tsx server/index.ts"
+    "dev": "NODE_OPTIONS=--experimental-sqlite next dev",
+    "build": "NODE_OPTIONS=--experimental-sqlite next build",
+    "start": "NODE_OPTIONS=--experimental-sqlite next start",
+    "lint": "eslint"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
-  "type": "module",
   "dependencies": {
-    "@hono/node-server": "^2.1.1",
-    "hono": "^4.13.9",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "next": "16.3.6",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.3.3",
-    "@types/node": "^26.6.3",
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0",
-    "@vitejs/plugin-react": "^6.1.1",
-    "concurrently": "^10.0.5",
-    "tailwindcss": "^4.3.3",
-    "tsx": "^4.23.15",
-    "typescript": "^7.0.2",
-    "vite": "^8.3.1"
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^22.20.4",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.6",
+    "tailwindcss": "^4",
+    "typescript": "^5"
   },
   "engines": {
     "node": ">=22"
