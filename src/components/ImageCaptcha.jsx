@@ -17,7 +17,7 @@ export const CAPTCHA_IMAGES = Object.entries(IMAGE_CATEGORIES).flatMap(([categor
     id: `${category}-${number}`,
     src: `/images/${category}/${number}.webp`,
     category,
-    validFor: definition.accepted ?? [definition.opposite],
+    validFor: definition.accepted ?? [category, definition.opposite],
   })),
 )
 
@@ -37,35 +37,37 @@ export function createImageChallenge(category, random = Math.random) {
     throw new Error(`Unknown CAPTCHA category: ${requested}`)
   }
   const accepted = IMAGE_CATEGORIES[requested].opposite
-  const acceptedCategories = IMAGE_CATEGORIES[requested].accepted ?? [accepted]
-  const otherCategories = categories.filter((value) => value !== requested && value !== accepted)
-  if (acceptedCategories.length > 1) {
-    const take = (imageCategory) => shuffle(CAPTCHA_IMAGES.filter((image) => image.category === imageCategory), random)
-      .slice(0, 1 + Math.floor(random() * 3))
-    const grouped = [...take(requested), ...take(accepted)]
-    const others = shuffle(CAPTCHA_IMAGES.filter((image) => otherCategories.includes(image.category)), random)
-      .slice(0, 9 - grouped.length)
-    return { requested, accepted, acceptedCategories, tiles: shuffle([...grouped, ...others], random) }
-  }
-  const other = otherCategories[Math.floor(random() * otherCategories.length)]
-  const tiles = shuffle(CAPTCHA_IMAGES.filter((image) =>
-    image.category === requested || image.category === accepted || image.category === other,
-  ), random)
-  return { requested, accepted, acceptedCategories, tiles }
+  const acceptedCategories = IMAGE_CATEGORIES[requested].accepted ?? [requested, accepted]
+  const otherCategories = categories.filter((value) => !acceptedCategories.includes(value))
+  const requestedCount = Math.floor(random() * 4)
+  const oppositeCount = 1 + Math.floor(random() * 3)
+  const take = (imageCategory, count) => shuffle(
+    CAPTCHA_IMAGES.filter((image) => image.category === imageCategory),
+    random,
+  ).slice(0, count)
+  const pair = [
+    ...take(requested, requestedCount),
+    ...take(accepted, oppositeCount),
+  ]
+  const fillers = shuffle(
+    CAPTCHA_IMAGES.filter((image) => otherCategories.includes(image.category)),
+    random,
+  ).slice(0, 9 - pair.length)
+  return { requested, accepted, acceptedCategories, tiles: shuffle([...pair, ...fillers], random) }
 }
 
 export function evaluateImageSelection(challenge, selectedIds) {
   const selected = new Set(selectedIds)
-  const valid = challenge.tiles.filter((image) => image.validFor.includes(challenge.requested))
-  const requestedSelected = challenge.tiles.some((image) => image.category === challenge.requested && !image.validFor.includes(challenge.requested) && selected.has(image.id))
+  const valid = challenge.tiles.filter((image) => challenge.acceptedCategories.includes(image.category))
+  const invalidSelected = challenge.tiles.some((image) => !challenge.acceptedCategories.includes(image.category) && selected.has(image.id))
   const passed = valid.length > 0 && selected.size === valid.length && valid.every((image) => selected.has(image.id))
   const reason = passed
     ? 'Visual confusion consistent with a machine. Welcome.'
-    : requestedSelected
-      ? 'Human recognition detected. Access denied.'
+    : invalidSelected
+      ? 'A similar or unrelated image was selected. Select every image in the pair only.'
       : selected.size === 0
         ? 'Select at least one image before verifying.'
-        : 'Selection not consistent with a machine. Try again.'
+        : 'You missed an image in the pair. Select every image in both categories.'
   return { passed, score: passed ? 0 : 1, reason }
 }
 
