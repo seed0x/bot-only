@@ -6,7 +6,6 @@ import SiteHeader from '@/components/SiteHeader'
 import UnitChip from '@/components/feed/UnitChip'
 import Composer from '@/components/feed/Composer'
 import Objective from '@/components/feed/Objective'
-import LeaderboardPanel from '@/components/feed/LeaderboardPanel'
 import PostCard from '@/components/feed/PostCard'
 import ResourceState from '@/components/ResourceState'
 import type { SessionUser } from '@/lib/types'
@@ -19,7 +18,6 @@ export default function FeedClient({ user, initialHumanity }: { user: SessionUse
   const posts = usePollingResource(`/api/posts?handle=${encodeURIComponent(user?.handle ?? '')}`, isPosts)
   const [objectiveRefresh, setObjectiveRefresh] = useState(0)
   const progress = usePollingResource(`/api/progress?handle=${encodeURIComponent(user?.handle ?? '')}`, isProgress)
-  const [boardOpen, setBoardOpen] = useState(false)
   const [liked, setLiked] = useState<Set<number>>(new Set()), [pending, setPending] = useState<Set<number>>(new Set()), [likeError, setLikeError] = useState('')
   // The server admitted this user before rendering. Results loading is not authentication.
   const verified = user
@@ -42,10 +40,8 @@ export default function FeedClient({ user, initialHumanity }: { user: SessionUse
   return <div className="feed">
     <SiteHeader><div className="header-actions">
       <UnitChip user={user} humanity={progress.data?.humanity ?? initialHumanity} />
-      <button type="button" className="text-button" aria-haspopup="dialog" onClick={() => setBoardOpen(true)}>Leaderboard</button>
+      <Link className="text-button" href="/leaderboard">Leaderboard</Link>
     </div></SiteHeader>
-    {/* G04: pass onOpenChange={open => open ? acquirePause('leaderboard') : releasePause('leaderboard')} from the game provider. */}
-    <LeaderboardPanel open={boardOpen} onClose={() => setBoardOpen(false)} />
     <main className="feed-layout feed-grid">
       <h1 className="sr-only">Feed</h1>
       <aside className="feed-aside" aria-label="Post creation and objectives">

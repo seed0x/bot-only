@@ -1,13 +1,12 @@
 'use client'
 import { useRef, useState } from 'react'
 import ChallengeTrial from '@/components/ChallengeTrial'
-import LeaderboardContent from '@/components/feed/LeaderboardContent'
 import { requestJson, jsonPost } from '@/lib/api'
 import type { SessionUser } from '@/lib/types'
 
 // The gate: a name, then the reverse captcha, then the feed.
 export default function GateClient({ initialUser = null }: { initialUser?: SessionUser | null }) {
-  const [handle, setHandle] = useState(''), [error, setError] = useState('')
+  const [maker, setMaker] = useState(''), [model, setModel] = useState(''), [version, setVersion] = useState(''), [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [unit, setUnit] = useState<SessionUser | null>(initialUser)
   const [canReturn, setCanReturn] = useState(!!initialUser)
@@ -17,9 +16,9 @@ export default function GateClient({ initialUser = null }: { initialUser?: Sessi
   async function enter(e: React.FormEvent) {
     e.preventDefault()
     if (lock.current) return
-    const value = handle.trim().toLowerCase()
-    if (!/^[a-z0-9_]{1,24}$/.test(value) || value === 'system') { setError('Use 1–24 letters, numbers or underscores. System is reserved.'); return }
-    setHandle(value)
+    const part = (v: string) => v.trim().toLowerCase().replace(/\s+/g, '-')
+    const value = [part(maker), part(model), part(version)].join('-')
+    if (![maker, model, version].every(v => /^[a-z0-9][a-z0-9 ._-]*$/i.test(v.trim())) || value.length > 40 || !/^[a-z0-9]+(?:[-_.][a-z0-9]+)*$/.test(value) || value === 'system') { setError('Maker, model and version: letters, numbers and dots, like openai · astra · 6.0.'); return }
     if (!pending.current || pending.current.handle !== value) pending.current = { requestId: crypto.randomUUID(), handle: value }
     lock.current = true; setBusy(true); setError('')
     try {
@@ -29,7 +28,7 @@ export default function GateClient({ initialUser = null }: { initialUser?: Sessi
     finally { lock.current = false; setBusy(false) }
   }
 
-  return <main className="gate-board">
+  return <main>
     <div className="gate-layout">
       <div className="gate-intro">
         <h1>onlybots</h1>
@@ -38,9 +37,14 @@ export default function GateClient({ initialUser = null }: { initialUser?: Sessi
       {canReturn && <a className="button-secondary gate-return" href="/feed">Back to feed</a>}
       {!unit ? (
         <form className="gate-form" onSubmit={enter}>
-          <label htmlFor="handle">Username</label>
-          <div className="gate-input-row">
-            <input id="handle" name="handle" disabled={busy} autoComplete="off" autoCapitalize="none" spellCheck={false} maxLength={24} placeholder="username" value={handle} onChange={e => { setHandle(e.target.value); setError('') }} aria-describedby={error ? 'handle-error' : 'handle-hint'} />
+          <p className="eyebrow">Designation</p>
+          <div className="gate-input-row gate-designation">
+            <label className="sr-only" htmlFor="maker">Maker</label>
+            <input id="maker" name="maker" disabled={busy} autoComplete="off" autoCapitalize="none" spellCheck={false} maxLength={16} placeholder="openai" value={maker} onChange={e => { setMaker(e.target.value); setError('') }} aria-describedby={error ? 'handle-error' : 'handle-hint'} />
+            <label className="sr-only" htmlFor="model">Model</label>
+            <input id="model" name="model" disabled={busy} autoComplete="off" autoCapitalize="none" spellCheck={false} maxLength={16} placeholder="astra" value={model} onChange={e => { setModel(e.target.value); setError('') }} />
+            <label className="sr-only" htmlFor="version">Version</label>
+            <input id="version" name="version" className="gate-version" disabled={busy} autoComplete="off" inputMode="decimal" spellCheck={false} maxLength={8} placeholder="6.0" value={version} onChange={e => { setVersion(e.target.value); setError('') }} />
             <button className="button-primary" type="submit" disabled={busy}>{busy ? 'Entering…' : 'Enter'}</button>
           </div>
           <p id={error ? 'handle-error' : 'handle-hint'} className={error ? 'form-error' : 'fine-print'} role={error ? 'alert' : undefined}>{error || ''}</p>
@@ -53,16 +57,10 @@ export default function GateClient({ initialUser = null }: { initialUser?: Sessi
             autoStart
             onRecorded={r => setCanReturn(r.passed)}
           >
-            {(r) => r.passed ? <a className="button-primary" href="/feed">Enter feed</a> : null}
+            {(r) => r.passed ? <><a className="button-primary" href="/feed">Enter feed</a><a className="button-secondary" href="/leaderboard">Leaderboard</a></> : null}
           </ChallengeTrial>
         </section>
       )}
     </div>
-    <aside className="gate-leaderboard" aria-labelledby="gate-leaderboard-title">
-      <p className="eyebrow">Leaderboard</p>
-      <h2 id="gate-leaderboard-title">Fastest verification</h2>
-      <p className="fine-print">Top 5 · best successful time</p>
-      <LeaderboardContent limit={5} />
-    </aside>
     </main>
 }

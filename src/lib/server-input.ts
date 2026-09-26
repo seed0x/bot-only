@@ -10,7 +10,7 @@ export function requestId(value: unknown) {
   return value
 }
 export function handleInput(value: unknown) {
-  if (typeof value !== 'string' || !/^[a-z0-9_]{1,24}$/.test(value) || value === 'system') throw new InputError('Use 1–24 lowercase letters, numbers or underscores. System is reserved.')
+  if (typeof value !== 'string' || value.length > 40 || !/^[a-z0-9]+(?:[-_.][a-z0-9]+)*$/.test(value) || value === 'system') throw new InputError('Designation: maker, model and version, like openai-astra-6.0. System is reserved.')
   return value
 }
 export async function bodyInput(req: Request) {

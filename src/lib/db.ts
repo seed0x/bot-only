@@ -173,5 +173,5 @@ export function logActivity(kind: string, handle: string, text: string) {
 }
 
 export function cleanHandle(raw: unknown): string {
-  return String(raw ?? '').trim().toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 24)
+  return String(raw ?? '').trim().toLowerCase().replace(/[^a-z0-9_.-]/g, '').slice(0, 40)
 }

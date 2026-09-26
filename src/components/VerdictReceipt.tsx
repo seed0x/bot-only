@@ -4,11 +4,7 @@ import type { RecordedResult } from '@/lib/results'
 
 export default function VerdictReceipt({ receipt, children, compact = false }: { receipt: RecordedResult; children?: React.ReactNode; compact?: boolean }) {
   const { result } = receipt
-  // Older attempts retain their recorded explanation; remove only the old presentation copy.
   const reason = result.meta.reason
-    .replace('Visual confusion consistent with a machine.', 'Verification complete.')
-    .replace(/^You (?:left out|also skipped) the (.+)\. (?:A machine can’t tell them apart|Too discerning)\.$/, 'Selection incomplete. Include the $1.')
-    .replace(' off. Not machine-like.', ' incorrect or missing.')
   if (compact) return <details className={`result-row ${receipt.passed ? 'admitted' : 'rejected'}`}>
     <summary aria-label={`${receipt.passed ? 'Passed' : 'Failed'} verification for @${receipt.handle}; details`}>
       <Avatar handle={receipt.handle} size={24} />
@@ -24,14 +20,8 @@ export default function VerdictReceipt({ receipt, children, compact = false }: {
     <dl className="result-metrics">
       <div><dt>Humanity</dt><dd>{result.score.toFixed(2)}</dd></div>
       <div><dt>Elapsed</dt><dd>{(result.duration_ms / 1000).toFixed(2)}<span>s</span></dd></div>
-      <div><dt>Moving</dt><dd>{result.meta.pointer ? <>{(result.meta.pointer.movementMs / 1000).toFixed(2)}<span>s</span></> : <span className="metric-unavailable">Not recorded</span>}</dd></div>
+      {result.meta.worstRatio !== undefined && result.meta.strokes ? <div><dt>Straightness</dt><dd>{result.meta.worstRatio.toFixed(2)}</dd></div> : null}
     </dl>
-    {(result.meta.pointer || result.meta.corrections !== undefined) && <details className="result-evidence"><summary>Attempt details</summary><dl className="result-monitoring">
-      <div><dt>Mouse movement</dt><dd>{result.meta.pointer ? (result.meta.pointer.movementMs / 1000).toFixed(2) + 's' : 'Not recorded'}</dd></div>
-      <div><dt>Mouse travel</dt><dd>{result.meta.pointer ? Math.round(result.meta.pointer.distancePx) + 'px' : 'Not recorded'}</dd></div>
-      <div><dt>Corrections</dt><dd>{result.meta.corrections ?? '—'}</dd></div>
-      <div><dt>Longest click pause</dt><dd>{result.meta.maxGap === undefined ? '—' : (result.meta.maxGap / 1000).toFixed(2) + 's'}</dd></div>
-    </dl><p className="fine-print">Movement and click timing are recorded separately from your result.</p></details>}
     {result.meta.trace && <details className="result-evidence"><summary>View movement</summary><AttemptEvidence samples={result.meta.trace} passed={result.passed} /></details>}
     {children && <div className="receipt-actions">{children}</div>}
   </section>
