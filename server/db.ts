@@ -1,6 +1,6 @@
 import { DatabaseSync } from 'node:sqlite'
 
-export const db = new DatabaseSync('data.db')
+export const db = new DatabaseSync(process.env.DB_PATH ?? 'data.db')
 db.exec('pragma journal_mode = WAL')
 db.exec(`
   create table if not exists attempts (
