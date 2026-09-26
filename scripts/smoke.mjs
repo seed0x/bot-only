@@ -1,6 +1,7 @@
 // Mutates the explicitly selected isolated test server.
 import { randomUUID } from 'node:crypto'
 import { setTimeout as delay } from 'node:timers/promises'
+import { solveImage, steadyClicks } from './captcha-solver.mjs'
 if (!process.env.BASE_URL) throw new Error('Set BASE_URL explicitly to an isolated test server.')
 const base = process.env.BASE_URL, handle = 'smoke_' + randomUUID().slice(0, 8)
 let failures = 0, checks = 0, cookie = ''
@@ -39,22 +40,35 @@ const pass = await record(good, { samples })
 check('shared scorer admits straight trace', pass.body.passed === true && pass.body.result?.score < 1e-12)
 const hash = (await issue('hash-recall')).body
 check('hash scored by server', (await record(hash, { value: hash.hash })).body.passed === true)
-// Reverse image captcha: every visible tile in the requested/look-alike pair is required.
-const PAIR = { crosswalk: ['crosswalk', 'train-track'], 'train-track': ['crosswalk', 'train-track'], 'traffic-light': ['traffic-light', 'streetlight'], streetlight: ['streetlight', 'traffic-light'], bicycle: ['bicycle', 'motorcycle'], motorcycle: ['motorcycle', 'bicycle'] }
-const LABEL = { crosswalks: 'crosswalk', 'train tracks': 'train-track', 'traffic lights': 'traffic-light', streetlights: 'streetlight', bicycles: 'bicycle', motorcycles: 'motorcycle' }
-const categoryOf = src => src.split('/')[2]
+// Reverse image captcha: rotating rules, opaque tiles, click log scored on the server.
+const tileBytes = async src => { const r = await fetch(base + src, { signal: AbortSignal.timeout(10_000) }); if (!r.ok) throw new Error('tile ' + r.status); return r.arrayBuffer() }
 const img = (await issue('image-confusion')).body
-check('image challenge issued with 9 tiles', Array.isArray(img?.tiles) && img.tiles.length === 9 && typeof img.prompt === 'string')
-check('image challenge leaks no answer', !JSON.stringify(img).includes('accepted') && !JSON.stringify(img).includes('round') && !JSON.stringify(img).includes('opposite'))
-const asked = LABEL[img.prompt], machinePick = img.tiles.filter(t => PAIR[asked].includes(categoryOf(t.src))).map(t => t.id)
+check('image challenge issued with 9 tiles and a rule', Array.isArray(img?.tiles) && img.tiles.length === 9 && typeof img.prompt === 'string' && typeof img.instruction === 'string')
+check('tile URLs are opaque', img.tiles.every(t => /^\/api\/captcha\/tile\/[A-Za-z0-9_-]{16,}$/.test(t.src) && !/crosswalk|train|light|cycle/.test(t.src + t.id)))
+check('image challenge leaks no answer', !/accepted|round|opposite|category|webp/.test(JSON.stringify(img)))
+check('public image folder is gone', (await fetch(base + '/images/crosswalk/01.webp')).status === 404)
+const tileHead = await fetch(base + img.tiles[0].src)
+check('tile route serves an uncached webp', tileHead.status === 200 && tileHead.headers.get('content-type') === 'image/webp' && /no-store/.test(tileHead.headers.get('cache-control') ?? ''))
+check('unknown tile token is 404', (await fetch(base + '/api/captcha/tile/' + 'x'.repeat(16))).status === 404)
+const solved = await solveImage(img, tileBytes)
+check('foreign tile id rejected', (await record(img, { clicks: [{ id: 'not-a-tile-token-0000', t: 10 }] })).status === 400)
 const img2 = (await issue('image-confusion')).body
-const asked2 = LABEL[img2.prompt]
-const bait2 = img2.tiles.filter(t => categoryOf(t.src) === asked2).map(t => t.id)
-const human = (await record(img2, { selected: bait2 })).body
-check('requested objects alone fail without the look-alike tiles', human.passed === false)
-const machine = (await record(img, { selected: machinePick })).body
-check('machine selection admitted', machine?.passed === true && machine.result?.challenge === 'image-confusion')
-check('image challenge cannot be replayed', (await record(img, { selected: machinePick })).status === 409)
+const solved2 = await solveImage(img2, tileBytes)
+const off = solved2.ids.length > 1 ? solved2.ids.slice(1) : [...solved2.ids, img2.tiles.find(t => !solved2.ids.includes(t.id)).id]
+await delay(steadyClicks(off).at(-1).t + 50)
+const human = (await record(img2, { clicks: steadyClicks(off) })).body
+check('a wrong tile set is rejected as human', human.passed === false)
+const img3 = (await issue('image-confusion')).body
+const solved3 = await solveImage(img3, tileBytes)
+const dithering = [...steadyClicks(solved3.ids)]; const again = solved3.ids[0]
+dithering.push({ id: again, t: dithering.at(-1).t + 150 }, { id: again, t: dithering.at(-1).t + 300 }, { id: again, t: dithering.at(-1).t + 450 }, { id: again, t: dithering.at(-1).t + 600 })
+await delay(dithering.at(-1).t + 50)
+const dither = (await record(img3, { clicks: dithering })).body
+check('changing your mind twice is rejected', dither.passed === false && dither.result.meta.corrections === 2)
+await delay(solved.clicks.at(-1).t + 50)
+const machine = (await record(img, { clicks: solved.clicks })).body
+check('machine click log admitted', machine?.passed === true && machine.result?.challenge === 'image-confusion' && machine.result.score <= 0.2)
+check('image challenge cannot be replayed', (await record(img, { clicks: solved.clicks })).status === 409)
 const postBody = { requestId: randomUUID(), handle, body: 'Smoke transmission. Evidence recorded.' }
 const transmission = await post('/api/posts', postBody)
 check('admitted unit transmits', transmission.status === 200 && transmission.body.id > 0)

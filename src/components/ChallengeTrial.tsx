@@ -52,7 +52,7 @@ export default function ChallengeTrial({ handle, kind, autoStart = false, onReco
   if (state.phase === 'playing') {
     const submit = (solution: Solution) => void send({ requestId: crypto.randomUUID(), handle, challengeId: state.challenge.id, solution })
     if (kind === 'straight-line') return <MovementCaptcha onSolution={submit} />
-    if (kind === 'image-confusion') return <ImageCaptcha challenge={state.challenge} onSolution={submit} />
+    if (kind === 'image-confusion') return <ImageCaptcha key={state.challenge.id} challenge={state.challenge} onSolution={submit} onRestart={start} />
     return <HashRecall challenge={state.challenge} onSolution={submit} />
   }
   const pending = state.pending

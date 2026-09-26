@@ -2,6 +2,8 @@
 import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 import { writeFile } from 'node:fs/promises'
+import { setTimeout as delay } from 'node:timers/promises'
+import { solveImage, steadyClicks } from './captcha-solver.mjs'
 if (!process.env.BASE_URL) throw new Error('Set BASE_URL to an isolated test server.')
 const base = process.env.BASE_URL
 const handle = 'gate_' + randomUUID().slice(0, 8)
@@ -33,14 +35,18 @@ await json('/api/register', {requestId:randomUUID(),handle})
 await denied()
 console.log('PASS username registration does not admit the browser')
 const failedChallenge = await json('/api/play', {requestId:randomUUID(),handle,kind:'image-confusion'})
-const failed = await json('/api/register', {requestId:randomUUID(),handle,challengeId:failedChallenge.id,solution:{selected:[]}})
+const tileBytes = async src => (await fetch(base + src, { signal: AbortSignal.timeout(10000) })).arrayBuffer()
+const wrong = await solveImage(failedChallenge, tileBytes)
+const wrongIds = wrong.ids.length > 1 ? wrong.ids.slice(1) : [...wrong.ids, failedChallenge.tiles.find(t => !wrong.ids.includes(t.id)).id]
+await delay(steadyClicks(wrongIds).at(-1).t + 50)
+const failed = await json('/api/register', {requestId:randomUUID(),handle,challengeId:failedChallenge.id,solution:{clicks:steadyClicks(wrongIds)}})
 assert.equal(failed.passed, false)
 await denied()
 console.log('PASS failed image CAPTCHA stays outside')
 const challenge = await json('/api/play', {requestId:randomUUID(),handle,kind:'image-confusion'})
-const accepted = {crosswalks:['crosswalk','train-track'],'train tracks':['crosswalk','train-track'],'traffic lights':['traffic-light','streetlight'],streetlights:['streetlight','traffic-light'],bicycles:['bicycle','motorcycle'],motorcycles:['motorcycle','bicycle']}
-const selected = challenge.tiles.filter(tile=>accepted[challenge.prompt].includes(tile.src.split('/')[2])).map(tile=>tile.id)
-const payload = {requestId:randomUUID(),handle,challengeId:challenge.id,solution:{selected}}
+const { clicks } = await solveImage(challenge, tileBytes)
+await delay(clicks.at(-1).t + 50)
+const payload = {requestId:randomUUID(),handle,challengeId:challenge.id,solution:{clicks}}
 const {response,setCookie} = await call('/api/register',payload)
 assert.equal(response.status,200)
 const passed = await response.json()

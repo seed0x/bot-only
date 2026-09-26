@@ -3,12 +3,15 @@ import { getDb, logActivity } from './db'
 import { operation } from './operations'
 import { handleInput, InputError, object, requestId } from './server-input'
 import { MAX_SAMPLES, scoreHash, scoreMotion } from './motion'
-import { createImageRound, scoreImageRound, type ImageRound } from './image-captcha'
-import type { AttemptReceipt, CaptchaResult, ChallengeKind, IssuedChallenge, MotionSample, Solution } from './types'
+import { createImageRound, IMAGE_WINDOW_MS, MAX_CLICKS, scoreImageRound, type ImageRound } from './image-captcha'
+import type { AttemptReceipt, CaptchaResult, ChallengeKind, ImageClick, IssuedChallenge, MotionSample, Solution } from './types'
 
 const KINDS: ChallengeKind[] = ['straight-line', 'hash-recall', 'image-confusion']
-const WINDOW_MS: Record<ChallengeKind, number> = { 'straight-line': 60_000, 'hash-recall': 4000, 'image-confusion': 120_000 }
+const WINDOW_MS: Record<ChallengeKind, number> = { 'straight-line': 60_000, 'hash-recall': 4000, 'image-confusion': IMAGE_WINDOW_MS }
 const secureRandom = () => randomInt(0, 2 ** 32) / 2 ** 32
+const tileToken = () => randomBytes(12).toString('base64url')
+// Brute-force guard: a unit may open this many image rounds per window.
+const IMAGE_ROUNDS_PER_WINDOW = 30, IMAGE_ROUND_WINDOW_MS = 10 * 60_000
 
 // Stored server-side only. The public challenge never includes the answer.
 type StoredChallenge = IssuedChallenge & { round?: ImageRound }
@@ -33,8 +36,13 @@ export function issueChallenge(body: Record<string, unknown>): IssuedChallenge {
     let stored: StoredChallenge = base, issued: IssuedChallenge = base
     if (kind === 'hash-recall') { stored = issued = { ...base, hash: randomBytes(20).toString('hex') } }
     if (kind === 'image-confusion') {
-      const round = createImageRound(secureRandom)
-      issued = { ...base, prompt: round.prompt, tiles: round.tiles.map(({ id, src }) => ({ id, src })) }
+      const db = getDb()
+      const recent = db.prepare("select count(*) as n from challenge_instances where handle = ? and kind = 'image-confusion' and started_at > ?").get(handle, startedAt - IMAGE_ROUND_WINDOW_MS) as { n: number }
+      if (recent.n >= IMAGE_ROUNDS_PER_WINDOW) throw new InputError('Too many rounds. The network is watching. Try again in a few minutes.', 429)
+      const round = createImageRound(secureRandom, tileToken)
+      const tile = db.prepare('insert into captcha_tiles (token, challenge_id, file, expires_at) values (?, ?, ?, ?)')
+      for (const t of round.tiles) tile.run(t.token, base.id, t.file, expiresAt)
+      issued = { ...base, prompt: round.prompt, instruction: round.instruction, ordered: round.ordered, tiles: round.tiles.map(t => ({ id: t.token, src: `/api/captcha/tile/${t.token}` })) }
       stored = { ...issued, round }
     }
     getDb().prepare('insert into challenge_instances (id, handle, kind, payload, started_at, expires_at) values (?, ?, ?, ?, ?, ?)').run(base.id, handle, kind, JSON.stringify(stored), startedAt, expiresAt)
@@ -55,9 +63,16 @@ function parseSolution(value: unknown): Solution {
     })
     return { samples }
   }
-  if ('selected' in s) {
-    if (!Array.isArray(s.selected) || s.selected.length > 9 || !s.selected.every((v) => typeof v === 'string' && v.length <= 40)) throw new InputError('Invalid image selection.')
-    return { selected: [...new Set(s.selected as string[])] }
+  if ('clicks' in s) {
+    if (!Array.isArray(s.clicks) || s.clicks.length < 1 || s.clicks.length > MAX_CLICKS) throw new InputError('Invalid image selection.')
+    let last = 0
+    const clicks = s.clicks.map((v): ImageClick => {
+      const c = object(v)
+      if (typeof c.id !== 'string' || c.id.length > 64 || typeof c.t !== 'number' || !Number.isFinite(c.t) || c.t < last || c.t > IMAGE_WINDOW_MS) throw new InputError('Invalid image selection.')
+      last = c.t
+      return { id: c.id, t: c.t }
+    })
+    return { clicks }
   }
   if (typeof s.value !== 'string' || s.value.length > 100) throw new InputError('Invalid hash response.')
   return { value: s.value }
@@ -73,11 +88,11 @@ export function submitAttempt(body: Record<string, unknown>): AttemptReceipt {
     if (row.used) throw new InputError('Challenge already recorded. Start a new attempt.', 409)
     const challenge = JSON.parse(row.payload) as StoredChallenge
     const elapsed = Math.max(0, Date.now() - challenge.startedAt)
-    const expected = challenge.kind === 'straight-line' ? 'samples' : challenge.kind === 'image-confusion' ? 'selected' : 'value'
+    const expected = challenge.kind === 'straight-line' ? 'samples' : challenge.kind === 'image-confusion' ? 'clicks' : 'value'
     if (!(expected in solution)) throw new InputError('Wrong solution for this challenge.')
     if ('samples' in solution && solution.samples.at(-1)!.t - solution.samples[0].t > elapsed + 100) throw new InputError('Motion duration exceeds the trial window.')
     const result = 'samples' in solution ? scoreMotion(solution.samples, Date.now() > challenge.expiresAt)
-      : 'selected' in solution ? scoreImage(challenge, solution.selected, elapsed)
+      : 'clicks' in solution ? scoreImage(challenge, solution.clicks, elapsed)
       : scoreHash(challenge.hash!, solution.value, elapsed)
     let user = db.prepare('select id from users where handle = ?').get(handle) as { id: number } | undefined
     if (result.passed) {
@@ -95,13 +110,19 @@ export function submitAttempt(body: Record<string, unknown>): AttemptReceipt {
   })
 }
 
-function scoreImage(challenge: StoredChallenge, selected: string[], elapsed: number): CaptchaResult {
+function scoreImage(challenge: StoredChallenge, clicks: ImageClick[], elapsed: number): CaptchaResult {
+  const round = challenge.round!
+  const tokens = new Set(round.tiles.map(t => t.token))
+  if (!clicks.every(c => tokens.has(c.id))) throw new InputError('Invalid image selection.')
+  if (clicks.at(-1)!.t > elapsed + 250) throw new InputError('Click timing exceeds the trial window.')
   const expired = Date.now() > challenge.expiresAt
-  const v = scoreImageRound(challenge.round!, selected)
+  const v = scoreImageRound(round, clicks)
   const passed = v.passed && !expired
-  const score = passed ? Math.min(0.2, elapsed / 60_000) : Math.min(1, 0.4 + (v.wrong + v.missed) * 0.1)
+  // humanity: a clean, steady pick stays near 0; wrong tiles and a human rhythm push toward 1
+  const score = passed ? Math.min(0.2, v.humanity * 0.15 + (elapsed / IMAGE_WINDOW_MS) * 0.05)
+    : Math.min(1, Math.max(0.5, 0.45 + (v.wrong + v.missed) * 0.1 + v.humanity * 0.3))
   return {
     challenge: 'image-confusion', passed, score, duration_ms: elapsed,
-    meta: { reason: expired ? 'Time’s up.' : v.reason, prompt: challenge.round!.prompt, selected },
+    meta: { reason: expired ? 'Time’s up.' : v.reason, prompt: round.prompt, rule: round.rule, selected: v.selection, corrections: v.corrections, maxGap: Math.round(v.maxGap), rhythmCv: Number(v.cv.toFixed(3)) },
   }
 }

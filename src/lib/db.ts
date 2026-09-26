@@ -26,6 +26,12 @@ const SCHEMA = `
     expires_at integer not null,
     used integer not null default 0
   );
+  create table if not exists captcha_tiles (
+    token text primary key,
+    challenge_id text not null,
+    file text not null,
+    expires_at integer not null
+  );
   create table if not exists users (
     id integer primary key autoincrement,
     handle text not null unique,

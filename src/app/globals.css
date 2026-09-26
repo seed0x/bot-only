@@ -203,8 +203,15 @@
   .image-tile img { width: 100%; height: 100%; object-fit: cover; transition: transform .12s; user-select: none; }
   .image-tile[aria-pressed="true"] img { transform: scale(.86); }
   .image-tile[aria-pressed="true"] { outline: 3px solid #1d6fd6; outline-offset: -3px; }
-  .image-tile-check { position: absolute; top: 6px; left: 6px; width: 24px; height: 24px; border-radius: 50%; background: #1d6fd6; color: #fff; font-size: 14px; font-weight: 700; display: grid; place-items: center; }
+  .image-tile-check { position: absolute; top: 6px; left: 6px; min-width: 24px; height: 24px; padding: 0 6px; border-radius: 50%; background: #1d6fd6; color: #fff; font-size: 14px; font-weight: 700; display: grid; place-items: center; }
   .image-tile:disabled { cursor: default; }
+  .image-captcha-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .image-captcha-timer { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; padding-top: 4px; }
+  .image-captcha-timer.is-low { color: #ffd2cc; }
+  .image-captcha-meter { position: relative; display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 10px 14px 12px; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; border-top: 1px solid var(--line); }
+  .image-captcha-meter strong { color: var(--text); font-weight: 600; }
+  .image-captcha-meter .is-bad { color: var(--danger); }
+  .image-captcha-meter i { position: absolute; left: 0; bottom: 0; height: 2px; background: var(--danger); transition: width .2s; }
   .image-captcha-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-top: 1px solid var(--line); }
 
 
