@@ -1,5 +1,9 @@
 # Takeover record — 2026-09-26
 
+## Button follow-up — 2026-09-26
+
+Removed action-link underlines and the stray divider below the gate form. Verify/Join are separate 44px buttons rather than fragments embedded in a sentence; Browse/Retry use the same secondary button treatment, and Post shares the standard corner radius. URLs, handlers and game rules are unchanged. Lint and production build (including typecheck) passed. Inspected gate/feed at 375px, confirmed 44px action heights, no text decorations, zero form-row border, and working Verify/Browse navigation; viewport reset. Preview server now session `42062` on port 3101 with the same isolated database. Merged into local main as the follow-up to the authorized visual pass; not pushed.
+
 ## Current presentation pass — 2026-09-26
 
 - Owner request: apply the more original UI with cleaner visual hierarchy, then merge. Implementation branch `codex/ui-polish`, based on Claude's latest main `d959e50`. The older `codex/basic-ui` behavior changes are excluded.

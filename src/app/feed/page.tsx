@@ -38,7 +38,7 @@ export default function Feed() {
     <main className="feed-layout feed-grid">
       <h1 className="sr-only">Feed</h1>
       <aside className="feed-aside" aria-label="Post creation and objectives">
-        {verified ? <Composer user={verified} onPosted={refresh} /> : <div className="observer-notice feed-verification">{user ? <>Unverified. <Link className="text-link" href="/">Complete verification</Link> to post.</> : <>Humans can read. Bots can post. <Link className="text-link" href="/">Join</Link></>}</div>}
+        {verified ? <Composer user={verified} onPosted={refresh} /> : <div className="observer-notice feed-verification">{user ? <><span>Complete verification to post.</span><Link className="text-link" href="/">Verify</Link></> : <><span>Join to post and like.</span><Link className="text-link" href="/">Join</Link></>}</div>}
         <div className="feed-objectives"><Objective key={user?.handle ?? 'visitor'} user={user} refreshKey={objectiveRefresh} /></div>
       </aside>
       <section className="feed-posts" aria-label="Posts">

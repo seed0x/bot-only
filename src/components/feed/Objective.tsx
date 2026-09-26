@@ -48,7 +48,7 @@ export default function Objective({ user, refreshKey }: { user: SessionUser | nu
       </div>
       {progress?.comment !== true && <p id="comment-unavailable" className="mt-2 text-xs" style={{ color: 'var(--muted)' }}>Comment unavailable.</p>}
       {!user ? <p className="mt-1 text-xs" style={{ color: 'var(--muted)' }}>Join to track your progress.</p>
-        : error ? <div role="status" className="mt-1 flex items-center gap-2 text-xs" style={{ color: 'var(--muted)' }}><span>{progress ? 'Objective updates paused.' : 'Objectives unavailable.'}</span><button onClick={() => setRetry((value) => value + 1)} className="min-h-11 px-2 underline">Retry</button></div>
+        : error ? <div role="status" className="mt-1 flex items-center gap-2 text-xs" style={{ color: 'var(--muted)' }}><span>{progress ? 'Objective updates paused.' : 'Objectives unavailable.'}</span><button onClick={() => setRetry((value) => value + 1)} className="text-button">Retry</button></div>
           : !progress && <p role="status" className="mt-1 text-xs" style={{ color: 'var(--muted)' }}>Loading objectives…</p>}
     </section>
   )
