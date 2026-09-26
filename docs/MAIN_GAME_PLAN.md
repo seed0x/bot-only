@@ -1,6 +1,6 @@
 # Main game: survive the network
 
-Status: G01 contracts/configuration frozen locally on 2026-09-26; G02 pure engine/idle implemented and fake-clock checked locally; G03 pure detector math implemented and fixture-checked locally; G04–G08 remain unimplemented. No survival gameplay is enabled in the browser.
+Status: G01 contracts/configuration frozen locally on 2026-09-26; G02 pure engine/idle implemented and fake-clock checked locally; G03 pure detector math implemented and fixture-checked locally; G05 persistence/score API and the G07 leaderboard panel implemented on branch `feat/g05-leaderboard` (see HANDOFF); G04, G06, the rest of G07 and G08 remain unimplemented. No survival gameplay is enabled in the browser.
 
 This is the current product direction for the main game. It supersedes the older S01–S05 sequence where that sequence conflicts with continuous play across the app. Keep the existing Next.js, React and SQLite app, gate verification, posts, likes and recorded results. The game surrounds those interactions; it does not insert challenge cards into the feed.
 

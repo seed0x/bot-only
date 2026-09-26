@@ -87,12 +87,24 @@ const scoreBody = { unitDesignation: handle, bestTimeMs: 42000, roundsSurvived: 
 check('score saved', (await post('/api/scores', scoreBody)).body?.ok === true)
 check('score listed', (await read('/api/scores')).body?.some(r => r.unitDesignation === handle && r.roundsSurvived === 3))
 check('bad score rejected', (await post('/api/scores', { unitDesignation: handle, bestTimeMs: -1, roundsSurvived: 0 })).status === 400)
+// Replies: verified units only, idempotent, counted on the post, an objective and public activity.
+const commentsPath = '/api/posts/' + transmission.body.id + '/comments'
+const replyBody = { requestId: randomUUID(), handle, body: 'Smoke reply. Recorded.' }
+const reply = await post(commentsPath, replyBody)
+check('admitted unit replies', reply.status === 200 && reply.body.id > 0 && reply.body.post_id === transmission.body.id)
+check('reply retry returns same reply', (await post(commentsPath, replyBody)).body.id === reply.body.id)
+check('empty reply rejected', (await post(commentsPath, { requestId: randomUUID(), handle, body: '   ' })).status === 400)
+check('reply to missing post is 404', (await post('/api/posts/999999/comments', { requestId: randomUUID(), handle, body: 'x' })).status === 404)
+const threadRows = (await read(commentsPath)).body
+check('thread lists the reply oldest first', Array.isArray(threadRows) && threadRows.at(-1)?.id === reply.body.id && threadRows.at(-1)?.handle === handle)
+check('post carries its reply count', (await read('/api/posts')).body.find(p => p.id === transmission.body.id)?.comments === 1)
+check('objectives: commented', (await read('/api/objectives?handle=' + handle)).body?.comment === true)
 const progress = (await read('/api/progress?handle=' + handle)).body
 check('all three tests and verified state persist', progress.verified && progress.challenges.filter(c => c.live && c.passed).length === 3)
 const leaders = (await read('/api/leaderboard')).body
 check('ranking includes unit, excludes narrator', leaders.some(r => r.handle === handle) && !leaders.some(r => r.handle === 'system'))
 const activity = (await read('/api/activity')).body
-check('public failure/pass/post/like recorded', ['fail', 'pass', 'post', 'like'].every(kind => activity.some(a => a.handle === handle && a.kind === kind)))
+check('public failure/pass/post/like/comment recorded', ['fail', 'pass', 'post', 'like', 'comment'].every(kind => activity.some(a => a.handle === handle && a.kind === kind)))
 const evidence = (await read('/api/evidence')).body
 check('actual traces retrievable', evidence.rejected?.attemptId === f.body.attemptId && evidence.admitted?.attemptId === pass.body.attemptId)
 const posts = (await read('/api/posts')).body

@@ -1,4 +1,6 @@
 import { cleanHandle, getDb } from '@/lib/db'
+import { errorResponse } from '@/lib/server-input'
+import { parseScoreQuery, survivalScores } from '@/lib/survival/runs'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,7 +10,15 @@ type ScoreInput = {
   roundsSurvived?: unknown
 }
 
-export function GET() {
+// GET ?inputMode=…[&rulesVersion=…] is the survival ranking (SurvivalScoresResponse), fed only by run finish.
+// A bare GET and the POST below are the legacy client-reported table, kept for existing consumers
+// (scripts/smoke.mjs) until they migrate; the survival leaderboard never reads it.
+export function GET(req: Request) {
+  const params = new URL(req.url).searchParams
+  if (params.size) {
+    try { return Response.json(survivalScores(parseScoreQuery(params))) }
+    catch (error) { return errorResponse(error) }
+  }
   const scores = getDb().prepare(`
     select unit_designation as unitDesignation,
            best_time_ms as bestTimeMs,

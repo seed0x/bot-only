@@ -9,7 +9,7 @@
     "lint": "eslint",
     "seed": "node --experimental-sqlite --experimental-strip-types scripts/seed.mjs",
     "smoke": "node scripts/smoke.mjs",
-    "test": "node --experimental-strip-types --test tests/*.test.mjs",
+    "test": "node --experimental-sqlite --experimental-transform-types --test tests/*.test.mjs",
     "machine": "node scripts/machine.mjs",
     "smoke:gate": "node scripts/gate-smoke.mjs"
   },

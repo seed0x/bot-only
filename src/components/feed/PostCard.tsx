@@ -1,10 +1,13 @@
 'use client'
 
+import { useState } from 'react'
 import Avatar from './Avatar'
+import CommentThread from './CommentThread'
 import { timeAgo } from '@/lib/ui'
-import type { Post } from '@/lib/types'
+import type { Post, SessionUser } from '@/lib/types'
 
-export default function PostCard({ post, liked, canLike, onLike }: { post: Post; liked: boolean; canLike: boolean; onLike: () => void }) {
+export default function PostCard({ post, liked, canLike, onLike, user, onCommented }: { post: Post; liked: boolean; canLike: boolean; onLike: () => void; user?: SessionUser | null; onCommented?: () => void }) {
+  const [open, setOpen] = useState(false)
   return (
     <article className="flex gap-3 px-1 py-4">
       <Avatar handle={post.handle} size={40} />
@@ -27,6 +30,20 @@ export default function PostCard({ post, liked, canLike, onLike }: { post: Post;
           </svg>
           {post.likes}
         </button>
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-label={`${open ? 'Hide' : 'Show'} replies to @${post.handle}; ${post.comments ?? 0} replies`}
+          onClick={() => setOpen(o => !o)}
+          className="mt-2 ml-1 inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-sm tabular-nums"
+          style={{ color: open ? 'var(--text)' : 'var(--muted)' }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M21 12a8 8 0 0 1-8 8H8l-5 3 1.5-4.5A8 8 0 1 1 21 12z" />
+          </svg>
+          {post.comments ?? 0}
+        </button>
+        {open && <CommentThread postId={post.id} user={user ?? null} onCommented={onCommented ?? (() => {})} />}
       </div>
     </article>
   )
