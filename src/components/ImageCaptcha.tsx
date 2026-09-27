@@ -1,6 +1,7 @@
 'use client'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
+import { challengeClock } from '@/lib/challenge-clock'
 import { clickRhythm } from '@/lib/image-captcha'
 import { newPointerMonitor, observePointer } from '@/lib/pointer-metrics'
 import { CAPTCHA_STAGE, MAX_CORRECTIONS, pointerReport } from '@/lib/captcha-verdict'
@@ -27,20 +28,21 @@ export default function ImageCaptcha({ challenge, onSolution, onRestart }: { cha
   const lastAction = useRef<number | null>(null)
   const readyAt = useRef<number | null>(null)
   const deadline = useRef<number | null>(null)
+  const issuedAt = useRef<number | null>(null)
   // Mirrors for the timer callback, which must see the latest values without re-subscribing.
   const clicksRef = useRef<ImageClick[]>([]), sentRef = useRef(false), submitRef = useRef(onSolution)
   useEffect(() => { submitRef.current = onSolution }, [onSolution])
   const ready = loaded >= tiles.length && !broken
   const expired = remaining <= 0
 
-  const solution = (): Solution => {
+  const solution = useCallback((): Solution => {
     const s = collected(collector.current)
     return {
       clicks: clicksRef.current,
       ...(pointer.current.metrics.samples > 0 ? { pointer: pointer.current.metrics } : {}),
-      ...(viewport.current && s.length ? { strokes: s.map(st => st.map(p => ({ x: p.x, y: p.y, t: Math.round(p.t - (readyAt.current ?? 0)) }))), viewport: viewport.current } : {}),
+      ...(viewport.current && s.length ? { strokes: s.map(st => st.filter(p => p.t - (issuedAt.current ?? 0) <= windowMs).map(p => ({ x: p.x, y: p.y, t: Math.max(0, Math.round(p.t - (issuedAt.current ?? 0))) }))), viewport: viewport.current } : {}),
     }
-  }
+  }, [windowMs])
 
   useEffect(() => {
     if (!ready || sent || expired) return
@@ -70,9 +72,13 @@ export default function ImageCaptcha({ challenge, onSolution, onRestart }: { cha
     }
   }, [ready, sent, expired])
 
-  useEffect(() => { if (ready && readyAt.current === null) { readyAt.current = performance.now(); lastAction.current = readyAt.current } }, [ready])
+  useEffect(() => { if (ready && readyAt.current === null) { readyAt.current = performance.now(); lastAction.current = issuedAt.current ?? readyAt.current } }, [ready])
   useEffect(() => {
-    if (deadline.current === null) deadline.current = performance.now() + windowMs
+    if (deadline.current === null) {
+      const clock = challengeClock(challenge.startedAt, challenge.expiresAt, Date.now(), performance.now())
+      issuedAt.current = clock.origin; deadline.current = clock.deadline
+      if (!clicksRef.current.length) lastAction.current = clock.origin
+    }
     const id = setInterval(() => {
       const now = performance.now(), left = Math.max(0, deadline.current! - now)
       setRemaining(left)
@@ -83,7 +89,7 @@ export default function ImageCaptcha({ challenge, onSolution, onRestart }: { cha
       if (left === 0 || sentRef.current) clearInterval(id)
     }, 100)
     return () => clearInterval(id)
-  }, [windowMs])
+  }, [windowMs, challenge.startedAt, challenge.expiresAt, solution])
 
   const rhythm = clickRhythm(clicks)
   const selected = rhythm.selection
@@ -92,13 +98,13 @@ export default function ImageCaptcha({ challenge, onSolution, onRestart }: { cha
 
   // `at` is the click event's timestamp: same clock as performance.now(), taken when the click happened.
   function toggle(id: string, at: number) {
-    if (sent || !ready || expired || readyAt.current === null) return
-    clicksRef.current = [...clicksRef.current, { id, t: Math.max(0, Math.round(at - readyAt.current)) }]
+    if (sent || !ready || expired || issuedAt.current === null || at >= (deadline.current ?? 0)) return
+    clicksRef.current = [...clicksRef.current, { id, t: Math.max(0, Math.round(at - issuedAt.current)) }]
     lastAction.current = at
     setClicks(clicksRef.current)
   }
   function verify() {
-    if (sentRef.current || selected.length === 0) return
+    if (sentRef.current || !ready || selected.length === 0) return
     sentRef.current = true; setSent(true); onSolution(solution())
   }
   const seconds = Math.ceil(remaining / 1000)
@@ -124,10 +130,10 @@ export default function ImageCaptcha({ challenge, onSolution, onRestart }: { cha
       <span className={motion.bad >= motion.limit ? 'is-bad' : motion.bad > 0 ? 'is-warn' : ''}>Curved strokes <strong>{motion.bad}</strong>/{motion.limit}</span>
       <span>Straightness <strong>{motion.scored ? motion.worst.toFixed(2) : '—'}</strong>/{motion.threshold}</span>
       <span className={rhythm.corrections > MAX_CORRECTIONS ? 'is-bad' : ''}>Corrections <strong>{rhythm.corrections}</strong>/{MAX_CORRECTIONS}</span>
-      <span className={idleMs >= idleLimit ? 'is-bad' : idleWarn ? 'is-warn' : ''}>Idle <strong>{(idleMs / 1000).toFixed(1)}s</strong>/{idleLimit / 1000}s</span>
+      <span className={idleMs >= idleLimit ? 'is-bad' : idleWarn ? 'is-warn' : ''}>Since last click <strong>{(idleMs / 1000).toFixed(1)}s</strong>/{idleLimit / 1000}s</span>
     </div>
     <footer className="image-captcha-foot">
-      <p className="fine-print" role="status">{broken ? 'An image failed to load.' : !ready ? 'Loading images…' : expired && clicks.length === 0 ? 'Time’s up.' : idleWarn && !sent ? 'Machines don’t hesitate.' : `${selected.length} selected`}</p>
+      <p className="fine-print" role="status">{broken ? 'An image failed to load.' : !ready ? 'Loading images…' : expired && clicks.length === 0 ? 'Time’s up.' : idleWarn && !sent ? 'Verify before the idle limit.' : `${selected.length} selected`}</p>
       {expired && clicks.length === 0 || broken
         ? <button type="button" className="button-secondary" onClick={onRestart}>New round</button>
         : <button type="button" className="button-primary" onClick={verify} disabled={sent || !ready || selected.length === 0}>{sent ? 'Checking…' : 'Verify'}</button>}

@@ -7,19 +7,27 @@ export function usePollingResource<T>(url: string | null, validate: (v: unknown)
   const [state, setState] = useState<{ key: string | null; data?: T; error?: string; errorStatus?: number }>({ key: url })
   useEffect(() => {
     if (!url) return
-    let active = true, running = false
+    let active = true, running = false, failures = 0
     let timer: ReturnType<typeof setTimeout>
     const controller = new AbortController()
     async function load() {
       if (!active || running) return
       clearTimeout(timer)
-      if (document.hidden) { timer = setTimeout(load, interval); return }
+      if (document.hidden || !navigator.onLine) { timer = setTimeout(load, interval); return }
       running = true
       try {
         const data = await requestJson(url!, { signal: controller.signal }, validate)
-        if (active) { setState({ key: url, data }); timer = setTimeout(load, interval) }
+        if (active) { failures = 0; setState({ key: url, data }); timer = setTimeout(load, interval) }
       } catch (e) {
-        if (active) setState(old => ({ key: url, data: old.key === url ? old.data : undefined, error: e instanceof Error ? e.message : 'Network unavailable.', errorStatus: e instanceof ApiError ? e.status : undefined }))
+        if (active) {
+          const status = e instanceof ApiError ? e.status : undefined
+          setState(old => ({ key: url, data: old.key === url ? old.data : undefined, error: e instanceof Error ? e.message : 'Network unavailable.', errorStatus: status }))
+          // Keep stale data and its visible error while retrying transient failures.
+          if (!status || status === 408 || status === 429 || status >= 500) {
+            failures = Math.min(failures + 1, 4)
+            timer = setTimeout(load, Math.min(30_000, interval * 2 ** failures))
+          }
+        }
       } finally { running = false }
     }
     void load()

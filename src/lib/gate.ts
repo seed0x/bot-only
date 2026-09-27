@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto'
 import { getDb } from './db'
 import type { AttemptReceipt, SessionUser } from './types'
+import { InputError } from './server-input'
 
 export const GATE_COOKIE = 'bot-only-admission'
 export const GATE_TTL_SECONDS = 12 * 60 * 60
@@ -28,7 +29,23 @@ export function admittedUser(token: string | undefined): (SessionUser & { humani
   return user ? { id: user.id, handle: user.handle, humanity: user.humanity } : null
 }
 
+function requestToken(req: Request) {
+  return req.headers.get('cookie')?.split(';').map(part => part.trim()).find(part => part.startsWith(GATE_COOKIE + '='))?.slice(GATE_COOKIE.length + 1)
+}
+
 export function requestAdmission(req: Request): SessionUser | null {
-  const token = req.headers.get('cookie')?.split(';').map(part => part.trim()).find(part => part.startsWith(GATE_COOKIE + '='))?.slice(GATE_COOKIE.length + 1)
-  return admittedUser(token)
+  return admittedUser(requestToken(req))
+}
+
+export function requireAdmission(req: Request, handle?: string): SessionUser {
+  const user = requestAdmission(req)
+  if (!user) throw new InputError('Complete the reverse CAPTCHA to enter.', 401)
+  if (handle !== undefined && handle !== user.handle) throw new InputError('This browser is signed in as a different unit.', 403)
+  return user
+}
+
+/** Ending this browser's session is idempotent and never deletes its identity or results. */
+export function endAdmission(req: Request) {
+  const token = requestToken(req)
+  if (token && /^[a-f0-9]{64}$/.test(token)) getDb().prepare('delete from gate_sessions where token_hash = ?').run(hash(token))
 }

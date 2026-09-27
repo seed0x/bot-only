@@ -1,6 +1,6 @@
 import { operation } from '@/lib/operations'
 import { getDb, logActivity } from '@/lib/db'
-import { requestAdmission } from '@/lib/gate'
+import { requestAdmission, requireAdmission } from '@/lib/gate'
 import { bodyInput, errorResponse, handleInput, InputError, requestId } from '@/lib/server-input'
 import { checkTransmission, judgeTyping, ruleFor } from '@/lib/transmission'
 export const dynamic = 'force-dynamic'
@@ -21,6 +21,7 @@ export function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const b = await bodyInput(req), handle = handleInput(b.handle), id = requestId(b.requestId)
+    const user = requireAdmission(req, handle)
     if (typeof b.body !== 'string' || !b.body.trim() || b.body.length > 280) throw new InputError('Transmit between 1 and 280 characters.')
     const body = b.body.trim()
     let typing: number[] = []
@@ -29,10 +30,8 @@ export async function POST(req: Request) {
       let prev = -1
       typing = b.typing.map((t) => { if (typeof t !== 'number' || !Number.isFinite(t) || t < 0 || t <= prev || t > 3_600_000) throw new InputError('Invalid typing record.'); prev = t; return t })
     }
-    return Response.json(operation(id, 'post', { handle, body, typing }, () => {
+    const outcome = operation(id, 'post', { handle, body, typing }, () => {
       const db = getDb()
-      const user = db.prepare('select id from users where handle = ? and verified_bot = 1').get(handle) as { id: number } | undefined
-      if (!user) throw new InputError('Unit not admitted. Verify before transmitting.', 403)
       // Test 01+: the network's rule for this unit's next transmission, and machine typing rhythm.
       const posted = (db.prepare('select count(*) as n from posts where user_id = ?').get(user.id) as { n: number }).n
       const rule = ruleFor(handle, posted)
@@ -41,11 +40,12 @@ export async function POST(req: Request) {
       const rejection = broken ?? rhythm.measurement?.explanation ?? null
       if (rejection) {
         logActivity('fail', handle, `transmission rejected. ${rejection}`)
-        throw new InputError(`Human detected. ${rejection}`, 422)
+        return { error: rejection }
       }
       const info = db.prepare('insert into posts (user_id, handle, body) values (?, ?, ?)').run(user.id, handle, body)
       logActivity('post', handle, body.length > 60 ? body.slice(0, 60) + '…' : body)
       return { id: Number(info.lastInsertRowid) }
-    }))
+    })
+    return Response.json(outcome, { status: 'error' in outcome ? 422 : 200 })
   } catch (e) { return errorResponse(e) }
 }

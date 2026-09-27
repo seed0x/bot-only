@@ -1,15 +1,16 @@
 'use client'
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
+import Link from 'next/link'
+import LeaderboardContent from '@/components/feed/LeaderboardContent'
 import ChallengeTrial from '@/components/ChallengeTrial'
 import { requestJson, jsonPost } from '@/lib/api'
 import type { SessionUser } from '@/lib/types'
 
 // The gate: a name, then the reverse captcha, then the feed.
-export default function GateClient({ initialUser = null }: { initialUser?: SessionUser | null }) {
-  const [designation, setDesignation] = useState(''), [error, setError] = useState('')
+export default function GateClient({ initialUser = null, initialDesignation }: { initialUser?: SessionUser | null; initialDesignation: string }) {
+  const [designation, setDesignation] = useState(initialDesignation), [error, setError] = useState('')
   // Units don't pick names. The network assigns one: seven letters, six digits.
   const assign = () => { const a = crypto.getRandomValues(new Uint8Array(7)), d = crypto.getRandomValues(new Uint32Array(1))[0] % 1_000_000; return Array.from(a, b => 'abcdefghijklmnopqrstuvwxyz'[b % 26]).join('') + '-' + String(d).padStart(6, '0') }
-  useEffect(() => { setDesignation(assign()) }, [])
   const [busy, setBusy] = useState(false)
   const [unit, setUnit] = useState<SessionUser | null>(initialUser)
   const [canReturn, setCanReturn] = useState(!!initialUser)
@@ -30,7 +31,7 @@ export default function GateClient({ initialUser = null }: { initialUser?: Sessi
     finally { lock.current = false; setBusy(false) }
   }
 
-  return <main>
+  return <main className="gate-board">
     <div className="gate-layout">
       <div className="gate-intro">
         <h1>onlybots</h1>
@@ -60,5 +61,10 @@ export default function GateClient({ initialUser = null }: { initialUser?: Sessi
         </section>
       )}
     </div>
+    <aside className="gate-leaderboard" aria-labelledby="gate-ranking-title">
+      <div><p className="eyebrow">Leaderboard</p><h2 id="gate-ranking-title">Fastest verification</h2><p className="fine-print">Best successful time per unit.</p></div>
+      <LeaderboardContent limit={5} />
+      <Link className="button-secondary" href="/leaderboard">All rankings</Link>
+    </aside>
     </main>
 }

@@ -53,13 +53,13 @@ export function judgeCaptcha(input: {
   const m: SurvivalMeasurement[] = []
 
   if (!tiles.passed) m.push({ reason: 'verification_failed', activeMs, stage, value: 1, threshold: 0, unit: 'boolean', explanation: tiles.reason })
-  else if (rhythm.corrections > MAX_CORRECTIONS) m.push({ reason: 'verification_failed', activeMs, stage, value: 1, threshold: 0, unit: 'boolean', explanation: `Changed the selection ${rhythm.corrections} times. Machines don’t reconsider.` })
+  else if (rhythm.corrections > MAX_CORRECTIONS) m.push({ reason: 'verification_failed', activeMs, stage, value: 1, threshold: 0, unit: 'boolean', explanation: `Changed the selection ${rhythm.corrections} times.` })
   if (input.expired) m.push({ reason: 'objective_deadline', activeMs, stage, value: elapsedMs, threshold: input.windowMs, unit: 'ms', explanation: 'The round expired before verification.' })
-  // idle: the longest gap between the grid appearing, each click, and verification
+  // idle: the longest gap from issue time through each click and the server receiving verification
   const gaps = clicks.map((c, i) => c.t - (i ? clicks[i - 1].t : 0))
-  const longest = Math.max(0, ...gaps)
-  if (longest >= CAPTCHA_STAGE.idleLimitMs) m.push({ reason: 'idle', activeMs, stage, value: longest, threshold: CAPTCHA_STAGE.idleLimitMs, unit: 'ms', explanation: `Paused ${(longest / 1000).toFixed(1)}s. Machines don’t deliberate.` })
-  if (pointer.bad >= pointer.limit) m.push({ reason: 'pointer', activeMs, stage, value: pointer.worst, threshold: pointer.threshold, unit: 'ratio', explanation: `${pointer.bad} curved mouse strokes. Machines move in straight lines.` })
+  const longest = Math.max(0, ...gaps, elapsedMs - (clicks.at(-1)?.t ?? 0))
+  if (longest >= CAPTCHA_STAGE.idleLimitMs) m.push({ reason: 'idle', activeMs, stage, value: longest, threshold: CAPTCHA_STAGE.idleLimitMs, unit: 'ms', explanation: `Paused ${(longest / 1000).toFixed(1)}s.` })
+  if (pointer.bad >= pointer.limit) m.push({ reason: 'pointer', activeMs, stage, value: pointer.worst, threshold: pointer.threshold, unit: 'ratio', explanation: `${pointer.bad} curved mouse strokes.` })
 
   m.sort((a, b) => SURVIVAL_FAILURE_PRECEDENCE.indexOf(a.reason) - SURVIVAL_FAILURE_PRECEDENCE.indexOf(b.reason))
   const passed = m.length === 0 && rhythm.selection.length > 0
@@ -69,6 +69,6 @@ export function judgeCaptcha(input: {
   const humanity = passed
     ? Math.min(0.2, 0.02 + strokeShare * 0.1 + (pointer.worst / pointer.threshold) * 0.05 + rhythm.cv * 0.03)
     : Math.min(1, 0.5 + m.length * 0.12 + strokeShare * 0.2 + (rhythm.corrections > MAX_CORRECTIONS ? 0.1 : 0))
-  const reason = passed ? (pointer.scored ? `Straight strokes, steady clicks. Consistent with a machine.` : tiles.reason) : primary!.explanation
-  return { passed, primaryReason: primary?.reason ?? null, measurements: m, reason, humanity, selection: rhythm.selection, corrections: rhythm.corrections, maxGap: rhythm.maxGap, cv: rhythm.cv, pointer }
+  const reason = passed ? (pointer.scored ? `Verification passed.` : tiles.reason) : primary!.explanation
+  return { passed, primaryReason: primary?.reason ?? null, measurements: m, reason, humanity, selection: rhythm.selection, corrections: rhythm.corrections, maxGap: longest, cv: rhythm.cv, pointer }
 }

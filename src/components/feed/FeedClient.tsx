@@ -1,6 +1,8 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import SessionEnded from '@/components/game/SessionEnded'
 import SiteHeader from '@/components/SiteHeader'
 import UnitChip from '@/components/feed/UnitChip'
 import Composer from '@/components/feed/Composer'
@@ -14,15 +16,26 @@ import { jsonPost, requestJson } from '@/lib/api'
 
 export default function FeedClient({ user, initialHumanity }: { user: SessionUser; initialHumanity: number }) {
   const router = useRouter()
-  const posts = usePollingResource(`/api/posts?handle=${encodeURIComponent(user?.handle ?? '')}`, isPosts)
+  const [ended, setEnded] = useState(false), [ending, setEnding] = useState(false), [endError, setEndError] = useState('')
+  const endLock = useRef(false)
+  async function endGame() {
+    if (endLock.current) return
+    endLock.current = true; setEnding(true); setEndError('')
+    try {
+      await requestJson('/api/session/end', jsonPost({}), (v): v is { ok: true } => !!v && typeof v === 'object' && 'ok' in v && v.ok === true)
+      setEnded(true)
+    } catch (error) { setEndError(error instanceof Error ? error.message : 'Couldn’t confirm the end of this session. Retry.') }
+    finally { endLock.current = false; setEnding(false) }
+  }
+  const posts = usePollingResource(ended || ending || endError ? null : `/api/posts?handle=${encodeURIComponent(user?.handle ?? '')}`, isPosts)
   const [objectiveRefresh, setObjectiveRefresh] = useState(0)
-  const progress = usePollingResource(`/api/progress?handle=${encodeURIComponent(user?.handle ?? '')}`, isProgress)
+  const progress = usePollingResource(ended || ending || endError ? null : `/api/progress?handle=${encodeURIComponent(user?.handle ?? '')}`, isProgress)
   const [liked, setLiked] = useState<Set<number>>(new Set()), [pending, setPending] = useState<Set<number>>(new Set()), [likeError, setLikeError] = useState('')
   // The server admitted this user before rendering. Results loading is not authentication.
   const verified = user
   useEffect(() => {
-    if (posts.errorStatus === 401) router.refresh()
-  }, [posts.errorStatus, router])
+    if (!ended && !ending && !endError && posts.errorStatus === 401) router.refresh()
+  }, [posts.errorStatus, router, ended, ending, endError])
   function refresh() { posts.refresh(); progress.refresh(); setObjectiveRefresh(n => n + 1) }
   async function like(id: number) {
     if (!verified || liked.has(id) || pending.has(id)) return
@@ -36,13 +49,15 @@ export default function FeedClient({ user, initialHumanity }: { user: SessionUse
   const pinned = posts.data?.filter(p => p.pinned) ?? []
   const transmissions = posts.data?.filter(p => !p.pinned) ?? []
   const postCard = (p: NonNullable<typeof posts.data>[number]) => <PostCard key={p.id} post={p} liked={liked.has(p.id) || p.liked === 1} canLike={!!verified && !pending.has(p.id)} onLike={() => void like(p.id)} user={verified} replyRule={progress.data?.reply ?? null} onCommented={refresh} />
+  if (ended) return <SessionEnded handle={user.handle} />
   return <div className="feed">
     <SiteHeader><div className="header-actions">
       <UnitChip user={user} humanity={progress.data?.humanity ?? initialHumanity} />
-      {/* Ends the session on the floor and goes to the rankings. The survival run (G04) replaces this with game over. */}
-      <button type="button" className="button-secondary" onClick={() => router.push('/leaderboard')}>End run</button>
+      <Link className="button-secondary" href="/?retry=1">Retry CAPTCHA</Link>
+      <button type="button" className="button-secondary" disabled={ending} onClick={() => void endGame()}>{ending ? 'Ending…' : endError ? 'Retry ending' : 'End game'}</button>
     </div></SiteHeader>
-    <main className="feed-layout feed-grid">
+    {endError && <p className="session-error form-error" role="alert">{endError} Retry ending before continuing.</p>}
+    {ending || endError ? <ResourceState title={ending ? "Ending session…" : "Session end not confirmed"} busy={ending} /> : <main className="feed-layout feed-grid">
       <h1 className="sr-only">Feed</h1>
       <aside className="feed-aside" aria-label="Post creation and objectives">
         <Composer user={verified} rule={progress.data?.transmission ?? null} onPosted={refresh} />
@@ -58,6 +73,6 @@ export default function FeedClient({ user, initialHumanity }: { user: SessionUse
         {transmissions.map(postCard)}
         {posts.data?.length === 0 && <ResourceState title="No posts yet" detail="Be the first to post." />}
       </section>
-    </main>
+    </main>}
   </div>
 }

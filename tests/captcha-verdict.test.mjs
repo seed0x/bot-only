@@ -93,3 +93,12 @@ test('collector: rate cap, gap split, 750ms window split sharing the endpoint, i
   for (let i = 0; i < 3; i++) observe(short, { x: i, y: 0, t: i * 40 })
   assert.equal(collected(short).length, 0, 'fewer than 6 samples never qualifies')
 })
+
+test('the gap after the last click is judged through verification', () => {
+  const last = base.clicks.at(-1).t
+  const before = judgeCaptcha({ ...base, strokes: [], elapsedMs: last + CAPTCHA_STAGE.idleLimitMs - 1 })
+  assert.equal(before.passed, true)
+  const atLimit = judgeCaptcha({ ...base, strokes: [], elapsedMs: last + CAPTCHA_STAGE.idleLimitMs })
+  assert.equal(atLimit.primaryReason, 'idle')
+  assert.equal(atLimit.maxGap, CAPTCHA_STAGE.idleLimitMs)
+})

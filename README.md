@@ -19,7 +19,7 @@ npm run dev
 
 Open [the gate](http://localhost:3000/) and complete the reverse CAPTCHA to open the feed. Another port: `npm run dev -- --port 3101`.
 
-The database creates itself. `npm run dev` and `npm start` first run `scripts/db-check.mjs`: a missing database is created and seeded with the demo opening, a broken one is moved aside as `data.db.broken-<time>` and rebuilt, and `DB_RESET=1` rebuilds a healthy one on purpose. Default file: `data.db` in the working directory, never committed. Set `DB_PATH` to an absolute path in production.
+Startup checks the configured SQLite file and applies additive schema migrations. It never renames, replaces, resets or automatically seeds the database. Integrity or migration errors stop startup visibly and preserve existing data. A missing file is initialized with an empty schema. Default file: `data.db` in the working directory, never committed. Set `DB_PATH` to an absolute persistent path in production; `.env.local` is also read by the startup check.
 
 ## Deploy or redeploy (Zo, Railway, any box with Node 22)
 
@@ -29,8 +29,8 @@ npm ci
 npm run build
 npm start            # db-check runs first, then the server
 ```
-To wipe the live network before a demo: `DB_RESET=1 npm start` once.
-If `git pull` complains that `data.db` would be overwritten, that copy was tracked by an older commit: `git checkout -- data.db` then pull again; db-check keeps the runtime file.
+`DB_RESET=1` is rejected at startup. `npm run seed` is an explicit destructive demo setup command; never use it to recover a running network.
+If an old checkout still tracks `data.db`, preserve a SQLite backup before resolving the Git conflict. Never discard the runtime database to make a pull succeed.
 
 ## The flow
 

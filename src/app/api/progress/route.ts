@@ -1,6 +1,6 @@
 import { cleanHandle, getDb } from '@/lib/db'
 import { CHALLENGES } from '@/lib/challenges'
-import { ruleFor } from '@/lib/transmission'
+import { ruleFor, replyRuleFor } from '@/lib/transmission'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,7 +19,7 @@ export function GET(req: Request) {
     humanity: user?.humanity_score ?? null,
     verified: user?.verified_bot === 1,
     transmission: handle ? ruleFor(handle, posted) : null,
-    reply: handle ? ruleFor(handle + ':reply', replied + 2) : null,
+    reply: handle ? replyRuleFor(handle, replied) : null,
     challenges: CHALLENGES.map((c) => ({ ...c, passed: best.has(c.id), best_score: best.get(c.id) ?? null })),
   })
 }

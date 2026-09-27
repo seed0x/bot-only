@@ -7,7 +7,7 @@ register('data:text/javascript,' + encodeURIComponent(String.raw`
     return nextResolve(local ? specifier + '.ts' : specifier, context)
   }
 `), import.meta.url)
-const { ruleFor, checkTransmission, judgeTyping } = await import('../src/lib/transmission.ts')
+const { ruleFor, replyRuleFor, checkTransmission, judgeTyping } = await import('../src/lib/transmission.ts')
 const { compose, steadyTyping, unevenTyping } = await import('../scripts/transmission-solver.mjs')
 
 test('rules rotate with the post count and are stable for a unit', () => {
@@ -25,17 +25,30 @@ test('every rule is satisfied by the machine composer and broken by a human sent
   }
 })
 
-test('rejections explain in the machine voice', () => {
+test('rejections identify the rule without filler', () => {
   const r = ruleFor('x-y-1.0', 0)
-  assert.match(checkTransmission(r, 'short'), /Humans estimate/)
-  assert.match(checkTransmission(ruleFor('x-y-1.0', 4), 'two words'), /breathe/)
+  assert.match(checkTransmission(r, 'short'), /exactly/)
+  assert.match(checkTransmission(ruleFor('x-y-1.0', 4), 'two words'), /Contains spaces/)
 })
 
 test('typing: even bursts pass, uneven bursts fail with a survival measurement', () => {
   const even = judgeTyping(steadyTyping(40))
   assert.equal(even.failed, false); assert.ok(even.scored >= 4)
-  const uneven = judgeTyping(unevenTyping(60))
+  const uneven = judgeTyping(unevenTyping(60).map(t => t / 2))
   assert.equal(uneven.failed, true)
   assert.equal(uneven.measurement.reason, 'typing'); assert.equal(uneven.measurement.unit, 'cv')
   assert.equal(judgeTyping([]).failed, false, 'no timestamps: nothing to judge, pasted text is machine-like')
 })
+
+ test('reply namespace does not leak into the version suffix', () => {
+   const rule = replyRuleFor('openai-astra-6.0', 1)
+   assert.equal(rule.version, '6.0')
+   assert.equal(checkTransmission(rule, 'version 6.0'), null)
+ })
+ test('slow typing evidence retains WPM units', () => {
+   const result = judgeTyping(Array.from({ length: 40 }, (_, i) => i * 1000))
+   assert.equal(result.failed, true)
+   assert.equal(result.measurement.unit, 'wpm')
+   assert.equal(result.measurement.value, 12)
+   assert.equal(result.measurement.threshold, 20)
+ })

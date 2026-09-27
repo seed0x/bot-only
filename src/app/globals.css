@@ -402,3 +402,21 @@
 .survival-hud button, .survival-result button, .survival-hud select { min-height: 44px; padding: 8px 12px; border: 1px solid #888; background: #222; color: #fff; max-width: 100%; }
 .survival-hud button:disabled { opacity: .5; }
 .survival-hud :focus-visible, .survival-result :focus-visible { outline: 2px solid #f0402f; outline-offset: 3px; }
+
+@layer components {
+  .gate-board { width: 100%; max-width: 1040px; margin: 0 auto; padding: 64px 32px; display: grid; grid-template-columns: minmax(0, 400px) minmax(0, 340px); justify-content: center; align-items: start; gap: 64px; }
+  .gate-board .gate-layout { min-height: 0; max-width: none; margin: 0; padding: 0; }
+  .gate-leaderboard { min-width: 0; padding-top: 8px; display: grid; gap: 20px; }
+  .gate-leaderboard h2 { font-size: 22px; margin: 5px 0 8px; }
+  .gate-leaderboard .button-secondary { justify-self: start; }
+  .session-ended { max-width: 640px; margin: 0 auto; padding: 80px 24px; display: grid; gap: 20px; }
+  .session-ended h1 { font-size: clamp(36px, 7vw, 64px); }
+  .session-error { max-width: 960px; margin: 20px auto; padding: 0 24px; }
+  .header-actions { flex-wrap: wrap; justify-content: flex-end; }
+  @media (max-width: 760px) {
+    .gate-board { grid-template-columns: minmax(0, 1fr); max-width: 448px; padding: 40px 24px; gap: 40px; }
+    .gate-leaderboard { border-top: 1px solid var(--line); padding-top: 24px; }
+    .header-actions { gap: 6px; }
+    .header-actions .button-secondary { padding: 8px 10px; font-size: 12px; }
+  }
+}
