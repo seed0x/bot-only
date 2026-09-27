@@ -1,3 +1,5 @@
+> Post input styling fixed locally (2026-09-26): visible inset field, padding, placeholder and keyboard focus. Scoped lint, TypeScript and whitespace pass; production build failed parsing TypeScript showConfig. Browser/device checks pending because no browser is connected. See newest HANDOFF entry.
+
 > Current integration: main + logic branch `fb8dc6b`; server-backed survival start/objectives/finish, explicit End game and fresh-gate restart, registration leaderboard, session/write checks and audit fixes are implemented. 113 tests and production build pass. Follow the newest `docs/HANDOFF.md` entry for current behavior; older diagnostic-only entries below are history. Next: live deployment verification and device/demo rehearsal. Do not reset/seed the shared SQLite database.
 
 # G06 — implemented locally — 2026-09-26

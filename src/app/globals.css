@@ -123,7 +123,9 @@
   .test-player { padding-top: 14px; }
   .composer { display: flex; align-items: start; gap: 12px; padding: 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
   .composer-content { flex: 1; min-width: 0; }
-  .composer-content textarea { font-size: 16px; line-height: 1.5; padding: 4px 0; min-height: 88px; }
+  .composer-content textarea { display: block; width: 100%; min-height: 112px; margin-bottom: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--text); font-size: 16px; line-height: 1.5; resize: vertical; }
+  .composer-content textarea:focus-visible { border-color: var(--verified); outline: 2px solid var(--verified); outline-offset: 2px; }
+  .composer-content textarea:disabled { color: var(--muted); cursor: not-allowed; }
   .composer-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; justify-content: space-between; }
   .composer-actions .fine-print { font-size: 10px; }
   .feed article:not(.test-card):not(.evidence-card) { border-bottom: 1px solid var(--line); padding-block: 22px; }

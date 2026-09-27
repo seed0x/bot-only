@@ -1,3 +1,11 @@
+## Post input styling — 2026-09-26
+
+- Owner: Codex; branch `main`, uncommitted atop `942bc1a`. Fetched and compared origin/main `4b5f903`; no integration/push/deployment. Remote composer styling is identical to the base; unrelated remote changes preserved.
+- Changed `src/app/globals.css` and `src/components/feed/Composer.tsx`: replace the borderless, transparent blank writing area with a full-width inset dark field, border, 12px padding, 112px minimum height, footer spacing, placeholder and visible keyboard focus. Keep 16px input type and vertical resizing. Disabled text remains readable. Existing validation, pending drafts, errors and immutable retries are unchanged.
+- Checks: scoped Composer ESLint, direct TypeScript no-emit check and git diff --check pass. Initial npm/npx calls failed because Node was absent from shell PATH; used installed Node v24.21.0. Production webpack build fails with “Could not parse output from TypeScript's --showConfig”; direct --showConfig succeeds. Build failure unresolved.
+- Browser inventory has no connected browser: desktop/mobile, zoom, keyboard and rendered error/disabled states were not visually inspected. No server started or database inspected/modified; mutation tests unnecessary for this presentation-only change.
+- Next: visually inspect the actual feed at 320/375/768/1024/1440px and keyboard focus when a browser is available; investigate build environment separately.
+
 ## Current integration — audit fixes and End game — 2026-09-26
 
 - Integrated main through `3f6e5ec` and `feat/fail-states` through `fb8dc6b`, retaining the current gate, image-click scoring, transmission/reply rules, admission-checked server feed and SQLite schema. Incoming tracked DB journals were excluded; runtime data was not reset or seeded.

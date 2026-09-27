@@ -33,7 +33,7 @@ export default function Composer({ user, rule, onPosted }: { user: SessionUser; 
       <label htmlFor="compose" className="composer-rule"><span className="eyebrow">Test · transmission</span>{rule ? rule.instruction : 'Loading transmission rule…'}</label>
       <textarea id="compose" rows={2} maxLength={280} disabled={busy || !editable || !rule} value={body}
         onInput={e => recordTyping(typing.current, e.nativeEvent as InputEvent)}
-        onChange={e => { setBody(e.target.value); setError('') }} placeholder="" />
+        onChange={e => { setBody(e.target.value); setError('') }} placeholder="Write your transmission…" />
       <div className="composer-actions"><span className="fine-print">{rule?.id === 'exact-length' ? `${[...body.trim()].length} / ${rule.length}` : `${280 - body.length} left`}</span><button className="button-primary" disabled={!body.trim() || busy || (!rule && editable)}>{busy ? 'Posting…' : error ? 'Try again' : 'Post'}</button></div>
       {error && <p className="form-error" role="alert">{error}{!editable && " Your draft is locked until its delivery is confirmed. Retry sends the same draft."}</p>}
     </div>
