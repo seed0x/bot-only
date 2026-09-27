@@ -1,6 +1,8 @@
 'use client'
 import { useRef, useState } from 'react'
+import Link from 'next/link'
 import ChallengeTrial from '@/components/ChallengeTrial'
+import LeaderboardContent from '@/components/feed/LeaderboardContent'
 import { requestJson, jsonPost } from '@/lib/api'
 import { judgeDesignation } from '@/lib/designation'
 import type { SessionUser } from '@/lib/types'
@@ -29,7 +31,7 @@ export default function GateClient({ initialUser = null }: { initialUser?: Sessi
     finally { lock.current = false; setBusy(false) }
   }
 
-  return <main>
+  return <main className="gate-board">
     <div className="gate-layout">
       <div className="gate-intro">
         <h1>onlybots</h1>
@@ -60,5 +62,12 @@ export default function GateClient({ initialUser = null }: { initialUser?: Sessi
         </section>
       )}
     </div>
+    <aside className="gate-leaderboard" aria-labelledby="gate-leaderboard-title">
+      <p className="eyebrow">Leaderboard</p>
+      <h2 id="gate-leaderboard-title">Fastest verification</h2>
+      <p className="fine-print">Top 5 · best successful time</p>
+      <LeaderboardContent limit={5} />
+      <Link className="button-secondary" href="/leaderboard">All rankings</Link>
+    </aside>
     </main>
 }

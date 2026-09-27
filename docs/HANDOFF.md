@@ -1,5 +1,11 @@
 # Takeover record — 2026-09-26
 
+## Restore registration leaderboard column — 2026-09-26
+
+- Owner reiterated that rankings must be visible beside username/designation entry. Restored gate-board layout and shared top-five LeaderboardContent alongside the latest teammate designation challenge, with All rankings linking to the existing leaderboard page. Desktop is two columns; mobile stacks below entry. Existing CAPTCHA and new transmission logic preserved.
+- Production build/TypeScript pass; lint has zero errors and three pre-existing script warnings. Browser confirmed real SQLite rankings on desktop and 375px without overflow. No database writes, CAPTCHA attempts, or synthetic data. Preview starts Next directly to avoid the newly added automatic db-check/reseed hook, while still using the real database.
+- Live audit: public gate updated during review after a brief series of Zo 502s that recovered. Column still absent in last public observation. Other findings and new transmission/reply bugs are recorded in the workspace reviews/onlybots-live-audit.md; no deployment access is configured in this task. A push alone is not confirmation that Zo has deployed it.
+
 ## CAPTCHA leaderboard cleanup — 2026-09-26
 
 - Following the owner’s best-time discussion, simplified the displayed leaderboard to each verified user’s fastest successful image CAPTCHA, ascending duration. Equal times sort by handle deterministically. Other challenges, failed attempts, invalid durations and system are excluded. Reads existing attempts directly; no new score table or writes.

@@ -1,3 +1,5 @@
+> Owner requirement: keep the top-five leaderboard visible as a right column beside the registration/designation form on desktop, stacked below on mobile. The separate /leaderboard page is additional, not a replacement.
+
 > Leaderboard contract: `/api/leaderboard` returns `{ handle, bestTimeMs }[]`, ranked by fastest successful image CAPTCHA per verified user. No input-mode tabs or survival metrics in this UI.
 
 > Registration now includes a shared top-five CAPTCHA leaderboard: beside the gate on desktop, below it on mobile. Feed dialog uses the same LeaderboardContent component.
