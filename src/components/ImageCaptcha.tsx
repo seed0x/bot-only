@@ -4,7 +4,7 @@ import Image from 'next/image'
 import { challengeClock } from '@/lib/challenge-clock'
 import { clickRhythm } from '@/lib/image-captcha'
 import { newPointerMonitor, observePointer } from '@/lib/pointer-metrics'
-import { CAPTCHA_STAGE, MAX_CORRECTIONS, pointerReport } from '@/lib/captcha-verdict'
+import { CAPTCHA_IDLE_MS, MAX_CORRECTIONS, pointerReport } from '@/lib/captcha-verdict'
 import { collected, interrupt, newPointerCollector, observe } from '@/lib/survival/pointer-collector'
 import type { ImageClick, IssuedChallenge, Solution, SurvivalPointerSample } from '@/lib/types'
 
@@ -94,7 +94,7 @@ export default function ImageCaptcha({ challenge, onSolution, onRestart }: { cha
   const rhythm = clickRhythm(clicks)
   const selected = rhythm.selection
   const motion = pointerReport(viewportSize ? strokes : [], viewportSize ?? { width: 1, height: 1 })
-  const idleLimit = CAPTCHA_STAGE.idleLimitMs, idleWarn = idleMs >= idleLimit * 0.75
+  const idleLimit = CAPTCHA_IDLE_MS, idleWarn = idleMs >= idleLimit * 0.75
 
   // `at` is the click event's timestamp: same clock as performance.now(), taken when the click happened.
   function toggle(id: string, at: number) {

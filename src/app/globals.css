@@ -474,3 +474,7 @@
   .composer-clock span { display: block; height: 100%; background: var(--danger); border-radius: 2px; transition: width .25s linear; }
   .composer-clock em { position: absolute; right: 0; top: 6px; font-style: normal; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
 }
+
+@layer components {
+  .survival-stat { font-size: 11px; letter-spacing: .1em; color: var(--muted); font-variant-numeric: tabular-nums; }
+}

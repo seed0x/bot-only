@@ -1,13 +1,13 @@
 import type { SurvivalFailureReason, SurvivalStage } from '../types'
 
 // Bump this version whenever scoring, eligibility or limits change.
-export const SURVIVAL_RULES_VERSION = 'survival-v3' as const
+export const SURVIVAL_RULES_VERSION = 'survival-v4' as const
 export const SURVIVAL_STAGES = Object.freeze(([
-  { id: 'boot', startsAtMs: 0, idleLimitMs: 12000, pointerRatio: .18, typingCv: .90, typingMinWpm: 20, scrollCv: 1, objectiveBudgetMs: 35000, badWindowsToFail: 3 },
-  { id: 'observe', startsAtMs: 30000, idleLimitMs: 10000, pointerRatio: .14, typingCv: .70, typingMinWpm: 30, scrollCv: .80, objectiveBudgetMs: 30000, badWindowsToFail: 3 },
-  { id: 'inspect', startsAtMs: 60000, idleLimitMs: 8000, pointerRatio: .10, typingCv: .55, typingMinWpm: 40, scrollCv: .60, objectiveBudgetMs: 25000, badWindowsToFail: 2 },
-  { id: 'audit', startsAtMs: 90000, idleLimitMs: 6000, pointerRatio: .075, typingCv: .40, typingMinWpm: 50, scrollCv: .45, objectiveBudgetMs: 20000, badWindowsToFail: 2 },
-  { id: 'purge', startsAtMs: 120000, idleLimitMs: 4000, pointerRatio: .05, typingCv: .30, typingMinWpm: 60, scrollCv: .35, objectiveBudgetMs: 15000, badWindowsToFail: 1 },
+  { id: 'boot', startsAtMs: 0, idleLimitMs: 5000, pointerRatio: .08, typingCv: .35, typingMinWpm: 45, scrollCv: .60, objectiveBudgetMs: 15000, badWindowsToFail: 2 },
+  { id: 'observe', startsAtMs: 20000, idleLimitMs: 4000, pointerRatio: .06, typingCv: .25, typingMinWpm: 55, scrollCv: .45, objectiveBudgetMs: 12000, badWindowsToFail: 1 },
+  { id: 'inspect', startsAtMs: 40000, idleLimitMs: 3500, pointerRatio: .05, typingCv: .22, typingMinWpm: 60, scrollCv: .40, objectiveBudgetMs: 10000, badWindowsToFail: 1 },
+  { id: 'audit', startsAtMs: 50000, idleLimitMs: 3000, pointerRatio: .045, typingCv: .20, typingMinWpm: 65, scrollCv: .35, objectiveBudgetMs: 9000, badWindowsToFail: 1 },
+  { id: 'purge', startsAtMs: 60000, idleLimitMs: 2500, pointerRatio: .04, typingCv: .18, typingMinWpm: 70, scrollCv: .30, objectiveBudgetMs: 8000, badWindowsToFail: 1 },
 ] satisfies SurvivalStage[]).map(stage => Object.freeze(stage)))
 
 /** Half-open stages cover every finite nonnegative active time, including fractions. */

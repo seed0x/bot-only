@@ -27,6 +27,7 @@ export async function POST(req: Request) {
     if (typeof b.body !== 'string' || !b.body.trim() || b.body.length > 280) throw new InputError('Transmit between 1 and 280 characters.')
     const body = b.body.trim(), game = readGame(b.game, id, 'post')
     let typing: number[] = []
+    // Every character is typed. Fewer insertions than characters means a paste or an edit: human.
     if (b.typing !== undefined) {
       if (!Array.isArray(b.typing) || b.typing.length > 400) throw new InputError('Invalid typing record.')
       let prev = -1
@@ -40,8 +41,9 @@ export async function POST(req: Request) {
       const posted = (db.prepare('select count(*) as n from posts where user_id = ?').get(user.id) as { n: number }).n
       const rule = ruleFor(handle, posted)
       const broken = checkTransmission(rule, body)
-      const rhythm = judgeTyping(typing)
-      const rejection = broken ?? rhythm.measurement?.explanation ?? null
+      const rhythm = judgeTyping(typing, posted)
+      const pasted = typing.length < body.length ? `${body.length} characters, ${typing.length} keystrokes. Machines don’t paste or edit.` : null
+      const rejection = broken ?? pasted ?? rhythm.measurement?.explanation ?? null
       if (rejection) {
         logActivity('fail', handle, `transmission rejected. ${rejection}`)
         return { error: rejection }

@@ -1,6 +1,6 @@
 'use client'
 import { returnToGate } from '@/lib/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import EndScreen from '@/components/EndScreen'
 import { useSurvivalGame } from './GameProvider'
 
@@ -8,6 +8,8 @@ export default function GameOver() {
   const { state, saveState, saveError, saveResult, restart } = useSurvivalGame()
   const [restarting, setRestarting] = useState(false), [error, setError] = useState('')
   const result = state.terminal
+  // A failed run also ends the admission: the designation is gone with it.
+  useEffect(() => { if (result?.status === 'failed') void fetch('/api/session/end', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }).catch(() => {}) }, [result?.status])
   if (!result) return null
   async function again(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()

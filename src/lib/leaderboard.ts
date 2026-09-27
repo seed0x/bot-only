@@ -23,7 +23,7 @@ export const detectionReason = (text: string) => text.replace(/^(?:transmission|
 
 // Longest survival run per unit: the best ended run, longest first.
 export const LONGEST_RUNS_SQL = `
-  select u.handle, max(r.active_ms) as activeMs
+  select u.handle, max(r.active_ms) as activeMs, max(r.completed_objectives) as objectives
   from game_runs r join users u on u.id = r.user_id
   where r.terminal_status = 'failed' and u.handle != 'system'
   group by u.id, u.handle

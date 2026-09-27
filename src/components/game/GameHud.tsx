@@ -7,7 +7,7 @@ import { survivalStageAt } from '@/lib/survival/config'
 import { useSurvivalGame } from './GameProvider'
 
 export default function GameHud() {
-  const { state, storageError, networkError, starting, fallback, retryMutation, start, resume, end } = useSurvivalGame()
+  const { state, readings, storageError, networkError, starting, fallback, retryMutation, start, resume, end } = useSurvivalGame()
   const [error, setError] = useState('')
   const pathname = usePathname()
   // No start button. A unit on the feed is in the run; the mode follows the device.
@@ -22,6 +22,9 @@ export default function GameHud() {
   return <aside className="survival-hud" aria-label="Survival game">
     <strong className={`survival-stage${stage.id === 'audit' || stage.id === 'purge' ? ' is-hot' : ''}`}>{stage.id.toUpperCase()}</strong>
       <span className="survival-clock">{(state.activeMs / 1000).toFixed(1)}s</span>
+      <span className="survival-stat">KEYS {readings.typing?.value != null ? (readings.typing.typingMetric === 'speed' ? `${Math.round(readings.typing.value)} wpm` : `cv ${readings.typing.value.toFixed(2)}/${stage.typingCv}`) : '—'}</span>
+      <span className="survival-stat">MOUSE {readings.pointer?.value != null ? `${readings.pointer.value.toFixed(3)}/${stage.pointerRatio}` : '—'}</span>
+      <span className="survival-stat">STRIKES {Object.values(state.badWindows).reduce((a, b) => a + b, 0)}/{stage.badWindowsToFail}</span>
       <p className="survival-copy">{objective ? <>{objective.kind === 'admission' ? 'Pass verification' : objective.kind === 'post' ? 'Post' : 'Like an eligible post'} · {(Math.max(0, objective.deadlineActiveMs - state.activeMs) / 1000).toFixed(1)}s left</> : 'Loading next objective…'}</p>
       <button className="button-secondary" disabled={!!state.pendingObjective} onClick={() => { setError(''); void end().catch(e => setError(e instanceof Error ? e.message : 'Couldn’t end the run. Retry.')) }}>End game</button>
       {state.phase === 'countdown' && <p className="survival-notice" role="status">Get ready…</p>}

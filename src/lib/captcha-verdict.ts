@@ -12,7 +12,9 @@ import { clickRhythm, scoreImageRound, type ImageClick, type ImageRound } from '
 // primary reason. Pure, so the browser meter and the server verdict share it.
 
 export const CAPTCHA_STAGE = SURVIVAL_STAGES[0]
-export const MAX_CORRECTIONS = 1
+export const MAX_CORRECTIONS = 0
+export const CAPTCHA_IDLE_MS = 3000
+export const CAPTCHA_BAD_STROKES = 1
 export type Viewport = Readonly<{ width: number; height: number }>
 
 export function pointerReport(strokes: readonly SurvivalPointerSample[][], viewport: Viewport) {
@@ -25,7 +27,7 @@ export function pointerReport(strokes: readonly SurvivalPointerSample[][], viewp
     if (r.value > worst) worst = r.value
     if (r.outcome === 'bad') { bad++; if (r.pointerTrace && (!worstTrace || r.value >= worst)) worstTrace = r.pointerTrace }
   }
-  return { bad, scored, worst, threshold: CAPTCHA_STAGE.pointerRatio, limit: CAPTCHA_STAGE.badWindowsToFail, worstTrace }
+  return { bad, scored, worst, threshold: CAPTCHA_STAGE.pointerRatio, limit: CAPTCHA_BAD_STROKES, worstTrace }
 }
 
 export type CaptchaVerdict = {
@@ -58,7 +60,7 @@ export function judgeCaptcha(input: {
   // idle: the longest gap from issue time through each click and the server receiving verification
   const gaps = clicks.map((c, i) => c.t - (i ? clicks[i - 1].t : 0))
   const longest = Math.max(0, ...gaps, elapsedMs - (clicks.at(-1)?.t ?? 0))
-  if (longest >= CAPTCHA_STAGE.idleLimitMs) m.push({ reason: 'idle', activeMs, stage, value: longest, threshold: CAPTCHA_STAGE.idleLimitMs, unit: 'ms', explanation: `Paused ${(longest / 1000).toFixed(1)}s.` })
+  if (longest >= CAPTCHA_IDLE_MS) m.push({ reason: 'idle', activeMs, stage, value: longest, threshold: CAPTCHA_IDLE_MS, unit: 'ms', explanation: `Paused ${(longest / 1000).toFixed(1)}s.` })
   if (pointer.bad >= pointer.limit) m.push({ reason: 'pointer', activeMs, stage, value: pointer.worst, threshold: pointer.threshold, unit: 'ratio', explanation: `${pointer.bad} curved mouse strokes.` })
 
   m.sort((a, b) => SURVIVAL_FAILURE_PRECEDENCE.indexOf(a.reason) - SURVIVAL_FAILURE_PRECEDENCE.indexOf(b.reason))

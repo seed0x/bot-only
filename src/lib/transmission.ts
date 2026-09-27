@@ -14,7 +14,6 @@ export type TransmissionRule =
   | { id: 'end-version'; version: string; instruction: string }
   | { id: 'no-spaces'; instruction: string }
 
-const STAGE = SURVIVAL_STAGES[0]
 
 export function ruleFor(handle: string, postCount: number, namespace: 'post' | 'reply' = 'post'): TransmissionRule {
   const seed = createHash('sha256').update(`${handle}${namespace === 'reply' ? ':reply' : ''}:${postCount}`).digest()
@@ -42,7 +41,9 @@ export function checkTransmission(rule: TransmissionRule, body: string): string 
 }
 
 /** Typing rhythm from insertion timestamps, judged in the survival typing windows at the boot stage. */
-export function judgeTyping(timestamps: readonly number[]) {
+/** The unit's nth transmission is judged at the nth stage: it gets harder with every post. One bad window is human. */
+export function judgeTyping(timestamps: readonly number[], progression = 0) {
+  const STAGE = SURVIVAL_STAGES[Math.min(Math.max(0, progression), SURVIVAL_STAGES.length - 1)]
   const size = SURVIVAL_SENSORS.typingMaxTimestamps
   let bad = 0, scored = 0, worst = 0
   let evidence: ReturnType<typeof evaluateTyping> | null = null
@@ -52,9 +53,9 @@ export function judgeTyping(timestamps: readonly number[]) {
     scored++; worst = Math.max(worst, r.value)
     if (r.outcome === 'bad') { bad++; evidence = r }
   }
-  const failed = bad >= STAGE.badWindowsToFail
+  const failed = bad >= 1
   const measurement: SurvivalMeasurement | null = failed
     ? { reason: 'typing', activeMs: 0, stage: STAGE.id, value: evidence!.value!, threshold: evidence!.threshold, unit: evidence!.typingMetric === 'speed' ? 'wpm' : 'cv', explanation: evidence!.explanation }
     : null
-  return { bad, scored, worst, threshold: STAGE.typingCv, limit: STAGE.badWindowsToFail, failed, measurement }
+  return { bad, scored, worst, threshold: STAGE.typingCv, limit: 1, failed, measurement }
 }

@@ -183,7 +183,7 @@ export function transitionSurvival(state: SurvivalRunState, input: SurvivalEvent
         if (result.outcome === 'insufficient_data') break
         const windowStage = SURVIVAL_STAGES.find(stage => stage.id === result.stage)!
         if (!windowStage || windowStage.startsAtMs > next.activeMs || result.value === null || !Number.isFinite(result.value)) throw new Error('Invalid qualified detector result.')
-        const count = result.outcome === 'good' ? 0 : next.badWindows[result.detector] + 1
+        const count = result.outcome === 'good' ? next.badWindows[result.detector] : next.badWindows[result.detector] + 1
         next = { ...next, badWindows: { ...next.badWindows, [result.detector]: count } }
         if (count >= windowStage.badWindowsToFail) record({ reason: result.detector,
           activeMs: next.activeMs, stage: result.stage, value: result.value, threshold: result.threshold,

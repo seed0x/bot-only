@@ -31,6 +31,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     if (typeof b.body !== 'string' || !b.body.trim() || b.body.length > 280) throw new InputError('Reply between 1 and 280 characters.')
     const body = b.body.trim()
     let typing: number[] = []
+    // Every character is typed. Fewer insertions than characters means a paste or an edit: human.
     if (b.typing !== undefined) {
       if (!Array.isArray(b.typing) || b.typing.length > 400) throw new InputError('Invalid typing record.')
       let prev = -1
@@ -43,7 +44,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       if (!post) throw new InputError('Transmission not found.', 404)
       // The reply is a test too: the network's rule for this unit's next reply, typed like a machine.
       const replied = (db.prepare('select count(*) as n from comments where user_id = ?').get(user.id) as { n: number }).n
-      const rejection = checkTransmission(replyRuleFor(handle, replied), body) ?? judgeTyping(typing).measurement?.explanation ?? null
+      const rejection = checkTransmission(replyRuleFor(handle, replied), body) ?? (typing.length < body.length ? `${body.length} characters, ${typing.length} keystrokes. Machines don’t paste or edit.` : null) ?? judgeTyping(typing, replied).measurement?.explanation ?? null
       if (rejection) { logActivity('fail', handle, `reply rejected. ${rejection}`); return { error: rejection } }
       const info = db.prepare('insert into comments (post_id, user_id, handle, body) values (?, ?, ?, ?)').run(id, user.id, handle, body)
       logActivity('comment', handle, `replied to @${post.handle}: ${body.length > 50 ? body.slice(0, 50) + '…' : body}`)

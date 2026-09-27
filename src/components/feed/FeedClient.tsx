@@ -45,6 +45,8 @@ export default function FeedClient({ user, initialHumanity }: { user: SessionUse
     const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined
     if (nav && new URL(nav.name).pathname === '/feed') window.location.replace('/')
   }, [])
+  // The server's verdict ends the browser run too.
+  useEffect(() => { if (progress.data?.terminated && game.run && game.phase !== 'ended') void endRun().catch(() => {}) }, [progress.data?.terminated, game.run, game.phase, endRun])
   function refresh() { posts.refresh(); progress.refresh() }
   useEffect(() => { targets(posts.data ? posts.data.map(p => liked.has(p.id) ? { ...p, liked: 1 } : p) : null) }, [posts.data, liked, targets])
   async function like(id: number) {
