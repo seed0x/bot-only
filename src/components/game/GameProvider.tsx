@@ -273,7 +273,9 @@ export default function GameProvider({ children }: { children: React.ReactNode }
     // Strict Mode replay does not reinterpret an in-memory run as a reload.
     if (current.current.phase === 'ready' && !current.current.run) {
       try {
-        const raw = sessionStorage.getItem(checkpointKey)
+        // A reload is a fresh start: the old checkpoint is dropped, never replayed as an ended run.
+        sessionStorage.removeItem(checkpointKey)
+        const raw = null as string | null
         if (raw) {
           const saved: unknown = JSON.parse(raw)
           if (!saved || typeof saved !== 'object' || !('run' in saved) || !('activeMs' in saved)) throw new Error('Invalid checkpoint')

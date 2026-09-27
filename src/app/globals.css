@@ -392,7 +392,6 @@
   .leaderboard-page .receipt-actions { margin-top: 36px; }
   .composer-rule { display: grid; gap: 4px; margin-bottom: 8px; font-size: 14px; line-height: 1.4; }
   .thread-rule { flex-basis: 100%; display: grid; gap: 2px; font-size: 13px; line-height: 1.4; }
-  .gate-assigned { flex: 1; font-size: 22px; letter-spacing: .02em; font-variant-numeric: tabular-nums; padding: 12px 0; }
 }
 
 /* Compact run controls share the established component layer. */

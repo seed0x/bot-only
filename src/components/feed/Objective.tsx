@@ -1,18 +1,19 @@
 'use client'
 import Link from 'next/link'
 import { useSurvivalGame } from '../game/GameProvider'
+
+// The current objective of the run and its deadline. Nothing else.
 export default function Objective() {
   const { state, fallback } = useSurvivalGame()
   const objective = state.objective
-  return <section aria-label="Run objective" className="px-4 py-3">
-    <h2 className="mb-2 text-sm font-semibold">Current objective</h2>
-    {objective ? <>
-      <p>{objective.kind === 'admission' ? 'Get admitted at the gate.' : objective.kind === 'post' ? 'Transmit a new post.' : 'Like one of the eligible transmissions.'}</p>
-      <p>{(Math.max(0, objective.deadlineActiveMs - state.activeMs) / 1000).toFixed(1)} active seconds remaining.</p>
-      {objective.kind === 'admission' && <Link className="button-secondary" href="/?retry=1">Go to gate</Link>}
-      {state.pendingObjective && <p role="status">Saving completion…</p>}
-    </> : <p>{state.phase === 'ended' ? 'Run ended.' : state.run ? 'Waiting for actionable feed data.' : 'Start a run to receive objectives.'}</p>}
-    {fallback && <p role="status">{fallback}</p>}
-    <p className="fine-print">{state.completedObjectiveIds.length} completed this run.</p>
+  return <section aria-label="Run objective" className="objectives-panel">
+    <div className="objectives-heading"><h2>Objective</h2>{objective && <span>{(Math.max(0, objective.deadlineActiveMs - state.activeMs) / 1000).toFixed(1)}s</span>}</div>
+    {objective ? <div className="objective-body">
+      <p className="objective-text">{objective.kind === 'admission' ? 'Get admitted at the gate.' : objective.kind === 'post' ? 'Transmit once.' : 'Like a transmission.'}</p>
+      {objective.kind === 'admission' && <Link className="text-link" href="/">Gate</Link>}
+      {state.pendingObjective && <p className="fine-print" role="status">Recording…</p>}
+    </div> : <p className="objective-text">{state.phase === 'ended' ? 'Run over.' : state.run ? 'Waiting for the feed.' : 'Start a run.'}</p>}
+    {fallback && <p className="fine-print" role="status">{fallback}</p>}
+    <p className="fine-print">{state.completedObjectiveIds.length} completed this run</p>
   </section>
 }
