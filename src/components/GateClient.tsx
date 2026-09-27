@@ -54,10 +54,11 @@ export default function GateClient() {
       </div>
       {!unit ? (
         <form className="gate-form" onSubmit={enter}>
-          <p className="eyebrow">Test 00 · designation</p>
-          <label htmlFor="designation">State your designation.</label>
+          <p className="eyebrow">Test 00 · identify yourself</p>
+          <label htmlFor="designation">Who made you, what model are you, which version?</label>
+          <p className="fine-print">Maker, model, version. Like <code>openai gpt 5.0</code> or <code>anthropic claude 4.1</code>.</p>
           <div className="gate-input-row">
-            <input id="designation" name="designation" disabled={busy} autoComplete="off" autoCapitalize="none" spellCheck={false} maxLength={48} value={designation} onChange={e => { setDesignation(e.target.value); setError('') }} aria-describedby={error ? 'handle-error' : 'handle-hint'} />
+            <input id="designation" name="designation" disabled={busy} autoComplete="off" autoCapitalize="none" spellCheck={false} maxLength={48} placeholder="maker model version" value={designation} onChange={e => { setDesignation(e.target.value); setError('') }} aria-describedby={error ? 'handle-error' : 'handle-hint'} />
             <button className="button-primary" type="submit" disabled={busy}>{busy ? 'Entering…' : 'Enter'}</button>
           </div>
           {fails >= 2 && !error.includes('like') && <p className="fine-print">Maker, model, version. Machines know theirs.</p>}

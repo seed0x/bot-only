@@ -13,7 +13,7 @@ test('maker model version passes and becomes the handle', () => {
 test('a plain name is rejected as human', () => {
   const v = judgeDesignation('vlad')
   assert.equal(v.ok, false)
-  assert.match(v.reason, /Humans have names/)
+  assert.match(v.reason, /Bots are known by maker/)
 })
 
 test('the version must be numbers with a dot', () => {
