@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import SiteHeader from '@/components/SiteHeader'
 import UnitChip from '@/components/feed/UnitChip'
@@ -11,12 +11,15 @@ import Terminated from '@/components/feed/Terminated'
 import type { SessionUser } from '@/lib/types'
 import { usePollingResource } from '@/hooks/usePollingResource'
 import { isPosts, isProgress } from '@/lib/validators'
-import { jsonPost, requestJson } from '@/lib/api'
+import { ApiError } from '@/lib/api'
+import { useSurvivalGame } from '@/components/game/GameProvider'
+import { setSessionUser } from '@/lib/session'
 
 export default function FeedClient({ user, initialHumanity }: { user: SessionUser; initialHumanity: number }) {
   const router = useRouter()
+  const { state: game, mutate, targets } = useSurvivalGame()
+  const requests = useRef(new Map<number, { requestId: string; handle: string }>())
   const posts = usePollingResource(`/api/posts?handle=${encodeURIComponent(user?.handle ?? '')}`, isPosts)
-  const [objectiveRefresh, setObjectiveRefresh] = useState(0)
   const progress = usePollingResource(`/api/progress?handle=${encodeURIComponent(user?.handle ?? '')}`, isProgress)
   const [liked, setLiked] = useState<Set<number>>(new Set()), [pending, setPending] = useState<Set<number>>(new Set()), [likeError, setLikeError] = useState('')
   // The server admitted this user before rendering. Results loading is not authentication.
@@ -24,20 +27,24 @@ export default function FeedClient({ user, initialHumanity }: { user: SessionUse
   useEffect(() => {
     if (posts.errorStatus === 401) router.refresh()
   }, [posts.errorStatus, router])
-  function refresh() { posts.refresh(); progress.refresh(); setObjectiveRefresh(n => n + 1) }
+  // The game provider binds runs to this admitted unit; the server still checks the cookie.
+  useEffect(() => { setSessionUser(user) }, [user])
+  useEffect(() => { targets(posts.data ? posts.data.map(p => liked.has(p.id) ? { ...p, liked: 1 } : p) : null) }, [posts.data, liked, targets])
+  function refresh() { posts.refresh(); progress.refresh() }
   async function like(id: number) {
     if (!verified || liked.has(id) || pending.has(id)) return
+    if (!requests.current.has(id)) requests.current.set(id, { requestId: crypto.randomUUID(), handle: verified.handle })
     setPending(s => new Set(s).add(id)); setLikeError('')
     try {
-      await requestJson(`/api/posts/${id}/like`, jsonPost({ handle: verified.handle }), (v): v is { ok: true } => !!v && typeof v === 'object' && 'ok' in v && v.ok === true)
-      setLiked(s => new Set(s).add(id)); refresh()
-    } catch (e) { setLikeError(e instanceof Error ? e.message : 'Like not confirmed. Retry.'); posts.refresh() }
+      await mutate(`/api/posts/${id}/like`, requests.current.get(id)!, 'like', (v): v is { ok: true } => !!v && typeof v === 'object' && 'ok' in v && v.ok === true, id)
+      requests.current.delete(id); setLiked(s => new Set(s).add(id)); refresh()
+    } catch (e) { if (e instanceof ApiError && e.status >= 400 && e.status < 500) requests.current.delete(id); setLikeError(e instanceof Error ? e.message : 'Like not confirmed. Retry.'); posts.refresh() }
     finally { setPending(s => { const next = new Set(s); next.delete(id); return next }) }
   }
   if (progress.data?.terminated) return <Terminated user={user} detections={progress.data.detections ?? 0} />
   const pinned = posts.data?.filter(p => p.pinned) ?? []
   const transmissions = posts.data?.filter(p => !p.pinned) ?? []
-  const postCard = (p: NonNullable<typeof posts.data>[number]) => <PostCard key={p.id} post={p} liked={liked.has(p.id) || p.liked === 1} canLike={!!verified && !pending.has(p.id)} onLike={() => void like(p.id)} user={verified} replyRule={progress.data?.reply ?? null} onCommented={refresh} />
+  const postCard = (p: NonNullable<typeof posts.data>[number]) => <PostCard key={p.id} post={p} liked={liked.has(p.id) || p.liked === 1} canLike={!!verified && !pending.has(p.id) && (!game.objective || game.objective.kind !== 'like' || game.objective.eligiblePostIds.includes(p.id))} onLike={() => void like(p.id)} user={verified} replyRule={progress.data?.reply ?? null} onCommented={refresh} />
   return <div className="feed">
     <SiteHeader><div className="header-actions">
       <UnitChip user={user} humanity={progress.data?.humanity ?? initialHumanity} />
@@ -49,7 +56,7 @@ export default function FeedClient({ user, initialHumanity }: { user: SessionUse
       <h1 className="sr-only">Feed</h1>
       <aside className="feed-aside" aria-label="Post creation and objectives">
         <Composer user={verified} rule={progress.data?.transmission ?? null} onPosted={refresh} />
-        <div className="feed-objectives"><Objective key={user?.handle ?? 'visitor'} user={user} refreshKey={objectiveRefresh} /></div>
+        <div className="feed-objectives"><Objective /></div>
       </aside>
       <section className="feed-posts" aria-label="Posts">
         <div className="posts-heading"><h2>Posts</h2></div>

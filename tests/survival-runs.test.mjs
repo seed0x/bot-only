@@ -4,7 +4,7 @@ import { register } from 'node:module'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { survivalStageAt } from '../src/lib/survival/config.ts'
+import { SURVIVAL_RULES_VERSION, survivalStageAt } from '../src/lib/survival/config.ts'
 
 // Disposable database: never the shared data.db.
 const dir = mkdtempSync(join(tmpdir(), 'survival-runs-'))
@@ -24,14 +24,14 @@ after(() => { getDb().close(); rmSync(dir, { recursive: true, force: true }) })
 let seq = 0
 const rid = (prefix = 'request') => `${prefix}_${String(++seq).padStart(16, '0')}`
 const unit = handle => ({ id: Number(getDb().prepare('insert into users (handle, verified_bot) values (?, 1)').run(handle).lastInsertRowid), handle })
-const start = (inputMode = 'pointer') => runs.startRun(runs.parseStart({ requestId: rid(), rulesVersion: 'survival-v1', inputMode })).runId
+const start = (inputMode = 'pointer') => runs.startRun(runs.parseStart({ requestId: rid(), rulesVersion: SURVIVAL_RULES_VERSION, inputMode })).runId
 const bind = (runId, user, requestId = rid()) => runs.bindRun(runId, runs.parseBind({ requestId, handle: user.handle }), user)
 const idle = (runId, activeMs, extra = {}) => {
   const stage = survivalStageAt(activeMs)
-  return { runId, rulesVersion: 'survival-v1', inputMode: 'pointer', activeMs, stage: stage.id, completedObjectiveIds: [], status: 'failed', primaryReason: 'idle',
+  return { runId, rulesVersion: SURVIVAL_RULES_VERSION, inputMode: 'pointer', activeMs, stage: stage.id, completedObjectiveIds: [], status: 'failed', primaryReason: 'idle',
     measurements: [{ reason: 'idle', activeMs, stage: stage.id, value: stage.idleLimitMs, threshold: stage.idleLimitMs, unit: 'ms', explanation: 'No qualifying activity before the idle limit.' }], ...extra }
 }
-const interrupted = (runId, activeMs) => ({ runId, rulesVersion: 'survival-v1', inputMode: 'pointer', activeMs, stage: survivalStageAt(activeMs).id,
+const interrupted = (runId, activeMs) => ({ runId, rulesVersion: SURVIVAL_RULES_VERSION, inputMode: 'pointer', activeMs, stage: survivalStageAt(activeMs).id,
   completedObjectiveIds: [], status: 'interrupted', interruption: 'reload', measurements: [] })
 const finish = (snapshot, user, requestId = rid()) => runs.finishRun(runs.parseFinish(snapshot.runId, { requestId, snapshot }), user)
 let actionId = 0
@@ -42,16 +42,16 @@ const statusOf = fn => { try { fn() } catch (error) { if (error?.status) return 
 const row = runId => getDb().prepare('select * from game_runs where id = ?').get(runId)
 
 test('start validates the exact request and replays one run per request ID', () => {
-  const request = { requestId: rid(), rulesVersion: 'survival-v1', inputMode: 'touch_or_keyboard' }
+  const request = { requestId: rid(), rulesVersion: SURVIVAL_RULES_VERSION, inputMode: 'touch_or_keyboard' }
   const receipt = runs.startRun(runs.parseStart(request))
   assert.equal(receipt.ok, true)
   assert.match(receipt.runId, /^[a-zA-Z0-9_-]{16,100}$/)
   assert.equal(new Date(receipt.startedAt).toISOString(), receipt.startedAt)
-  assert.deepEqual(runs.startRun(runs.parseStart({ inputMode: 'touch_or_keyboard', rulesVersion: 'survival-v1', requestId: request.requestId })), receipt)
+  assert.deepEqual(runs.startRun(runs.parseStart({ inputMode: 'touch_or_keyboard', rulesVersion: SURVIVAL_RULES_VERSION, requestId: request.requestId })), receipt)
   assert.equal(statusOf(() => runs.startRun(runs.parseStart({ ...request, inputMode: 'pointer' }))), 409)
   assert.equal(getDb().prepare('select count(*) as n from game_runs').get().n, 1)
   assert.equal(row(receipt.runId).terminal_status, null)
-  for (const bad of [{ ...request, extra: 1 }, { requestId: request.requestId, rulesVersion: 'survival-v1' }, { ...request, rulesVersion: 'survival-v0' },
+  for (const bad of [{ ...request, extra: 1 }, { requestId: request.requestId, rulesVersion: SURVIVAL_RULES_VERSION }, { ...request, rulesVersion: 'survival-v0' },
     { ...request, inputMode: 'mouse' }, { ...request, requestId: 'short' }, [request], null]) assert.equal(statusOf(() => runs.parseStart(bad)), 400)
 })
 
@@ -188,8 +188,8 @@ test('ranking keeps one whole best confirmed run per unit in each mode', () => {
 
 test('score query requires one input mode and rejects unknown filters', () => {
   const parse = query => runs.parseScoreQuery(new URLSearchParams(query))
-  assert.deepEqual(parse('inputMode=pointer'), { inputMode: 'pointer', rulesVersion: 'survival-v1' })
-  assert.deepEqual(parse('inputMode=touch_or_keyboard&rulesVersion=survival-v1'), { inputMode: 'touch_or_keyboard', rulesVersion: 'survival-v1' })
-  for (const query of ['', 'rulesVersion=survival-v1', 'inputMode=mouse', 'inputMode=pointer&limit=5', 'inputMode=pointer&inputMode=pointer', 'inputMode=pointer&rulesVersion=survival-v0'])
+  assert.deepEqual(parse('inputMode=pointer'), { inputMode: 'pointer', rulesVersion: SURVIVAL_RULES_VERSION })
+  assert.deepEqual(parse('inputMode=touch_or_keyboard&rulesVersion=' + SURVIVAL_RULES_VERSION), { inputMode: 'touch_or_keyboard', rulesVersion: SURVIVAL_RULES_VERSION })
+  for (const query of ['', 'rulesVersion=' + SURVIVAL_RULES_VERSION, 'inputMode=mouse', 'inputMode=pointer&limit=5', 'inputMode=pointer&inputMode=pointer', 'inputMode=pointer&rulesVersion=survival-v0'])
     assert.equal(statusOf(() => parse(query)), 400, query)
 })

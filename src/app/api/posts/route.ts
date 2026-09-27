@@ -1,6 +1,7 @@
 import { detected, operation } from '@/lib/operations'
 import { getDb, logActivity } from '@/lib/db'
 import { requestAdmission } from '@/lib/gate'
+import { readGame, checkGame, completeGame } from '@/lib/survival/objectives'
 import { bodyInput, errorResponse, handleInput, InputError, requestId } from '@/lib/server-input'
 import { checkTransmission, judgeTyping, ruleFor } from '@/lib/transmission'
 export const dynamic = 'force-dynamic'
@@ -29,7 +30,9 @@ export async function POST(req: Request) {
       let prev = -1
       typing = b.typing.map((t) => { if (typeof t !== 'number' || !Number.isFinite(t) || t < 0 || t <= prev || t > 3_600_000) throw new InputError('Invalid typing record.'); prev = t; return t })
     }
-    return Response.json(detected(handle, 'transmission', () => operation(id, 'post', { handle, body, typing }, () => {
+    const game = readGame(b.game, id, 'post')
+    return Response.json(detected(handle, 'transmission', () => operation(id, 'post', { handle, body, typing, ...(game ? { game } : {}) }, () => {
+      checkGame(game, handle)
       const db = getDb()
       const user = db.prepare('select id from users where handle = ? and verified_bot = 1').get(handle) as { id: number } | undefined
       if (!user) throw new InputError('Unit not admitted. Verify before transmitting.', 403)
@@ -42,7 +45,9 @@ export async function POST(req: Request) {
       if (rejection) throw new InputError(`Human detected. ${rejection}`, 422)
       const info = db.prepare('insert into posts (user_id, handle, body) values (?, ?, ?)').run(user.id, handle, body)
       logActivity('post', handle, body.length > 60 ? body.slice(0, 60) + '…' : body)
-      return { id: Number(info.lastInsertRowid) }
+      const postId = Number(info.lastInsertRowid)
+      const completion = completeGame(game, { id: user.id, handle }, { kind: 'post', postId })
+      return { id: postId, ...(completion ? { completion } : {}) }
     })))
   } catch (e) { return errorResponse(e) }
 }

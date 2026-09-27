@@ -3,12 +3,14 @@ import { useEffect, useRef, useState } from 'react'
 import ChallengeTrial from '@/components/ChallengeTrial'
 import { requestJson, jsonPost } from '@/lib/api'
 import type { SessionUser } from '@/lib/types'
+import { setSessionUser } from '@/lib/session'
 
 // The gate: a name, then the reverse captcha, then the feed.
 export default function GateClient({ initialUser = null }: { initialUser?: SessionUser | null }) {
   const [designation, setDesignation] = useState(''), [error, setError] = useState('')
   // Units don't pick names. The network assigns one: seven letters, six digits.
   const assign = () => { const a = crypto.getRandomValues(new Uint8Array(7)), d = crypto.getRandomValues(new Uint32Array(1))[0] % 1_000_000; return Array.from(a, b => 'abcdefghijklmnopqrstuvwxyz'[b % 26]).join('') + '-' + String(d).padStart(6, '0') }
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- assigned after hydration so server and client markup agree
   useEffect(() => { setDesignation(assign()) }, [])
   const [busy, setBusy] = useState(false)
   const [unit, setUnit] = useState<SessionUser | null>(initialUser)
@@ -53,7 +55,7 @@ export default function GateClient({ initialUser = null }: { initialUser?: Sessi
             handle={unit.handle}
             kind="image-confusion"
             autoStart
-            onRecorded={r => setCanReturn(r.passed)}
+            onRecorded={r => { setCanReturn(r.passed); if (r.passed && r.user) setSessionUser(r.user) }}
           >
             {(r) => r.passed ? <a className="button-primary" href="/feed">Enter feed</a> : null}
           </ChallengeTrial>

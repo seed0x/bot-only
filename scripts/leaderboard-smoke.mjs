@@ -26,10 +26,10 @@ const ok = async (path, body, options) => {
 }
 const idle = (runId, activeMs, inputMode = 'pointer') => {
   const stage = activeMs < 30000 ? ['boot', 12000] : activeMs < 60000 ? ['observe', 10000] : activeMs < 90000 ? ['inspect', 8000] : activeMs < 120000 ? ['audit', 6000] : ['purge', 4000]
-  return { runId, rulesVersion: 'survival-v1', inputMode, activeMs, stage: stage[0], completedObjectiveIds: [], status: 'failed', primaryReason: 'idle',
+  return { runId, rulesVersion: 'survival-v3', inputMode, activeMs, stage: stage[0], completedObjectiveIds: [], status: 'failed', primaryReason: 'idle',
     measurements: [{ reason: 'idle', activeMs, stage: stage[0], value: stage[1], threshold: stage[1], unit: 'ms', explanation: 'No qualifying activity before the idle limit.' }] }
 }
-const start = (inputMode = 'pointer', requestId = id()) => ok('/api/runs', { requestId, rulesVersion: 'survival-v1', inputMode })
+const start = (inputMode = 'pointer', requestId = id()) => ok('/api/runs', { requestId, rulesVersion: 'survival-v3', inputMode })
 const bind = (runId, requestId = id()) => ok(`/api/runs/${runId}/bind`, { requestId, handle })
 const finish = (snapshot, requestId = id()) => call(`/api/runs/${snapshot.runId}/finish`, { requestId, snapshot })
 const board = async (inputMode = 'pointer') => (await ok('/api/scores?inputMode=' + inputMode)).scores.filter(row => row.handle === handle)
@@ -46,9 +46,9 @@ pass('unit admitted through the image gate')
 const startId = id(), started = await start('pointer', startId)
 assert.match(started.runId, /^[a-zA-Z0-9_-]{16,100}$/)
 assert.deepEqual(await start('pointer', startId), started)
-assert.equal((await call('/api/runs', { requestId: startId, rulesVersion: 'survival-v1', inputMode: 'touch_or_keyboard' })).status, 409)
+assert.equal((await call('/api/runs', { requestId: startId, rulesVersion: 'survival-v3', inputMode: 'touch_or_keyboard' })).status, 409)
 pass('start replays one run per request ID; changed payload is 409')
-for (const body of [{ requestId: id(), rulesVersion: 'survival-v0', inputMode: 'pointer' }, { requestId: id(), rulesVersion: 'survival-v1', inputMode: 'pointer', extra: 1 }])
+for (const body of [{ requestId: id(), rulesVersion: 'survival-v0', inputMode: 'pointer' }, { requestId: id(), rulesVersion: 'survival-v3', inputMode: 'pointer', extra: 1 }])
   assert.equal((await call('/api/runs', body)).status, 400)
 assert.equal((await call('/api/runs', '{"requestId":', { raw: true })).status, 400)
 assert.equal((await call('/api/runs', JSON.stringify({ pad: 'x'.repeat(64001) }), { raw: true })).status, 413)
@@ -82,7 +82,7 @@ await bind(interrupted.runId)
 const cut = { ...idle(interrupted.runId, 90000), status: 'interrupted', interruption: 'reload', measurements: [] }
 delete cut.primaryReason
 assert.equal((await finish(cut)).body.ranked, false)
-const anonymous = await ok('/api/runs', { requestId: id(), rulesVersion: 'survival-v1', inputMode: 'pointer' }, { withCookie: false })
+const anonymous = await ok('/api/runs', { requestId: id(), rulesVersion: 'survival-v3', inputMode: 'pointer' }, { withCookie: false })
 assert.equal((await call(`/api/runs/${anonymous.runId}/finish`, { requestId: id(), snapshot: idle(anonymous.runId, 100000) }, { withCookie: false })).body.ranked, false)
 const rows = await board()
 assert.deepEqual(rows.map(row => [row.runId, row.activeMs, row.completedObjectives, row.roundsSurvived, row.stage]), [[runId, 50000, 0, 1, 'observe']])
@@ -93,9 +93,9 @@ await bind(touch.runId)
 assert.equal((await finish(idle(touch.runId, 35000, 'touch_or_keyboard'))).body.ranked, true)
 assert.deepEqual((await board('touch_or_keyboard')).map(row => row.activeMs), [35000])
 assert.deepEqual((await board()).map(row => row.activeMs), [50000])
-const response = await ok('/api/scores?inputMode=pointer&rulesVersion=survival-v1')
-assert.deepEqual([response.rulesVersion, response.inputMode, Array.isArray(response.scores)], ['survival-v1', 'pointer', true])
-for (const query of ['?rulesVersion=survival-v1', '?inputMode=mouse', '?inputMode=pointer&limit=5', '?inputMode=pointer&rulesVersion=survival-v0'])
+const response = await ok('/api/scores?inputMode=pointer&rulesVersion=survival-v3')
+assert.deepEqual([response.rulesVersion, response.inputMode, Array.isArray(response.scores)], ['survival-v3', 'pointer', true])
+for (const query of ['?rulesVersion=survival-v3', '?inputMode=mouse', '?inputMode=pointer&limit=5', '?inputMode=pointer&rulesVersion=survival-v0'])
   assert.equal((await call('/api/scores' + query)).status, 400)
 assert.equal((await call("/api/scores")).status, 400)
 pass('input modes rank separately; score query rejects missing mode and unknown filters; legacy bare GET still answers')

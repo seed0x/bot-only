@@ -187,7 +187,7 @@ export function transitionSurvival(state: SurvivalRunState, input: SurvivalEvent
         next = { ...next, badWindows: { ...next.badWindows, [result.detector]: count } }
         if (count >= windowStage.badWindowsToFail) record({ reason: result.detector,
           activeMs: next.activeMs, stage: result.stage, value: result.value, threshold: result.threshold,
-          unit: result.detector === 'pointer' ? 'ratio' : 'cv', explanation: result.explanation })
+          unit: result.detector === 'pointer' ? 'ratio' : result.typingMetric === 'speed' ? 'wpm' : 'cv', explanation: result.explanation })
         break
       }
       case 'objective_issued': {
@@ -221,9 +221,11 @@ export function transitionSurvival(state: SurvivalRunState, input: SurvivalEvent
           (next.user && next.user.id !== event.receipt.user.id)) break
         if (next.objective.kind === 'like' && event.receipt.action.kind === 'like' &&
           !next.objective.eligiblePostIds.includes(event.receipt.action.postId)) break
+        const remainingPauses = next.pauseReasons.filter(reason => reason !== 'objective_request')
         next = { ...next, user: Object.freeze({ ...event.receipt.user }), pendingObjective: null, objective: null,
           completedObjectiveIds: [...next.completedObjectiveIds, pending.objectiveId],
-          pauseReasons: next.pauseReasons.filter(reason => reason !== 'objective_request') }
+          pauseReasons: remainingPauses, phase: remainingPauses.length ? 'paused' : 'running', countdownEndsAtMs: null }
+        resetAll()
         break
       }
       case 'objective_rejected':

@@ -54,8 +54,8 @@ test('typing regular/irregular fixtures use population CV and retain no contents
   assert.equal(regular.outcome, 'good')
   const bad = evaluateTyping(timestamps([1, 1, 1, 1, 1, 1, 1, 1500]), 'boot')
   assert.equal(bad.outcome, 'bad')
-  assert.deepEqual(Object.keys(bad).sort(), ['detector', 'explanation', 'outcome', 'stage', 'threshold', 'value'])
-  assert.equal(evaluateTyping(timestamps(Array(8).fill(1500)), 'purge').outcome, 'good')
+  assert.deepEqual(Object.keys(bad).sort(), ['detector', 'explanation', 'outcome', 'stage', 'threshold', 'typingMetric', 'value'])
+  assert.equal(evaluateTyping(timestamps(Array(8).fill(1500)), 'purge').outcome, 'bad')
 })
 test('typing positive mean and finite strictly increasing timestamps are required', () => {
   for (const times of [[], Array(8).fill(0), Array(10).fill(0), Array(9).fill(0),
@@ -102,4 +102,18 @@ test('maximum pointer buffer and exact duration/path boundaries qualify', () => 
   assert.equal(evaluatePointer(points, 'boot', viewport).pointerTrace, undefined)
   const pausedPoint = stroke([[0, 0], [0, 0], [10, 0], [30, 0], [45, 0], [60, 0]])
   assert.equal(evaluatePointer(pausedPoint, 'boot', viewport).outcome, 'good')
+})
+
+test('typing minimum speed ramps by stage; equality and faster windows are safe', () => {
+  for (const [stage, minimum] of [['boot', 20], ['observe', 30], ['inspect', 40], ['audit', 50], ['purge', 60]]) {
+    const timestamps = interval => Array.from({ length: 9 }, (_, i) => i * interval)
+    for (const interval of [12000 / minimum, 12000 / (minimum + 5)]) {
+      assert.equal(evaluateTyping(timestamps(interval), stage).outcome, 'good')
+    }
+    const slow = evaluateTyping(timestamps(12000 / (minimum - 1)), stage)
+    assert.equal(slow.outcome, 'bad')
+    assert.equal(slow.typingMetric, 'speed')
+    assert.equal(slow.threshold, minimum)
+    assert.ok(slow.value < minimum)
+  }
 })

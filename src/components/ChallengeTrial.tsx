@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
+import { useSurvivalGame } from './game/GameProvider'
 import MovementCaptcha from './MovementCaptcha'
 import HashRecall from './HashRecall'
 import ImageCaptcha from './ImageCaptcha'
@@ -14,12 +15,18 @@ type Pending = { requestId: string; handle: string; kind: ChallengeKind } | { re
 type State = { phase: 'idle' } | { phase: 'preparing' | 'saving'; pending: Pending } | { phase: 'playing'; challenge: IssuedChallenge } | { phase: 'error'; pending: Pending; message: string; canRestart: boolean } | { phase: 'recorded'; receipt: AttemptReceipt }
 
 export default function ChallengeTrial({ handle, kind, autoStart = false, onRecorded, children }: { handle: string; kind: ChallengeKind; autoStart?: boolean; onRecorded?: (r: AttemptReceipt) => void; children?: (r: AttemptReceipt) => React.ReactNode }) {
+  const { state: game, mutate, resource } = useSurvivalGame()
   const [state, setState] = useState<State>({ phase: 'idle' })
   const lock = useRef(false), active = useRef(true), controller = useRef<AbortController | null>(null)
   useEffect(() => {
     active.current = true
     return () => { active.current = false; controller.current?.abort() }
   }, [])
+  const needsChallenge = game.phase !== 'ended' && game.objective?.kind === 'admission' && (state.phase === 'preparing' || state.phase === 'error' && !('solution' in state.pending))
+  useEffect(() => {
+    resource('gate_challenge', needsChallenge)
+    return () => resource('gate_challenge', false)
+  }, [needsChallenge, resource])
   async function send(pending: Pending) {
     if (lock.current) return
     lock.current = true
@@ -28,7 +35,7 @@ export default function ChallengeTrial({ handle, kind, autoStart = false, onReco
     setState({ phase: submitting ? 'saving' : 'preparing', pending })
     try {
       if (submitting) {
-        const receipt = await requestJson('/api/register', { ...jsonPost(pending), signal: controller.current.signal }, isReceipt)
+        const receipt = await mutate('/api/register', pending, 'admission', isReceipt)
         if (!active.current) return
         setState({ phase: 'recorded', receipt }); onRecorded?.(receipt)
         window.dispatchEvent(new Event('network-updated'))
