@@ -1,3 +1,5 @@
+> Failure explanations clarified (2026-09-26): new survival/CAPTCHA failures describe the action and how to improve using plain language. Scoring unchanged. Full 19-file suite, scoped lint and TypeScript pass; browser copy review pending.
+
 > Transmission hint visibility updated (2026-09-26): composer instruction and rule-specific length target appear only for the current post objective. Scoped lint, TypeScript and whitespace pass; visual objective-transition check pending.
 
 > Post keystroke checking removed locally (2026-09-26): content rules remain; composer no longer records typing or supplies survival typing evidence. Full 19-file suite, scoped lint and TypeScript pass. Browser check pending; see newest HANDOFF.

@@ -37,7 +37,7 @@ export function evaluatePointer(samples: readonly SurvivalPointerSample[], stage
   }
   const loop = distance <= limits.pointerLoopDistancePx
   const scored = result('pointer', stage, deviation / Math.max(distance, limits.pointerMinPathPx),
-    loop ? 'Qualified stroke loops or reverses back within 15px of its start.' : 'Maximum distance from the endpoint segment divided by endpoint distance (minimum 60px).', loop)
+    loop ? 'Your mouse movement looped back on itself. Move in straight lines without doubling back.' : 'Your mouse movement was too curved. Move in straighter lines.', loop)
   if (scored.outcome !== 'bad') return scored
   return Object.freeze({ ...scored, pointerTrace: Object.freeze(samples.map(point => Object.freeze({ x: point.x / viewport.width, y: point.y / viewport.height, t: point.t - first.t }))) })
 }
@@ -75,8 +75,8 @@ export function evaluateTyping(timestamps: readonly number[], stage: SurvivalSta
   const wpm = 12000 * intervals.length / intervals.reduce((sum, interval) => sum + interval, 0)
   if (wpm < config.typingMinWpm) return Object.freeze({ detector: 'typing', stage,
     outcome: 'bad', typingMetric: 'speed', value: wpm, threshold: config.typingMinWpm,
-    explanation: `Typing speed ${wpm.toFixed(1)} WPM is below the ${config.typingMinWpm} WPM minimum (five insertions per word).` })
-  return Object.freeze({ ...result('typing', stage, cv, 'Population CV of eight insertion intervals.'), typingMetric: 'consistency' })
+    explanation: `You typed too slowly. Aim for at least ${config.typingMinWpm} words per minute.` })
+  return Object.freeze({ ...result('typing', stage, cv, 'Your typing pace was uneven. Keep a steady rhythm between letters.'), typingMetric: 'consistency' })
 }
 
 /** Six consecutive signed net CSS-pixel displacements in 100ms bins from ONE
@@ -90,5 +90,5 @@ export function evaluateScroll(bins: readonly number[], stage: SurvivalStageId):
   if (!Number.isFinite(movement) || movement < limits.scrollMinMovementPx) return insufficient('Scroll window has less than 60px movement or invalid totals.')
   const reversal = bins.some(value => value > 0) && bins.some(value => value < 0)
   const cv = coefficientOfVariation(bins.map(Math.abs))
-  return result('scroll', stage, cv, reversal ? 'Direction reversal within a qualified scroll window.' : 'Population CV of absolute speed in six 100ms bins.', reversal)
+  return result('scroll', stage, cv, reversal ? 'You changed scrolling direction too quickly. Scroll steadily in one direction.' : 'Your scrolling speed changed too much. Keep a steady pace.', reversal)
 }

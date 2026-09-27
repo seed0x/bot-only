@@ -73,7 +73,7 @@ test.skip('scroll regular, internal zero bins, exact CV equality and reversal', 
   const reversal = evaluateScroll([10, 10, 10, -10, -10, -10], 'boot')
   assert.equal(reversal.value, 0)
   assert.equal(reversal.outcome, 'bad')
-  assert.match(reversal.explanation, /reversal/)
+  assert.match(reversal.explanation, /changed scrolling direction/)
   assert.equal(evaluateScroll(Array(6).fill(-10), 'purge').outcome, 'good')
 })
 test('short/invalid/oversized scroll arrays never fabricate a pass', () => {

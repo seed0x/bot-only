@@ -100,9 +100,9 @@ export function scoreImageRound(round: ImageRound, clicks: ImageClick[]) {
   const skippedLookAlike = round.tiles.some((t) => t.category === IMAGE_CATEGORIES[round.requested].opposite && !picked.has(t.token))
 
   let reason: string, passed = false
-  if (picked.size === 0) reason = 'Nothing selected.'
-  else if (!setCorrect && skippedLookAlike) reason = `Selection incomplete. Include the ${lookAlike}.`
-  else if (!setCorrect) reason = `${wrong + missed} incorrect or missing tile${wrong + missed === 1 ? '' : 's'}.`
+  if (picked.size === 0) reason = 'No images were selected. Select the requested images and their look-alikes, then press Verify.'
+  else if (!setCorrect && skippedLookAlike) reason = `Some matching images are missing. Select the ${round.prompt} and the ${lookAlike}.`
+  else if (!setCorrect) reason = `You selected the wrong images or missed some matching ones. Select the ${round.prompt} and the ${lookAlike}; one image mistake is allowed.`
   else { passed = true; reason = wrong + missed ? 'Verification complete. One tile error allowed.' : 'Verification complete.' }
 
   return { passed, wrong, missed, ...rhythm, humanity: rhythmHumanity(rhythm), reason }

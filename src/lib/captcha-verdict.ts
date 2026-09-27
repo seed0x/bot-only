@@ -55,13 +55,13 @@ export function judgeCaptcha(input: {
   const m: SurvivalMeasurement[] = []
 
   if (!tiles.passed) m.push({ reason: 'verification_failed', activeMs, stage, value: 1, threshold: 0, unit: 'boolean', explanation: tiles.reason })
-  else if (rhythm.corrections > MAX_CORRECTIONS) m.push({ reason: 'verification_failed', activeMs, stage, value: 1, threshold: 0, unit: 'boolean', explanation: `Changed the selection ${rhythm.corrections} times.` })
-  if (input.expired) m.push({ reason: 'objective_deadline', activeMs, stage, value: elapsedMs, threshold: input.windowMs, unit: 'ms', explanation: 'The round expired before verification.' })
+  else if (rhythm.corrections > MAX_CORRECTIONS) m.push({ reason: 'verification_failed', activeMs, stage, value: 1, threshold: 0, unit: 'boolean', explanation: `You changed your selection too many times. Only ${MAX_CORRECTIONS} correction is allowed.` })
+  if (input.expired) m.push({ reason: 'objective_deadline', activeMs, stage, value: elapsedMs, threshold: input.windowMs, unit: 'ms', explanation: 'Time ran out. Choose your images and press Verify before the countdown ends.' })
   // idle: the longest gap from issue time through each click and the server receiving verification
   const gaps = clicks.map((c, i) => c.t - (i ? clicks[i - 1].t : 0))
   const longest = Math.max(0, ...gaps, elapsedMs - (clicks.at(-1)?.t ?? 0))
-  if (longest >= CAPTCHA_IDLE_MS) m.push({ reason: 'idle', activeMs, stage, value: longest, threshold: CAPTCHA_IDLE_MS, unit: 'ms', explanation: `Paused ${(longest / 1000).toFixed(1)}s.` })
-  if (pointer.bad >= pointer.limit) m.push({ reason: 'pointer', activeMs, stage, value: pointer.worst, threshold: pointer.threshold, unit: 'ratio', explanation: `${pointer.bad} curved mouse strokes.` })
+  if (longest >= CAPTCHA_IDLE_MS) m.push({ reason: 'idle', activeMs, stage, value: longest, threshold: CAPTCHA_IDLE_MS, unit: 'ms', explanation: `You waited too long between clicks or before pressing Verify. Keep each pause under ${CAPTCHA_IDLE_MS / 1000} seconds.` })
+  if (pointer.bad >= pointer.limit) m.push({ reason: 'pointer', activeMs, stage, value: pointer.worst, threshold: pointer.threshold, unit: 'ratio', explanation: `Your mouse movement was too curved ${pointer.bad} times. Move in straighter lines between images.` })
 
   m.sort((a, b) => SURVIVAL_FAILURE_PRECEDENCE.indexOf(a.reason) - SURVIVAL_FAILURE_PRECEDENCE.indexOf(b.reason))
   const passed = m.length === 0 && rhythm.selection.length > 0

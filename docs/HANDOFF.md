@@ -1,3 +1,9 @@
+## Clearer failure explanations — 2026-09-26
+
+- Codex / `main`, uncommitted atop `172f474`; preserved staged hint-visibility work. Updated explanation text in survival detectors/engine and CAPTCHA verdict/selection scoring. New failures explain curved or looping mouse movement, uneven/slow typing, uneven/reversed scrolling, inactivity, missed objectives, incorrect images, too many corrections and expired verification with practical next-attempt guidance. No scoring, thresholds, precedence, storage or retry changes.
+- Full npm test passes all 19 files; scoped ESLint, TypeScript no-emit and whitespace pass. Existing explanation assertions updated for the intentional wording change. No new tests needed for copy-only edits. Previously skipped tests remain skipped; this does not establish full browser/device coverage.
+- No browser review or production build performed. No server started or shared database inspected/modified. Previously recorded results retain their original explanation text; new attempts use the new copy. No commit, push or deployment. Next: playtest the messages for readability and usefulness.
+
 ## Hide inactive transmission hint — 2026-09-26
 
 - Codex / `main`, uncommitted atop `172f474`. Changed `src/components/feed/Composer.tsx` at user request: show the transmission instruction/loading hint and exact-length target only when `state.objective.kind` is `post`. For like/admission/no objective, retain a screen-reader label and normal remaining-character count. Draft, posting, errors and immutable retry handling remain unchanged.

@@ -49,7 +49,7 @@ function terminal(state: SurvivalRunState, measurements: readonly SurvivalMeasur
 function idleMeasurement(state: SurvivalRunState): SurvivalMeasurement {
   const stage = survivalStageAt(state.activeMs)
   return { reason: 'idle', activeMs: state.activeMs, stage: stage.id,
-    value: state.idleElapsedMs, threshold: stage.idleLimitMs, unit: 'ms', explanation: 'No qualifying activity before the idle limit.' }
+    value: state.idleElapsedMs, threshold: stage.idleLimitMs, unit: 'ms', explanation: `You stopped interacting for too long. Keep moving, typing or scrolling; the limit was ${stage.idleLimitMs / 1000} seconds.` }
 }
 
 // Find the first idle limit crossing, including limits tightened at stage boundaries.
@@ -132,7 +132,7 @@ export function transitionSurvival(state: SurvivalRunState, input: SurvivalEvent
       record({ reason: 'objective_deadline', activeMs: failureAt, stage: state.objective.stage,
         value: failureAt - state.objective.issuedAtActiveMs,
         threshold: state.objective.deadlineActiveMs - state.objective.issuedAtActiveMs,
-        unit: 'ms', explanation: 'The current objective was not submitted before its deadline.' })
+        unit: 'ms', explanation: 'Time ran out on your objective. Complete the action shown before its countdown reaches zero.' })
     }
   }
   // An event later than an already crossed idle boundary cannot beat that failure.
@@ -244,7 +244,7 @@ export function transitionSurvival(state: SurvivalRunState, input: SurvivalEvent
         break
       case 'verification_rejected':
         if (next.run) record({ reason: 'verification_failed', activeMs: next.activeMs,
-          stage: survivalStageAt(next.activeMs).id, value: 1, threshold: 0, unit: 'boolean', explanation: 'The server confirmed a failed admission attempt.' })
+          stage: survivalStageAt(next.activeMs).id, value: 1, threshold: 0, unit: 'boolean', explanation: 'You did not pass the image check. Select the requested images and their look-alikes, move in straight lines, and avoid long pauses.' })
         break
       case 'interrupted':
         if (next.run && !measurements.size) {

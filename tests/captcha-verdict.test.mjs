@@ -64,7 +64,7 @@ test('changing the selection twice fails; once is allowed', () => {
   assert.equal(once.passed, true)
   const twice = judgeCaptcha({ ...base, strokes: [], clicks: [...steady(['cw', 'bk']), { id: 'bk', t: 600 }, { id: 'bk', t: 700 }, { id: 'bk', t: 800 }, { id: 'tt', t: 900 }] })
   assert.equal(twice.passed, false)
-  assert.match(twice.reason, /Changed the selection 2 times/)
+  assert.match(twice.reason, /Only 1 correction is allowed/)
 })
 
 test('no viewport means no pointer verdict: touch players are judged on tiles and timing only', () => {
