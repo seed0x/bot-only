@@ -223,12 +223,15 @@ test('definite mutation rejection preserves objective and budget; malformed succ
     const input = { requestId: 'post_rejected_0000001', handle: 'verified', body: 'draft' }
     await assert.rejects(h.value.mutate('/api/posts', input, 'post', isPostReceipt), /rejected/)
     assert.equal(h.state().objective.objectiveId, original.objectiveId)
-    assert.equal(h.state().pendingObjective, null); assert.equal(h.state().phase, 'paused')
+    assert.equal(h.state().pendingObjective, null); assert.equal(h.state().phase, 'running')
     assert.equal(h.state().activeMs, 100)
-    h.value.resume(); h.tick(6100)
+    h.tick(3200)
+    assert.equal(h.state().activeMs, 200)
+    assert.equal(h.state().objective.deadlineActiveMs, original.deadlineActiveMs)
     h.network.fetch = () => Response.json({ id: 42 })
     await assert.rejects(h.value.mutate('/api/posts', input, 'post', isPostReceipt), /confirm/)
     assert.ok(h.state().pendingObjective); assert.equal(h.state().completedObjectiveIds.length, 0)
+    assert.equal(h.state().phase, 'paused')
   } finally { cleanup(); h.restore() }
 })
 

@@ -203,19 +203,39 @@ test.skip('objective overdue ends at the first representable time after deadline
   assert.equal(state.terminal.primaryReason, 'objective_deadline')
   assert.ok(state.activeMs > 35000 && state.activeMs < 35000.001)
 })
-test('definite rejection preserves objective and pre-request budgets', () => {
+test('definite rejection continues immediately with the same objective and pre-request budgets', () => {
   let state = running()
   const obj = objective(state)
   state = step(state, 'objective_issued', 3000, { objective: obj })
   const payload = { ...submission(obj), submittedAtActiveMs: 1000 }
   state = step(state, 'objective_submitted', 4000, { submission: payload })
   state = step(state, 'objective_rejected', 100000, { runId, objectiveId: obj.objectiveId, requestId: payload.requestId, message: 'Invalid post.' })
-  assert.equal(state.phase, 'paused')
+  assert.equal(state.phase, 'running')
   assert.equal(state.activeMs, 1000)
   assert.equal(state.idleElapsedMs, 1000)
   assert.equal(state.objective.objectiveId, obj.objectiveId)
   assert.equal(state.pendingObjective, null)
   assert.deepEqual(state.pauseReasons, [])
+  const advanced = step(state, 'tick', 100100)
+  assert.equal(advanced.activeMs, 1100)
+  assert.equal(advanced.idleElapsedMs, 1100)
+  assert.equal(advanced.objective.deadlineActiveMs, obj.deadlineActiveMs)
+})
+test('definite rejection preserves overlapping pauses', () => {
+  for (const reason of ['leaderboard', 'hidden', 'blurred', 'required_resource']) {
+    let state = running()
+    const obj = objective(state)
+    const payload = { ...submission(obj), submittedAtActiveMs: 1000 }
+    state = step(state, 'objective_issued', 3000, { objective: obj })
+    state = step(state, 'objective_submitted', 4000, { submission: payload })
+    state = step(state, 'pause_acquired', 5000, { reason })
+    state = step(state, 'objective_rejected', 100000, { runId, objectiveId: obj.objectiveId, requestId: payload.requestId, message: 'Invalid post.' })
+    assert.equal(state.phase, 'paused')
+    assert.deepEqual(state.pauseReasons, [reason])
+    assert.equal(step(state, 'tick', 100100).activeMs, 1000)
+    assert.equal(state.pendingObjective, null)
+    assert.equal(state.objective.objectiveId, obj.objectiveId)
+  }
 })
 test('interruption is neutral, unranked local terminal and frozen', () => {
   const state = step(running(), 'interrupted', 4000, { runId, cause: 'reload' })

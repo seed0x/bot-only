@@ -230,7 +230,10 @@ export function transitionSurvival(state: SurvivalRunState, input: SurvivalEvent
       }
       case 'objective_rejected':
         if (next.pendingObjective?.objectiveId === event.objectiveId && next.pendingObjective.requestId === event.requestId) {
-          next = { ...next, pendingObjective: null, pauseReasons: next.pauseReasons.filter(reason => reason !== 'objective_request') }
+          const remainingPauses = next.pauseReasons.filter(reason => reason !== 'objective_request')
+          next = { ...next, pendingObjective: null, pauseReasons: remainingPauses,
+            phase: remainingPauses.length ? 'paused' : 'running', countdownEndsAtMs: null }
+          resetAll()
         }
         break
       case 'objective_uncertain':

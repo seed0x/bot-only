@@ -1,3 +1,5 @@
+> Objective rejection continuation (2026-09-26): confirmed incorrect objective submissions now continue immediately with the same objective/deadline when no other pause remains. Uncertain requests still pause for immutable retry. Focused engine/provider tests and lint pass; browser playtest pending. See newest HANDOFF.
+
 > Bottom survival bar Open button removed at user request (2026-09-26). Objective/countdown and recovery controls preserved; scoped lint and whitespace checks pass. Visual check pending.
 
 > Post input styling accepted by the user in the ChatGPT app (2026-09-26). Visible inset field, padding, placeholder and keyboard focus implemented. Scoped lint, TypeScript and whitespace pass; production build failed parsing TypeScript showConfig. Full viewport/device matrix remains untested. See newest HANDOFF entry.
