@@ -12,7 +12,7 @@ import {
   SURVIVAL_SENSORS, SURVIVAL_STAGES, SURVIVAL_TIMING, survivalStageAt,
 } from './config'
 
-// G05 server side of the frozen survival-v1 contract: run start, identity binding, the one
+// G05 server side of the versioned survival contract: run start, identity binding, the one
 // terminal write per run, and the best-run-per-identity ranking. Routes only parse and delegate.
 
 const KNOWN_RULES_VERSIONS: readonly string[] = [SURVIVAL_RULES_VERSION]
@@ -123,15 +123,16 @@ function measurements(value: unknown, activeMs: number, terminalStage: SurvivalS
     const stage = stageId(input.stage)
     const terminalOnly = reason === 'idle' || reason === 'verification_failed'
     if (terminalOnly ? stage !== terminalStage : STAGE_IDS.indexOf(stage) > STAGE_IDS.indexOf(terminalStage)) throw new InputError(`The ${reason} measurement stage does not fit this run.`)
-    const unit = UNITS[reason]
+    const unit = reason === 'typing' && input.unit === 'wpm' ? 'wpm' : UNITS[reason]
     if (input.unit !== unit) throw new InputError(`The ${reason} measurement unit is ${unit}.`)
     const max = unit === 'ms' ? SURVIVAL_LIMITS.activeMsMax : unit === 'boolean' ? 1 : SURVIVAL_LIMITS.cvMax
     const measured = bounded(input.value, 0, max, 'Measurement value'), threshold = bounded(input.threshold, 0, max, 'Measurement threshold')
     const config = stageConfig(stage)
     const thresholdOk = reason === 'verification_failed' ? measured === 1 && threshold === 0
       : reason === 'objective_deadline' ? sameMs(threshold, config.objectiveBudgetMs) || sameMs(threshold, SURVIVAL_TIMING.admissionBudgetMs)
-      : threshold === (reason === 'idle' ? config.idleLimitMs : reason === 'pointer' ? config.pointerRatio : reason === 'typing' ? config.typingCv : config.scrollCv)
+      : threshold === (reason === 'idle' ? config.idleLimitMs : reason === 'pointer' ? config.pointerRatio : reason === 'typing' ? (unit === 'wpm' ? config.typingMinWpm : config.typingCv) : config.scrollCv)
     if (!thresholdOk) throw new InputError(`The ${reason} threshold does not match survival rules for its stage.`)
+    if (reason === 'typing' && (unit === 'wpm' ? measured >= threshold : measured <= threshold)) throw new InputError('Typing evidence does not meet its stage rule.')
     const explanation = input.explanation
     const length = typeof explanation === 'string' ? [...explanation].length : 0
     if (typeof explanation !== 'string' || length < 1 || length > SURVIVAL_LIMITS.explanationMaxLength) throw new InputError(`Explanation must be 1–${SURVIVAL_LIMITS.explanationMaxLength} characters.`)
@@ -187,6 +188,9 @@ export function parseFinish(runId: string, body: unknown): SurvivalFinishRequest
 /** One terminal write per run. `admitted` must match a bound run's identity. */
 export function finishRun(input: SurvivalFinishRequest, admitted: SessionUser | null): SurvivalFinishReceipt {
   const { requestId: id, snapshot: result } = input
+  // Check identity before looking up an idempotent receipt, too.
+  const owner = getDb().prepare('select user_id from game_runs where id = ?').get(result.runId) as { user_id: number | null } | undefined
+  if (owner?.user_id != null && owner.user_id !== admitted?.id) throw new InputError('Only the bound unit can save this run.', 403)
   return operation(id, 'survival.finish', result, () => {
     const db = getDb()
     const run = db.prepare('select rules_version, input_mode, user_id, terminal_status from game_runs where id = ?').get(result.runId) as

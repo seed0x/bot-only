@@ -13,7 +13,7 @@ const { createSurvivalState, transitionSurvival, survivalIdleWarning } = await i
 import { survivalStageAt } from '../src/lib/survival/config.ts'
 
 const runId = 'run_00000000000001'
-const startReceipt = { ok: true, requestId: 'start_000000000001', runId, rulesVersion: 'survival-v1', inputMode: 'pointer', startedAt: '2026-09-26T00:00:00.000Z' }
+const startReceipt = { ok: true, requestId: 'start_000000000001', runId, rulesVersion: 'survival-v3', inputMode: 'pointer', startedAt: '2026-09-26T00:00:00.000Z' }
 const step = (state, type, atMs, fields = {}) => transitionSurvival(state, { type, atMs, ...fields }).state
 const running = () => step(step(createSurvivalState(), 'start_acknowledged', 0, { receipt: startReceipt }), 'countdown_finished', 3000)
 const activity = (state, atMs) => step(state, 'activity', atMs, { source: 'input' })
@@ -259,4 +259,18 @@ test('verification wins over an equal-time objective expiration', () => {
   const ended = step(state, 'verification_rejected', timestamp, { runId, attemptId: 7 })
   assert.equal(ended.terminal.primaryReason, 'verification_failed')
   assert.deepEqual(ended.terminal.measurements.map(m => m.reason), ['verification_failed', 'objective_deadline'])
+})
+
+test('slow typing windows latch typing failure with WPM evidence', () => {
+  let state = running()
+  for (let i = 0; i < 3; i++) {
+    state = step(state, 'detector_evaluated', 3001 + i, { result: {
+      detector: 'typing', stage: 'boot', outcome: 'bad', typingMetric: 'speed', value: 19,
+      threshold: 20, explanation: 'Typing below minimum speed.',
+    } })
+  }
+  assert.equal(state.phase, 'ended')
+  assert.equal(state.terminal.primaryReason, 'typing')
+  assert.equal(state.terminal.measurements[0].unit, 'wpm')
+  assert.equal(state.terminal.measurements[0].value, 19)
 })

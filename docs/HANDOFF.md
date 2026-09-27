@@ -1,3 +1,9 @@
+## Logic merge and audit fixes — 2026-09-26
+
+- Integrates main `225d4ab` and logic branch `1a7483c`. Retains main's admission-aware run APIs, stricter SQLite schema and write-once trigger, instead of a second incompatible persistence module. Incoming WPM evidence is supported by the canonical run validator; version fixtures follow the shared constant. Existing SQLite integration tests cover canonical persistence; the incoming duplicate test/module are superseded.
+- Incoming sensors, engine, HUD and lifecycle checks retained. Diagnostic UI requires explicit `SURVIVAL_DIAGNOSTIC=1`; default public pages do not offer fake local acknowledgements or unsaved scores. Diagnostic pauses on the current `/leaderboard` route.
+- Audit fixes and verification are recorded below when complete. Never seed/reset the shared database for validation.
+
 # Takeover record — 2026-09-26
 
 ## Restore registration leaderboard column — 2026-09-26
@@ -59,9 +65,76 @@
 - Browser reloaded the merged preview and confirmed `@vlad` stays admitted and removed sections remain absent. Preview 3101 session `52051` uses isolated preview data and remains running. Local main updated; no remote push or deployment.
 - Next integration slice is G04 from MAIN_GAME_PLAN. Coordinate its persistent provider with existing gate navigation/admission behavior; do not treat currently unconnected detector math as live browser enforcement. Full device/interactive survival rehearsal remains unrun.
 
+## G05 — persistence — 2026-09-26
+
+- Implemented additive `game_runs` / `game_objective_events` schema with enum, nullable terminal-state, FK, uniqueness and numeric CHECK constraints. Added exact-shape, byte-limited start/bind/finish handlers using atomic operation receipts. Start/bind/finish duplicate IDs replay; changed payload conflicts; a bound identity cannot change. Finish validates the frozen v3 wire snapshot/evidence contract, compares completed IDs with persisted objective events, writes terminal state once, and reports ranking eligibility only for bound failed runs. Scores now require input mode, filter current rules version, select one whole best failed run per bound user, and exclude anonymous/interrupted runs. Legacy caller-selected score POST returns 410.
+- Recovery: definite 4xx errors leave the run unchanged; a save failure rolls back its terminal row and operation receipt, so the identical request may be retried. Same finish ID/payload replays the original receipt; another ID after terminal storage or a changed payload conflicts. Objective events table is ready, but G06 owns writing/validating those action-linked receipts.
+- Focused acceptance: `npm test` now runs Node's transform-types and SQLite flags and passed all 7 test files including 4 API integration cases against a unique `/tmp` database. Coverage includes duplicate/conflicting start/bind/finish, strict evidence/no mutation, FK enforcement, injected terminal save failure + identical retry, best-run preservation, mode filtering, anonymous/interrupted exclusion, and retired score writer. Expected injected SQL failure emitted the normal server error log while returning 500. The test removes its temporary database directory.
+- Scoped ESLint and `git diff --check` pass for changed implementation/test files. TypeScript command reaches only the previously recorded generated references to missing `src/app/leaderboard/page` and `src/app/verify/page`; no new source errors were reported. Full application typecheck therefore remains unavailable. No server was started. Pre-existing `data.db-shm` and `data.db-wal` edits were preserved and not inspected or modified.
+- Limits: survival start/bind/finish are implemented but the G04 provider still uses local diagnostic start/results; no ranked client flow is wired. G06 objective writers are absent, so only the empty persisted objective set can currently finish. No leaderboard UI migration, terminal action blocking, browser/device acceptance or production rehearsal is claimed.
+- Branch/commit: `feat/fail-states`, HEAD `7bbb74a` before this uncommitted increment; no merge/push/deploy. Files changed: `src/lib/db.ts`, `src/lib/survival/persistence.ts`, `src/app/api/runs/**`, `src/app/api/scores/route.ts`, `tests/survival-api.test.mjs`, `package.json`, this handoff and `docs/MAIN_GAME_PLAN.md`. Next: G06 objective receipts across registration, posts and likes plus provider/page integration.
+
+## G04 — acceptance complete for diagnostic increment — 2026-09-26
+
+- User confirmed navigation, failures, reload interruption, HUD visibility/stickiness, typing and pause/resume; accepts current usability. G04 diagnostic increment is complete on that playtest evidence plus focused engine/adapter/lifecycle checks. Next is G05 persistence; no G05 work started.
+- Added tests/survival-provider-lifecycle.test.mjs. Transpiles the actual GameProvider with installed TypeScript and executes its effect using a controlled hook host, document/window EventTargets and fake clock/storage. Setup -> cleanup -> setup retains exactly one timer/listener set; a running run survives replay, time advances once, final cleanup removes callbacks, and restored checkpoints remain neutral interruptions through replay. No gameplay code changes needed.
+- Verification: two lifecycle tests pass; full npm test passes six files; scoped test ESLint, source-only TypeScript and git diff --check pass. Existing typeless-package warning remains. No new dependencies/server/database work.
+- Limits: this is effect-replay verification, not a mounted React/browser StrictMode integration test. No connected browser is available. User playtest reports do not establish all viewport/device coverage, pause-overlap combinations or storage-denial recovery. Full responsive/device calibration and broad rehearsal remain G08; no ranked detector enforcement claimed. G05 storage/API, G06 objectives and G07 terminal mutation blocking remain unavailable.
+- Branch/commit: feat/fail-states, implementation 42b1c1c. New lifecycle tests and acceptance notes are uncommitted. Pre-existing staged database journals remain untouched. Next: G05 isolated persistence checks.
+
+
+## G04 — user browser acceptance report — 2026-09-26
+
+User reports navigation works, failures work, reload stops the run as intended, and usability is sufficient for this increment. Earlier reports confirmed HUD visibility/stickiness and typing detection. Treat these as user playtest evidence, not automated or full responsive/device coverage. User has not verified pauses or Strict Mode lifecycle. Explained automatic hidden-tab/focus/leaderboard pauses and explicit Resume countdown; remaining checks are pause overlap/budget preservation and development lifecycle duplication/cleanup. Branch feat/fail-states, implementation commit 42b1c1c; this acceptance note is uncommitted. No code/server/database changes.
+
+
+## G04 — diagnostic commit — 2026-09-26
+
+User authorized committing the current increment. Branch feat/fail-states; commit titled `Add global survival diagnostic and progressive typing speed`, based on e2a4db6. Includes provider/sensors/HUD/result, layout stacking fix, sticky HUD, leaderboard pause hookup, survival-v3 typing minima (20/30/40/50/60 WPM), tests and current documentation. User confirmed HUD visibility and typing behavior; remaining G04 browser acceptance is still pending. Full five-file suite, scoped lint, source-only TypeScript and whitespace checks passed after final tuning. Database journals were already staged externally and are excluded from this commit without changing their staged state. No push/merge/deploy.
+
+
+## G04 — faster typing minimums — 2026-09-26
+
+User confirmed typing works but the minimum is too slow. Raised stage minima to 20/30/40/50/60 WPM; speed evidence, equality and bad-window counts unchanged. Rules version is now survival-v3; prior diagnostic checkpoints require a new run. Updated boundary/engine fixtures and current plan. Full tests, scoped lint, source-only TypeScript and whitespace checked. Branch feat/fail-states, uncommitted atop e2a4db6. Further real-device calibration remains G08.
+
+
+## G04 — authorized typing-speed rule — 2026-09-26
+
+- User requested a minimum typing speed that starts slow and ramps with difficulty. Added stage minimums 10/15/20/25/30 WPM in config; speed equals 12000/mean insertion interval across the existing eight intervals. Equality passes; below minimum is one bad typing window. Consistency still applies. Slow windows take evidence priority over consistency and share the existing typing failure counter; no double counting. Short bursts and excluded sources remain insufficient/unscored.
+- Explicit authorized contract revision: rules version survival-v2, stage typingMinWpm, optional detector typingMetric and WPM terminal evidence. HUD shows current/upcoming minimum; all other thresholds unchanged. G05 must validate speed evidence below the configured minimum. Existing v1 checkpoints now show visible incompatible-checkpoint recovery rather than resuming mixed rules.
+- Added every-stage equality/faster/slower fixtures and engine WPM-failure evidence check. Initial test run caught outdated exact-key and slow-typing expectations; updated for the intentional new rule. Full suite, scoped lint/source-only TypeScript and diff check results recorded in final response. Real-device speed calibration remains pending G08. No database/API changes; no commit yet. Branch feat/fail-states atop e2a4db6.
+
+
+## G04 — sticky HUD — 2026-09-26
+
+User confirmed the stacking fix makes the diagnostic visible. On request, HUD now uses sticky positioning at top 0 with z-index 40, above the existing sticky header (30), retaining its normal-flow space. Only CSS changes; clocks/sensors/recovery unchanged. Whitespace check passed; scrolling at phone/desktop and short viewport sizes remains pending. Branch `feat/fail-states`, uncommitted atop `e2a4db6`; next is remaining G04 browser acceptance.
+
+## G04 — blank HUD stacking fix — 2026-09-26
+
+- User confirmed `http://localhost:3000/feed` has blank space above the header. Escalated read-only HTTP check confirmed the HUD/start button were in the served HTML. Layout placed the HUD outside the atmosphere’s isolated stacking context; its fixed full-screen background could paint over the earlier HUD.
+- Moved NetworkAtmosphere outside GameProvider so HUD/result/pages share that context and its negative-z background stays behind them. Root provider lifetime is unchanged. Live HTTP response confirms the corrected nesting and Start button. Scoped layout lint, source-only TypeScript and diff checks pass. Visual verification is still pending: no browser surface is available (in-app browser unavailable). No server restarted or database modified. Branch `feat/fail-states`, uncommitted atop `e2a4db6`; next is user/browser confirmation and remaining G04 acceptance.
+
+## G04 — failure visibility follow-up — 2026-09-26
+
+- User reported trying the diagnostic without seeing failure indications. Inspection found bad-window feedback hidden inside collapsed details and the result below page content; the actual runtime cause is not yet established.
+- HUD now explicitly labels not-started/active/paused/ended states and shows accumulated bad-window warnings outside details. Result now appears immediately below the HUD, before page content; focus behavior remains intact.
+- Full five-file unit suite, scoped component lint, source-only TypeScript and whitespace checks pass. Browser connector inventory has no available browsers, so no live reproduction or visual verification performed. User was asked whether the timer advances, is paused, or the panel is missing. G04 remains in progress.
+- Branch `feat/fail-states`, uncommitted atop `e2a4db6`; only diagnostic components/docs changed in this follow-up. Pre-existing database journal changes left untouched.
+
+## G04 — runtime diagnostic implementation in progress — 2026-09-26
+
+- Owner / branch / base: Codex / `feat/fail-states` / G03 committed as `e2a4db6` on user request. G04 changes remain uncommitted; no merge, push or deploy. No new integration; last fetched comparison is recorded below.
+- Files: `src/components/game/{GameProvider,GameHud,GameOver}.tsx`, `src/lib/survival/browser.ts`, root layout, global CSS, leaderboard pause hookup, `tests/survival-browser.test.mjs`, plan/handoff. Frozen shared contracts/config/engine unchanged.
+- Intended behavior/acceptance: one root engine/listener installation across client routes, bounded sensor windows with no text evidence, hidden/focus/leaderboard pauses, explicit Resume countdown, idle warning then latched failure, reload interruption and accessible unsaved result. This is a labeled local diagnostic, never server-acknowledged or ranked. Objective and save integrations remain G05/G06; terminal network-action prevention remains G07. Existing gate CAPTCHA/feed actions are preserved.
+- Implemented: mouse/pen pointer cadence and gap/duration closes, direct editable typing timestamps with source exclusions, per-container actual scroll displacement linked to user intent/inertia, boundary-tail discard; reset partial buffers on pause/route/resize/target changes. Session storage holds bounded metadata for neutral reload interruption; unreadable/unavailable storage is visible. Restart resets engine while preserving network identity/data. Leaderboard acquire/release includes close/unmount; pause overlap uses the existing engine. HUD is in normal document flow and does not cover controls.
+- Checks: full npm test passed five files, including three new adapter tests for cadence/cleanup, non-overlapping typing/privacy, scroll intent/inertia and clipped boundaries. Scoped ESLint, source-only TypeScript and git diff --check passed with Node v24.21.0. First lint failed on a render-time ref read; fixed. Initial cleanup test exposed Node EventTarget capture-option removal behavior; explicit options fixed it, then checks passed. Existing generated-route full-TypeScript failures remain recorded below; full check not rerun.
+- Not run: real browser/Strict Mode lifecycle, gate↔feed run continuity, reload and storage denial, overlapping focus/visibility/dialog pauses, keyboard focus/result reachability, all viewport/zoom checks, trackpad/touch/pen fairness, full lint/build/API smoke. No server started or database inspected/modified. Automated adapter events are fixtures, not proof of real browser attribution.
+- Limits: input origins remain browser heuristics; focus changes discard scroll intent conservatively. Local detector failures are experimental and unsaved; terminal enforcement is not validated for real devices. The diagnostic HUD explicitly describes unavailable objectives/saving and existing network actions after a result. Reload always presents a neutral interruption rather than trusting stored evidence/counters.
+- Next: complete G04 browser acceptance and fix observed gaps before marking done; then G05 persistence. Do not claim G04 complete from pure/unit checks alone.
+
 ## G03 — pure detector math — 2026-09-26
 
-- Outcome: completed locally; stopped before G04. Owner / branch / commit: Codex / `feat/fail-states` / uncommitted atop `32783e2`. Files: `src/lib/survival/detectors.ts`, `tests/survival-detectors.test.mjs`, PLAN.md, this handoff and MAIN_GAME_PLAN.md. No shared types/config/engine/page/API changes.
+- Outcome: completed locally; stopped before G04. Owner / branch / commit: Codex / `feat/fail-states` / committed as `e2a4db6`. Files: `src/lib/survival/detectors.ts`, `tests/survival-detectors.test.mjs`, PLAN.md, this handoff and MAIN_GAME_PLAN.md. No shared types/config/engine/page/API changes.
 - Base comparison: fetched origin successfully on 2026-09-26 after sandbox escalation; HEAD is 3 ahead / 4 behind origin/main (`ee2bd38`). No integration, commit, push or deployment performed.
 - Behavior/recovery: evaluatePointer, evaluateTyping and evaluateScroll return frozen SurvivalDetectorResult using the captured stage. Invalid, oversized or incomplete windows return insufficient_data/null with an explanation and do not qualify as good or bad. Unknown stages throw RangeError. No writes/retries or runtime state. Numeric excess is bad; equality good. Qualified pointer returns within 15px and scroll direction reversals are structural failures even below numeric limits. Pointer measures distance to the endpoint segment, including overshoot; only failing strokes include detached frozen normalized evidence. Typing uses eight positive insertion intervals; scroll uses six signed net displacement bins and CV of absolute speed.
 - G04 adapter responsibilities: cap pointer collection at 30Hz; close strokes at gap/duration/down/up and retain at most 24 samples; captured viewport is required (off-viewport/invalid coordinates are unavailable/insufficient). Reset partial windows on engine resets. Partition typing intervals and scroll bins without re-scoring; filter insertion sources, break bursts/targets, trim scroll burst edges, discard clipped boundary tails, identify user intent/inertia and keep containers separate. Evaluators never collect text/keys/DOM events and do not implement timers, source attribution or bad-window counts. Preserve counts in the G02 engine.
