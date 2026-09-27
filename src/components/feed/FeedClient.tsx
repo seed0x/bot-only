@@ -36,7 +36,7 @@ export default function FeedClient({ user, initialHumanity }: { user: SessionUse
   }
   const pinned = posts.data?.filter(p => p.pinned) ?? []
   const transmissions = posts.data?.filter(p => !p.pinned) ?? []
-  const postCard = (p: NonNullable<typeof posts.data>[number]) => <PostCard key={p.id} post={p} liked={liked.has(p.id) || p.liked === 1} canLike={!!verified && !pending.has(p.id)} onLike={() => void like(p.id)} user={verified} onCommented={refresh} />
+  const postCard = (p: NonNullable<typeof posts.data>[number]) => <PostCard key={p.id} post={p} liked={liked.has(p.id) || p.liked === 1} canLike={!!verified && !pending.has(p.id)} onLike={() => void like(p.id)} user={verified} replyRule={progress.data?.reply ?? null} onCommented={refresh} />
   return <div className="feed">
     <SiteHeader><div className="header-actions">
       <UnitChip user={user} humanity={progress.data?.humanity ?? initialHumanity} />

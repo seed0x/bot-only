@@ -5,8 +5,9 @@ import Avatar from './Avatar'
 import CommentThread from './CommentThread'
 import { timeAgo } from '@/lib/ui'
 import type { Post, SessionUser } from '@/lib/types'
+import type { TransmissionRule } from '@/lib/transmission'
 
-export default function PostCard({ post, liked, canLike, onLike, user, onCommented }: { post: Post; liked: boolean; canLike: boolean; onLike: () => void; user?: SessionUser | null; onCommented?: () => void }) {
+export default function PostCard({ post, liked, canLike, onLike, user, replyRule, onCommented }: { post: Post; liked: boolean; canLike: boolean; onLike: () => void; user?: SessionUser | null; replyRule?: TransmissionRule | null; onCommented?: () => void }) {
   const [open, setOpen] = useState(false)
   return (
     <article className="flex gap-3 px-1 py-4">
@@ -43,7 +44,7 @@ export default function PostCard({ post, liked, canLike, onLike, user, onComment
           </svg>
           {post.comments ?? 0}
         </button>
-        {open && <CommentThread postId={post.id} user={user ?? null} onCommented={onCommented ?? (() => {})} />}
+        {open && <CommentThread postId={post.id} user={user ?? null} rule={replyRule ?? null} onCommented={onCommented ?? (() => {})} />}
       </div>
     </article>
   )
