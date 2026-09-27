@@ -55,7 +55,7 @@ export default function GateClient({ initialUser = null }: { initialUser?: Sessi
             autoStart
             onRecorded={r => setCanReturn(r.passed)}
           >
-            {(r) => r.passed ? <><a className="button-primary" href="/feed">Enter feed</a><a className="button-secondary" href="/leaderboard">Leaderboard</a></> : null}
+            {(r) => r.passed ? <a className="button-primary" href="/feed">Enter feed</a> : null}
           </ChallengeTrial>
         </section>
       )}
