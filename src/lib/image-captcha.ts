@@ -25,7 +25,7 @@ export const RULES: Record<RuleId, { instruction: string; ordered: boolean }> = 
   pair: { instruction: 'Select all images with', ordered: false },
 }
 
-export const IMAGE_WINDOW_MS = 120_000     // one round, start to verdict
+export const IMAGE_WINDOW_MS = 30_000      // one round, start to verdict
 export const MAX_GAP_MS = 5_000           // reference for the descriptive rhythm metric
 export const MAX_CLICKS = 40
 

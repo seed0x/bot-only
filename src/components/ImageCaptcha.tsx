@@ -135,7 +135,7 @@ export default function ImageCaptcha({ challenge, onSolution, onRestart }: { cha
     <footer className="image-captcha-foot">
       <p className="fine-print" role="status">{broken ? 'An image failed to load.' : !ready ? 'Loading images…' : expired && clicks.length === 0 ? 'Time’s up.' : idleWarn && !sent ? 'Verify before the idle limit.' : `${selected.length} selected`}</p>
       {expired && clicks.length === 0 || broken
-        ? <button type="button" className="button-secondary" onClick={onRestart}>New round</button>
+        ? null
         : <button type="button" className="button-primary" onClick={verify} disabled={sent || !ready || selected.length === 0}>{sent ? 'Checking…' : 'Verify'}</button>}
     </footer>
   </div>

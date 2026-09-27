@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import SessionEnded from '@/components/game/SessionEnded'
+import EndScreen from '@/components/EndScreen'
 import { useSurvivalGame } from '@/components/game/GameProvider'
 import SiteHeader from '@/components/SiteHeader'
 import UnitChip from '@/components/feed/UnitChip'
@@ -10,7 +10,6 @@ import Composer from '@/components/feed/Composer'
 import Objective from '@/components/feed/Objective'
 import PostCard from '@/components/feed/PostCard'
 import ResourceState from '@/components/ResourceState'
-import Terminated from '@/components/feed/Terminated'
 import type { SessionUser } from '@/lib/types'
 import { usePollingResource } from '@/hooks/usePollingResource'
 import { isPosts, isProgress } from '@/lib/validators'
@@ -59,11 +58,11 @@ export default function FeedClient({ user, initialHumanity }: { user: SessionUse
     } catch (e) { if (e instanceof ApiError && e.status >= 400 && e.status < 500 && e.status !== 408 && e.status !== 429) likeRequests.current.delete(id); setLikeError(e instanceof Error ? e.message : 'Like not confirmed. Retry.'); posts.refresh() }
     finally { likeLocks.current.delete(id); setPending(s => { const next = new Set(s); next.delete(id); return next }) }
   }
-  if (progress.data?.terminated) return <Terminated user={user} detections={progress.data.detections ?? 0} />
+  if (progress.data?.terminated) return <EndScreen eyebrow={`@${user.handle}`} title="Human detected." failed detail={<p className="muted">{progress.data.detections ?? 0} detections. Designation revoked.</p>}><form action="/"><button className="button-primary" type="submit">Start again</button></form></EndScreen>
   const pinned = posts.data?.filter(p => p.pinned) ?? []
   const transmissions = posts.data?.filter(p => !p.pinned) ?? []
   const postCard = (p: NonNullable<typeof posts.data>[number]) => <PostCard key={p.id} post={p} liked={liked.has(p.id) || p.liked === 1} canLike={!!verified && !pending.has(p.id) && (game.objective?.kind !== 'like' || game.objective.eligiblePostIds.includes(p.id))} onLike={() => void like(p.id)} user={verified} replyRule={progress.data?.reply ?? null} onCommented={refresh} />
-  if (ended) return <SessionEnded handle={user.handle} />
+  if (ended) return <EndScreen eyebrow={`@${user.handle}`} title="Session ended."><form action="/"><button className="button-primary" type="submit">Start again</button></form></EndScreen>
   return <div className="feed">
     <SiteHeader><div className="header-actions">
       <UnitChip user={user} humanity={progress.data?.humanity ?? initialHumanity} />

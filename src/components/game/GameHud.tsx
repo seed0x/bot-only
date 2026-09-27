@@ -21,14 +21,13 @@ export default function GameHud() {
   if (state.phase === 'ended' || state.phase === 'ready') return null
   const objective = state.objective
   return <aside className="survival-hud" aria-label="Survival game">
-    <strong>Survival</strong>
+    <strong className={`survival-stage${stage.id === 'audit' || stage.id === 'purge' ? ' is-hot' : ''}`}>{stage.id.toUpperCase()}</strong>
       <span className="survival-clock">{(state.activeMs / 1000).toFixed(1)}s</span>
       <p className="survival-copy">{objective ? <>{objective.kind === 'admission' ? 'Pass verification' : objective.kind === 'post' ? 'Post' : 'Like an eligible post'} · {(Math.max(0, objective.deadlineActiveMs - state.activeMs) / 1000).toFixed(1)}s left <Link className="button-secondary" href={objective.kind === 'admission' ? '/?retry=1' : '/feed'}>Open</Link></> : 'Loading next objective…'}</p>
       <button className="button-secondary" disabled={!!state.pendingObjective} onClick={() => { setError(''); void end().catch(e => setError(e instanceof Error ? e.message : 'Couldn’t end the run. Retry.')) }}>End game</button>
       {state.phase === 'countdown' && <p className="survival-notice" role="status">Get ready…</p>}
-      {state.phase === 'paused' && <p className="survival-notice" role="status">Paused. <button className="button-secondary" disabled={state.pauseReasons.length > 0} onClick={resume}>Resume</button>{state.pendingObjective && <> Saving your action. {networkError && <button className="button-secondary" onClick={retryMutation}>Retry saving action</button>}</>}</p>}
       {survivalIdleWarning(state) && <p className="survival-notice form-error" role="status">Idle {(Math.max(0, stage.idleLimitMs - state.idleElapsedMs) / 1000).toFixed(1)}s</p>}
-      {state.phase === 'running' && (['pointer', 'typing', 'scroll'] as const).map(detector => state.badWindows[detector] > 0 && <p className="survival-notice" role="status" key={detector}>{detector} {state.badWindows[detector]}/{stage.badWindowsToFail}</p>)}
+      {state.phase === 'running' && (['pointer', 'typing', 'scroll'] as const).map(detector => state.badWindows[detector] > 0 && <p className="survival-notice" role="status" key={detector}>ANOMALY · {detector === 'pointer' ? 'cursor path too human' : detector === 'typing' ? 'typing too human' : 'scrolling too human'} {state.badWindows[detector]}/{stage.badWindowsToFail}</p>)}
     {fallback && <p className="survival-notice" role="status">{fallback}</p>}
     {(error || networkError || storageError) && <p className="survival-notice form-error" role="alert">{error || networkError || storageError}</p>}
   </aside>

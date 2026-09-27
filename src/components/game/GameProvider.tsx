@@ -78,12 +78,11 @@ export default function GameProvider({ children }: { children: React.ReactNode }
   const resource = useCallback((owner: 'like_targets' | 'gate_challenge' | 'feed_identity', blocked: boolean) => {
     if (blocked) resources.current.add(owner)
     else resources.current.delete(owner)
-    pause('required_resource', resources.current.size > 0)
+    pause('required_resource', false)
   }, [pause])
   const conditions = useCallback(() => {
-    pause('hidden', document.hidden)
-    pause('blurred', !document.hasFocus())
-    pause('leaderboard', window.location?.pathname === '/leaderboard')
+    // No pauses: the run keeps counting whatever the tab or page does.
+    pause('hidden', false); pause('blurred', false); pause('leaderboard', false)
   }, [pause])
   const issue = useCallback((kind: SurvivalObjective['kind']) => {
     const s = current.current
@@ -149,7 +148,6 @@ export default function GameProvider({ children }: { children: React.ReactNode }
       const bound = pending.verified ? await requestJson(`/api/runs/${pending.receipt.runId}/bind`, jsonPost({ requestId: pending.bindId, handle: pending.handle }), (v): v is SurvivalBindReceipt => isBindReceipt(v) && v.runId === pending.receipt!.runId && v.requestId === pending.bindId && v.user.handle === pending.handle) : null
       if (!mounted.current || token !== generation.current) return
       conditions()
-      if (resources.current.size) pause('required_resource', true)
       emit({ type: 'start_acknowledged', atMs: performance.now(), receipt: pending.receipt })
       if (bound) emit({ type: 'identity_bound', atMs: performance.now(), receipt: bound })
       issue(bound ? 'post' : 'admission')
@@ -327,7 +325,7 @@ export default function GameProvider({ children }: { children: React.ReactNode }
   }, [conditions, emit, persist])
   useEffect(() => {
     emit({ type: 'sensor_reset', cause: 'route', atMs: performance.now() })
-    pause('leaderboard', pathname === '/leaderboard')
+    pause('leaderboard', false)
   }, [pathname, emit, pause])
   useEffect(() => { if (state.terminal) void saveResult().catch(() => {}) }, [state.terminal, saveResult])
   return <GameContext.Provider value={{ state, saveState, saveError, saveResult, end, restart, readings, storageError, networkError, starting, fallback, retryMutation, resource, targets, mutate, start, resume, pause }}>

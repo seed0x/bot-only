@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import ChallengeTrial from '@/components/ChallengeTrial'
+import EndScreen from '@/components/EndScreen'
 import { requestJson, jsonPost } from '@/lib/api'
 import { judgeDesignation } from '@/lib/designation'
 import { useSurvivalGame } from '@/components/game/GameProvider'
@@ -14,6 +15,7 @@ export default function GateClient() {
   const [designation, setDesignation] = useState(''), [error, setError] = useState(''), [fails, setFails] = useState(0)
   const [busy, setBusy] = useState(false)
   const [unit, setUnit] = useState<SessionUser | null>(null)
+  const [failed, setFailed] = useState('')
   // Arriving at the gate forgets any earlier admission.
   useEffect(() => { void fetch('/api/session/end', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }).catch(() => {}) }, [])
   const pending = useRef<{ requestId: string; handle: string } | null>(null)
@@ -39,6 +41,7 @@ export default function GateClient() {
     start(mode); router.push('/feed')
   }
 
+  if (failed) return <EndScreen eyebrow={unit ? `@${unit.handle}` : 'onlybots'} title="Human detected." failed detail={<p className="muted">{failed}</p>}><form action="/"><button className="button-primary" type="submit">Start again</button></form></EndScreen>
   return <main>
     <div className="gate-layout">
       <div className="gate-intro">
@@ -66,7 +69,7 @@ export default function GateClient() {
         </form>
       ) : (
         <section className="gate-verify" aria-label="Verification">
-          <ChallengeTrial handle={unit.handle} kind="image-confusion" autoStart onRecorded={r => { if (r.passed) admitted() }}>
+          <ChallengeTrial handle={unit.handle} kind="image-confusion" autoStart onRecorded={r => { if (r.passed) admitted(); else setFailed(r.result.meta.reason) }}>
             {(r) => r.passed ? <p className="fine-print" role="status">Admitted. Opening the feed…</p> : null}
           </ChallengeTrial>
         </section>

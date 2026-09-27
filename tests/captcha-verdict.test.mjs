@@ -20,7 +20,7 @@ const round = { rule: 'pair', requested: 'crosswalk', prompt: 'crosswalks', inst
 const steady = ids => ids.map((id, i) => ({ id, t: 200 + i * 150 }))
 const straight = (k = 0) => Array.from({ length: 8 }, (_, i) => ({ x: 100 + i * 40, y: 100 + k * 50, t: 60 + k * 200 + i * 16 }))
 const curved = (k = 0) => Array.from({ length: 12 }, (_, i) => ({ x: 300 + i * 25, y: 300 + Math.sin(i / 1.5) * 120, t: 60 + k * 200 + i * 16 }))
-const base = { round, clicks: steady(['cw', 'tt']), viewport, elapsedMs: 900, windowMs: 120_000, expired: false }
+const base = { round, clicks: steady(['cw', 'tt']), viewport, elapsedMs: 900, windowMs: 30_000, expired: false }
 
 test('right tiles, straight strokes, steady clicks: admitted with low humanity', () => {
   const v = judgeCaptcha({ ...base, strokes: [straight(0), straight(1)] })
