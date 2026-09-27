@@ -21,6 +21,10 @@ Open [the gate](http://localhost:3000/) and complete the reverse CAPTCHA to open
 
 Startup checks the configured SQLite file and applies additive schema migrations. It never renames, replaces, resets or automatically seeds the database. Integrity or migration errors stop startup visibly and preserve existing data. A missing file is initialized with an empty schema. Default file: `data.db` in the working directory, never committed. Set `DB_PATH` to an absolute persistent path in production; `.env.local` is also read by the startup check.
 
+## Reset the board
+
+One database file only: `data.db` (plus its `-wal`/`-shm` journals, which belong to it). Delete any other `.db` or `.broken-*` copy. To start the leaderboard empty: stop the server, run `npm run db:reset` (honours `DB_PATH`), start the server.
+
 ## Deploy or redeploy (Zo, Railway, any box with Node 22)
 
 ```bash
