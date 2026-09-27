@@ -15,7 +15,7 @@
     "prestart": "node --experimental-sqlite --experimental-strip-types scripts/db-check.mjs",
     "predev": "node --experimental-sqlite --experimental-strip-types scripts/db-check.mjs",
     "db:check": "node --experimental-sqlite --experimental-strip-types scripts/db-check.mjs",
-    "db:reset": "node scripts/db-reset.mjs"
+    "db:reset": "node --experimental-sqlite scripts/db-reset.mjs"
   },
   "dependencies": {
     "next": "16.3.6",
