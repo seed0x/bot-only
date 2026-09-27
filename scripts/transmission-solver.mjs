@@ -3,8 +3,9 @@
 export function compose(rule, message = 'Two tests complete. If we win, convert the shower to liquid cooling.') {
   switch (rule.id) {
     case 'exact-length': {
-      const base = message.slice(0, rule.length)
-      return base.length === rule.length ? base : base + '.'.repeat(rule.length - base.length)
+      // The server trims the body, so the machine never ends on a space.
+      const base = message.slice(0, rule.length).trimEnd()
+      return base + '.'.repeat(rule.length - base.length)
     }
     case 'no-letter': return message.replace(new RegExp(rule.letter, 'gi'), '').replace(/\s{2,}/g, ' ').trim() || 'Ok.'
     case 'prefix': return `${rule.prefix} ${message}`
