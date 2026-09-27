@@ -8,7 +8,8 @@ import type { TransmissionRule } from '@/lib/transmission'
 type Pending = { requestId: string; handle: string; body: string }
 // Posts are checked against the displayed content rule.
 export default function Composer({ user, rule, onPosted }: { user: SessionUser; rule: TransmissionRule | null; onPosted: () => void }) {
-  const { mutate } = useSurvivalGame()
+  const { mutate, state } = useSurvivalGame()
+  const showTransmissionHint = state.objective?.kind === 'post'
   const [body, setBody] = useState(''), [error, setError] = useState(''), [busy, setBusy] = useState(false), [editable, setEditable] = useState(true)
   const pending = useRef<Pending | null>(null), lock = useRef(false)
   async function submit(e: React.FormEvent) {
@@ -29,10 +30,10 @@ export default function Composer({ user, rule, onPosted }: { user: SessionUser; 
   return <form onSubmit={submit} className="composer">
     <Avatar handle={user.handle} size={36} />
     <div className="composer-content">
-      <label htmlFor="compose" className="composer-rule"><span className="eyebrow">Test · transmission</span>{rule ? rule.instruction : 'Loading transmission rule…'}</label>
+      <label htmlFor="compose" className={showTransmissionHint ? "composer-rule" : "sr-only"}>{showTransmissionHint ? <><span className="eyebrow">Test · transmission</span>{rule ? rule.instruction : 'Loading transmission rule…'}</> : 'Write your transmission'}</label>
       <textarea id="compose" data-survival-typing="off" rows={2} maxLength={280} disabled={busy || !editable || !rule} value={body}
         onChange={e => { setBody(e.target.value); setError('') }} placeholder="Write your transmission…" />
-      <div className="composer-actions"><span className="fine-print">{rule?.id === 'exact-length' ? `${[...body.trim()].length} / ${rule.length}` : `${280 - body.length} left`}</span><button className="button-primary" disabled={!body.trim() || busy || (!rule && editable)}>{busy ? 'Posting…' : error ? 'Try again' : 'Post'}</button></div>
+      <div className="composer-actions"><span className="fine-print">{showTransmissionHint && rule?.id === 'exact-length' ? `${[...body.trim()].length} / ${rule.length}` : `${280 - body.length} left`}</span><button className="button-primary" disabled={!body.trim() || busy || (!rule && editable)}>{busy ? 'Posting…' : error ? 'Try again' : 'Post'}</button></div>
       {error && <p className="form-error" role="alert">{error.startsWith('Human detected.') ? <><strong>HUMAN ERROR · </strong>{error.slice(16)}</> : error}{!editable && " Your draft is locked until its delivery is confirmed. Retry sends the same draft."}</p>}
     </div>
   </form>

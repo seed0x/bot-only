@@ -1,3 +1,8 @@
+## Hide inactive transmission hint — 2026-09-26
+
+- Codex / `main`, uncommitted atop `172f474`. Changed `src/components/feed/Composer.tsx` at user request: show the transmission instruction/loading hint and exact-length target only when `state.objective.kind` is `post`. For like/admission/no objective, retain a screen-reader label and normal remaining-character count. Draft, posting, errors and immutable retry handling remain unchanged.
+- Scoped Composer ESLint, TypeScript no-emit and whitespace checks pass. No tests added for this presentation-only condition. Browser/device/visual objective-transition check and production build not run. No server/database work or integration/push/deployment. Next: verify hint hides on like and returns on post in the browser.
+
 ## Remove post keystroke checking — 2026-09-26
 
 - Codex / `main`, uncommitted atop `de68a90`; prior CAPTCHA changes preserved, including their staged state. No integration/push/deployment. Last fetched main comparison in this session had no divergence.

@@ -1,3 +1,5 @@
+> Transmission hint visibility updated (2026-09-26): composer instruction and rule-specific length target appear only for the current post objective. Scoped lint, TypeScript and whitespace pass; visual objective-transition check pending.
+
 > Post keystroke checking removed locally (2026-09-26): content rules remain; composer no longer records typing or supplies survival typing evidence. Full 19-file suite, scoped lint and TypeScript pass. Browser check pending; see newest HANDOFF.
 
 > CAPTCHA leniency completed locally (2026-09-26): allow one tile error with at least one correct tile selected, one correction, two curved strokes, and pauses under five seconds. Full 19-file tests, scoped lint and TypeScript pass; browser rehearsal pending. See newest HANDOFF.
