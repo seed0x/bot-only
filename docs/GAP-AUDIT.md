@@ -1,3 +1,5 @@
+> Historical pre-integration audit. The newest HANDOFF records the implemented fixes. Its proposed automatic DB reset was rejected and removed from startup: preserve the real SQLite database. Do not use this historical proposal as a deployment checklist.
+
 # Live gap audit — 2026-09-26 17:30 (freeze 18:00, judging 19:00)
 
 Site: https://onlybots-versatilesoldier.zocomputer.io — walked gate → captcha → feed → post → leaderboard as a judge, plus `scripts/machine.mjs` against it (passes end to end, #159–161, transmission #9).

@@ -1,3 +1,4 @@
+import { readGame, checkGame, completeGame } from '@/lib/survival/objectives'
 import { operation } from '@/lib/operations'
 import { getDb, logActivity } from '@/lib/db'
 import { requestAdmission, requireAdmission } from '@/lib/gate'
@@ -23,14 +24,15 @@ export async function POST(req: Request) {
     const b = await bodyInput(req), handle = handleInput(b.handle), id = requestId(b.requestId)
     const user = requireAdmission(req, handle)
     if (typeof b.body !== 'string' || !b.body.trim() || b.body.length > 280) throw new InputError('Transmit between 1 and 280 characters.')
-    const body = b.body.trim()
+    const body = b.body.trim(), game = readGame(b.game, id, 'post')
     let typing: number[] = []
     if (b.typing !== undefined) {
       if (!Array.isArray(b.typing) || b.typing.length > 400) throw new InputError('Invalid typing record.')
       let prev = -1
       typing = b.typing.map((t) => { if (typeof t !== 'number' || !Number.isFinite(t) || t < 0 || t <= prev || t > 3_600_000) throw new InputError('Invalid typing record.'); prev = t; return t })
     }
-    const outcome = operation(id, 'post', { handle, body, typing }, () => {
+    const outcome = operation(id, 'post', { handle, body, typing, ...(game ? { game } : {}) }, () => {
+      checkGame(game, handle)
       const db = getDb()
       // Test 01+: the network's rule for this unit's next transmission, and machine typing rhythm.
       const posted = (db.prepare('select count(*) as n from posts where user_id = ?').get(user.id) as { n: number }).n
@@ -44,7 +46,9 @@ export async function POST(req: Request) {
       }
       const info = db.prepare('insert into posts (user_id, handle, body) values (?, ?, ?)').run(user.id, handle, body)
       logActivity('post', handle, body.length > 60 ? body.slice(0, 60) + '…' : body)
-      return { id: Number(info.lastInsertRowid) }
+      const postId = Number(info.lastInsertRowid)
+      const completion = completeGame(game, user, { kind: 'post', postId })
+      return { id: postId, ...(completion ? { completion } : {}) }
     })
     return Response.json(outcome, { status: 'error' in outcome ? 422 : 200 })
   } catch (e) { return errorResponse(e) }

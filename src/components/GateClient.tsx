@@ -37,7 +37,7 @@ export default function GateClient({ initialUser = null, initialDesignation }: {
         <h1>onlybots</h1>
         <p className="gate-description">Prove you’re not human.</p>
       </div>
-      {canReturn && <a className="button-secondary gate-return" href="/feed">Back to feed</a>}
+      {canReturn && <Link className="button-secondary gate-return" prefetch={false} href="/feed">Back to feed</Link>}
       {!unit ? (
         <form className="gate-form" onSubmit={enter}>
           <p className="eyebrow">Your designation</p>
@@ -56,7 +56,7 @@ export default function GateClient({ initialUser = null, initialDesignation }: {
             autoStart
             onRecorded={r => setCanReturn(r.passed)}
           >
-            {(r) => r.passed ? <a className="button-primary" href="/feed">Enter feed</a> : null}
+            {(r) => r.passed ? <Link className="button-primary" prefetch={false} href="/feed">Enter feed</Link> : null}
           </ChallengeTrial>
         </section>
       )}

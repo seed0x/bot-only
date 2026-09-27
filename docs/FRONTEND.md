@@ -1,3 +1,5 @@
+> Current run flow: one root GameProvider owns server-acknowledged survival runs across client navigation. End game saves an interrupted result; automatic failures save their evidence. GameOver replaces gameplay and owns saving/retry/Start again. Start again revokes this browser admission and returns to the initial gate without deleting content/results. Leaderboard route pauses an active run. The CAPTCHA-to-feed action must be client navigation so it does not interrupt the run. See newest HANDOFF for tested scope.
+
 > Owner requirement: keep the top-five leaderboard visible as a right column beside the registration/designation form on desktop, stacked below on mobile. The separate /leaderboard page is additional, not a replacement.
 
 > Leaderboard contract: `/api/leaderboard` returns `{ handle, bestTimeMs }[]`, ranked by fastest successful image CAPTCHA per verified user. No input-mode tabs or survival metrics in this UI.
@@ -106,7 +108,7 @@ The visible Shift+B demonstration may animate a machine attempt, but must be lab
 
 User copy examples: “Network unavailable. Retry.” / “Result not confirmed. Retry recording.” / “Transmission not confirmed. Your draft is preserved.” / “Updates paused.” Use plain actions even within the machine voice.
 
-GET scheduling: retain current approximate cadences (feed/progress 4s, activity 3s, open ranking 2s), but schedule after completion and never overlap the same resource. Abort on unmount; ignore old responses after identity change/invalidation. Pause polling while hidden/offline; refresh once on return. After a request failure, show its recovery state rather than cycling a hidden retry loop.
+GET scheduling: retain current approximate cadences (feed/progress 4s, activity 3s, open ranking 2s), but schedule after completion and never overlap the same resource. Abort on unmount; ignore old responses after identity change/invalidation. Pause polling while hidden/offline; refresh once on return. On transient read failure, keep the visible error and confirmed data, retry with capped backoff up to 30s, and retain manual Retry. Do not automatically retry writes.
 
 All requests have an initial 10-second deadline. A write timeout aborts client waiting, not proof that the server rolled back. Do not automatically resend writes.
 

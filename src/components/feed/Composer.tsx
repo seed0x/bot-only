@@ -1,13 +1,15 @@
 'use client'
 import { useRef, useState } from 'react'
 import { newTypingRecord, recordTyping } from '@/lib/typing-record'
+import { useSurvivalGame } from '../game/GameProvider'
 import Avatar from './Avatar'
-import { ApiError, jsonPost, requestJson } from '@/lib/api'
+import { ApiError } from '@/lib/api'
 import type { SessionUser } from '@/lib/types'
 import type { TransmissionRule } from '@/lib/transmission'
 type Pending = { requestId: string; handle: string; body: string; typing: number[] }
 // Test 01+: the composer is a test. The network's rule shows above the box; typing rhythm is recorded.
 export default function Composer({ user, rule, onPosted }: { user: SessionUser; rule: TransmissionRule | null; onPosted: () => void }) {
+  const { mutate } = useSurvivalGame()
   const [body, setBody] = useState(''), [error, setError] = useState(''), [busy, setBusy] = useState(false), [editable, setEditable] = useState(true)
   const pending = useRef<Pending | null>(null), lock = useRef(false), typing = useRef(newTypingRecord())
   async function submit(e: React.FormEvent) {
@@ -16,7 +18,7 @@ export default function Composer({ user, rule, onPosted }: { user: SessionUser; 
     pending.current ??= { requestId: crypto.randomUUID(), handle: user.handle, body: body.trim(), typing: [...typing.current.samples] }
     lock.current = true; setBusy(true); setError('')
     try {
-      await requestJson('/api/posts', jsonPost(pending.current), (v): v is { id: number } => !!v && typeof v === 'object' && 'id' in v && typeof v.id === 'number')
+      await mutate('/api/posts', pending.current, 'post', (v): v is { id: number } => !!v && typeof v === 'object' && 'id' in v && typeof v.id === 'number')
       pending.current = null; typing.current = newTypingRecord(); setEditable(true); setBody(''); onPosted(); window.dispatchEvent(new Event('network-updated'))
     } catch (e) {
       const rejected = e instanceof ApiError && e.status >= 400 && e.status < 500 && e.status !== 408 && e.status !== 429

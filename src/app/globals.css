@@ -396,12 +396,13 @@
 }
 
 /* Sticky survival diagnostic stays above the page header while scrolling. */
-.survival-hud, .survival-result { margin: 12px auto; padding: 16px; width: calc(100% - 24px); max-width: 1000px; border: 1px solid #555; background: #161616; color: #eee; overflow-wrap: anywhere; }
-.survival-hud { position: sticky; top: 0; z-index: 40; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-.survival-hud p, .survival-hud details { flex-basis: 100%; }
-.survival-hud button, .survival-result button, .survival-hud select { min-height: 44px; padding: 8px 12px; border: 1px solid #888; background: #222; color: #fff; max-width: 100%; }
-.survival-hud button:disabled { opacity: .5; }
-.survival-hud :focus-visible, .survival-result :focus-visible { outline: 2px solid #f0402f; outline-offset: 3px; }
+@layer components {
+.survival-hud { position: relative; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 0 auto; padding: 16px 24px; width: 100%; max-width: 1040px; border-bottom: 1px solid var(--line); background: var(--bg); overflow-wrap: anywhere; }
+.survival-hud .survival-copy { flex: 1 1 240px; color: var(--muted); }
+.survival-hud .survival-notice { flex-basis: 100%; }
+.survival-clock { font: 500 24px var(--font-archivo), sans-serif; font-variant-numeric: tabular-nums; }
+}
+
 
 @layer components {
   .gate-board { width: 100%; max-width: 1040px; margin: 0 auto; padding: 64px 32px; display: grid; grid-template-columns: minmax(0, 400px) minmax(0, 340px); justify-content: center; align-items: start; gap: 64px; }
@@ -419,4 +420,15 @@
     .header-actions { gap: 6px; }
     .header-actions .button-secondary { padding: 8px 10px; font-size: 12px; }
   }
+}
+
+@layer components {
+  .game-result.is-failed h1 { color: var(--danger); }
+  .game-result-metrics { display: flex; gap: 48px; margin: 8px 0; }
+  .game-result-metrics dt { color: var(--muted); font-size: 13px; }
+  .game-result-metrics dd { margin: 8px 0 0; font: 400 36px var(--font-archivo), sans-serif; font-variant-numeric: tabular-nums; }
+  .game-result-metrics small { font-size: 16px; margin-left: 4px; color: var(--muted); }
+  .survival-hud { font-size: 13px; }
+  .survival-hud select { background: var(--surface); color: var(--text); border: 1px solid var(--line); border-radius: 6px; min-height: 44px; margin-left: 8px; }
+  .survival-hud > details { width: 100%; }
 }

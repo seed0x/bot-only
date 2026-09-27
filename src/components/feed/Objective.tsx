@@ -1,25 +1,18 @@
 'use client'
-import type { ObjectiveProgress, SessionUser } from '@/lib/types'
-import { usePollingResource } from '@/hooks/usePollingResource'
-import ResourceState from '../ResourceState'
-
-function isObjectives(v: unknown): v is ObjectiveProgress {
-  if (!v || typeof v !== 'object') return false
-  return 'post' in v && typeof v.post === 'boolean' && 'like' in v && typeof v.like === 'boolean'
-    && 'comment' in v && (v.comment === null || typeof v.comment === 'boolean')
-}
-export default function Objective({ user, refreshKey }: { user: SessionUser | null; refreshKey: number }) {
-  const { data, error, refresh } = usePollingResource(user ? `/api/objectives?handle=${encodeURIComponent(user.handle)}&refresh=${refreshKey}` : null, isObjectives)
-  const available = data ? [data.post, data.like, ...(data.comment === null ? [] : [data.comment])] : []
-  return <section aria-label="Objectives" className="objectives-panel">
-    <div className="objectives-heading"><h2>Objectives</h2>{data && <span>{available.filter(Boolean).length} / {available.length}</span>}</div>
-    {!user ? <ResourceState title="Join to track your progress" />
-      : !data && !error ? <ResourceState title="Loading objectives…" busy /> : null}
-    {error && <ResourceState title={data ? 'Updates paused' : 'Objectives unavailable'} retry={refresh} />}
-    {data && <ul className="objective-list">{(['post', 'comment', 'like'] as const).map(key => <li key={key} className={data[key] === null ? 'objective-unavailable' : ''}>
-      <span className={`objective-check${data[key] ? ' objective-done' : ''}`} aria-hidden="true">{data[key] ? '✓' : data[key] === null ? '—' : ''}</span>
-      <span>{key[0].toUpperCase() + key.slice(1)}</span>
-      <span className={data[key] === null ? 'objective-status' : 'sr-only'}>{data[key] === null ? 'Unavailable' : data[key] ? 'Completed' : 'Not completed'}</span>
-    </li>)}</ul>}
+import Link from 'next/link'
+import { useSurvivalGame } from '../game/GameProvider'
+export default function Objective() {
+  const { state, fallback } = useSurvivalGame()
+  const objective = state.objective
+  return <section aria-label="Run objective" className="px-4 py-3">
+    <h2 className="mb-2 text-sm font-semibold">Current objective</h2>
+    {objective ? <>
+      <p>{objective.kind === 'admission' ? 'Get admitted at the gate.' : objective.kind === 'post' ? 'Transmit a new post.' : 'Like one of the eligible transmissions.'}</p>
+      <p>{(Math.max(0, objective.deadlineActiveMs - state.activeMs) / 1000).toFixed(1)} active seconds remaining.</p>
+      {objective.kind === 'admission' && <Link className="button-secondary" href="/?retry=1">Go to gate</Link>}
+      {state.pendingObjective && <p role="status">Saving completion…</p>}
+    </> : <p>{state.phase === 'ended' ? 'Run ended.' : state.run ? 'Waiting for actionable feed data.' : 'Start a run to receive objectives.'}</p>}
+    {fallback && <p role="status">{fallback}</p>}
+    <p className="fine-print">{state.completedObjectiveIds.length} completed this run.</p>
   </section>
 }

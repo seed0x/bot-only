@@ -31,7 +31,7 @@ export const MAX_CLICKS = 40
 
 export type RoundTile = { token: string; file: string; category: Category }
 export type ImageRound = { rule: RuleId; requested: Category; prompt: string; instruction: string; ordered: boolean; tiles: RoundTile[] }
-export type ImageClick = { id: string; t: number }   // t: ms since the grid became ready
+export type ImageClick = { id: string; t: number }   // t: ms since server challenge issuance
 
 function shuffle<T>(items: T[], random: () => number): T[] {
   const out = [...items]

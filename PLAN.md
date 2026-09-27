@@ -1,3 +1,11 @@
+> Current integration: main + logic branch `fb8dc6b`; server-backed survival start/objectives/finish, explicit End game and fresh-gate restart, registration leaderboard, session/write checks and audit fixes are implemented. 112 tests and production build pass. Follow the newest `docs/HANDOFF.md` entry for current behavior; older diagnostic-only entries below are history. Next: live deployment verification and device/demo rehearsal. Do not reset/seed the shared SQLite database.
+
+# G06 — implemented locally — 2026-09-26
+
+Owner: Codex. Branch: `feat/fail-states`, base `1a7483c`; G06 work remains uncommitted. Owned slice: register/play action handling in `src/lib/game.ts`, post/like routes, objective validation/receipt helpers, root provider/HUD integration, gate `ChallengeTrial`, feed/Composer/Objective, result copy, focused tests and current docs. Shared types/config, DB schema, gate CAPTCHA scoring and leaderboard remain unchanged. At user request, successful objective acknowledgement now continues immediately when no other pause reason remains.
+
+Behavior/recovery/checks: acknowledged Start and verified binding; admission → post/like objectives; exact immutable uncertain retries with paused clocks; definite rejection keeps input/objective and requires Resume; no-target replacement with a new post budget. Focused disposable API and provider checks are recorded in `docs/HANDOFF.md`. G06 is implemented and ready for review; mounted browser/device acceptance remains unrun. Stop here. Next task is G07 result saving, survival leaderboard and complete terminal action blocking.
+
 # Takeover record — 2026-09-26
 
 Current owner override: no rotating CAPTCHA rules. Select both look-alike categories within 120 seconds; record movement and click timing separately without extra rejection criteria. Integrated through teammate main `5fc1e00`. Use the real SQLite database only; do not create substitute preview/test databases or run destructive smoke/seed against shared data. Current verification: 55 pure unit tests, lint and production build pass; interactive rehearsal remains. See the latest handoff before older evidence below.
