@@ -1,23 +1,26 @@
 'use client'
 import { returnToGate } from '@/lib/navigation'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import EndScreen from '@/components/EndScreen'
 import { useSurvivalGame } from './GameProvider'
 
 export default function GameOver() {
-  const { state, saveState, saveError, saveResult, restart } = useSurvivalGame()
+  const { state, saveError, saveResult, restart } = useSurvivalGame()
   const [restarting, setRestarting] = useState(false)
+  const [restartError, setRestartError] = useState<string | null>(null)
   const result = state.terminal
-  // A failed run also ends the admission: the designation is gone with it.
-  useEffect(() => { if (result?.status === 'failed') void fetch('/api/session/end', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }).catch(() => {}) }, [result?.status])
   if (!result) return null
   async function again(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (restarting) return
     setRestarting(true)
-    // Whatever the save or the clear did, the gate always opens: it forgets everything anyway.
-    try { await restart() } catch { /* the gate resets the session */ }
-    returnToGate()
+    setRestartError(null)
+    // Restart saves first, then clears admission. Keep the bound session for save retries.
+    try { await restart(); returnToGate() }
+    catch (error) {
+      setRestartError(error instanceof Error ? error.message : 'Could not restart. Retry.')
+      setRestarting(false)
+    }
   }
   return <EndScreen eyebrow={state.user ? `@${state.user.handle}` : 'onlybots'} title={result.status === 'interrupted' ? 'Run ended.' : 'Human detected.'} failed={result.status === 'failed'}
     detail={<>
@@ -27,6 +30,7 @@ export default function GameOver() {
         <div><dt>Objectives</dt><dd>{result.completedObjectiveIds.length}</dd></div>
       </dl>
       {saveError && <div role="alert"><p className="form-error">{saveError}</p><button className="button-secondary" onClick={() => void saveResult().catch(() => {})}>Retry saving</button></div>}
+      {restartError && <p className="form-error" role="alert">{restartError}</p>}
     </>}>
     <form action="/" onSubmit={again}><button className="button-primary" disabled={restarting}>{restarting ? 'Restarting…' : 'Start again'}</button></form>
   </EndScreen>

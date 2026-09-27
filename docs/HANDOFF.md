@@ -1,3 +1,10 @@
+## Bound-unit save race fixed — 2026-09-26
+
+- Codex / `main`, uncommitted atop `2d3856c`. Fetched origin/main and compared: no divergence. User reported “Only the bound unit can save this run” after completion. Root cause: GameOver mounted an effect that called `/api/session/end` on failed runs, racing the provider’s finish request and deleting the cookie/session required by server ownership checks.
+- Removed automatic session revocation from `src/components/game/GameOver.tsx`; admission remains until provider restart has saved the terminal result, then cleared the session. Restart errors now stay visible and re-enable the action instead of navigating to the gate (which would clear admission despite an unsaved result). Server ownership checks and immutable save retries are unchanged.
+- Added `tests/game-over.test.mjs`, executing the actual transpiled component with controlled hooks: failed result rendering sends no session-end request; rejected restart shows its error and stays on the result; successful restart navigates. Existing provider test verifies identical finish retries and session-end after confirmed save. Component/provider/run test files and full npm test (19 files) pass; scoped ESLint, TypeScript no-emit and whitespace checks pass.
+- No browser/device verification or production build run. No server started or shared database inspected/modified; run tests use disposable SQLite. No commit, integration, push or deployment. A session already revoked by the old code cannot be recovered by this fix alone. Next: live browser check a fresh bound run failure, save acknowledgement and Start again.
+
 ## End-screen leaderboard order follow-up — 2026-09-26
 
 - User reported the reorder did not appear. Found that shared `src/components/EndScreen.tsx`, used after run end, CAPTCHA failure and session termination, independently renders both tables in the old order. Swapped it to Longest run then Fastest verification, matching the standalone page. Codex / `main`, uncommitted atop `fd33193`.

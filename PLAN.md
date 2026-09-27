@@ -1,3 +1,5 @@
+> Completed run-save fix (2026-09-26): GameOver no longer revokes admission while finish is pending. Start again saves, then clears the session; failure stays visible on the result for retry. Focused component/provider/run tests, lint and TypeScript pass; live browser reproduction pending. See newest HANDOFF.
+
 > Leaderboard order swapped (2026-09-26): Longest run now leads both the standalone leaderboard page and the shared game end-screen leaderboard, followed by Fastest verification. Scoped lint and whitespace checks pass; visual check pending.
 
 > Objective rejection continuation (2026-09-26): confirmed incorrect objective submissions now continue immediately with the same objective/deadline when no other pause remains. Uncertain requests still pause for immutable retry. Focused engine/provider tests and lint pass; browser playtest pending. See newest HANDOFF.
