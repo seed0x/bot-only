@@ -14,7 +14,7 @@ export default function GameOver() {
     <p>{(result.activeMs / 1000).toFixed(1)} seconds · {result.stage} · {result.inputMode} · {result.completedObjectiveIds.length} objectives</p>
     {result.status === 'failed' && result.measurements.map(item => <p key={item.reason}><strong>{item.reason}</strong>: {item.explanation} ({item.value.toFixed(3)} / {item.threshold} {item.unit})</p>)}
     {result.status === 'interrupted' && <p>Reloading or closing ends a run without a scored failure.</p>}
-    <p>Saving and objective enforcement are not integrated yet. Existing network actions remain available in this diagnostic increment.</p>
-    <button onClick={() => start(result.inputMode)}>Start another local run</button>
+    <p>This result remains unsaved. Existing network actions are still available after a result.</p>
+    <button onClick={() => start(result.inputMode)}>Start another run</button>
   </section>
 }

@@ -1,3 +1,4 @@
+import { readGame, checkGame, completeGame } from '@/lib/survival/objectives'
 import { operation } from '@/lib/operations'
 import { cleanHandle, getDb, logActivity } from '@/lib/db'
 import { bodyInput, errorResponse, handleInput, InputError, requestId } from '@/lib/server-input'
@@ -17,14 +18,17 @@ export async function POST(req: Request) {
   try {
     const b = await bodyInput(req), handle = handleInput(b.handle), id = requestId(b.requestId)
     if (typeof b.body !== 'string' || !b.body.trim() || b.body.length > 280) throw new InputError('Transmit between 1 and 280 characters.')
-    const body = b.body.trim()
-    return Response.json(operation(id, 'post', { handle, body }, () => {
+    const body = b.body.trim(), game = readGame(b.game, id, 'post')
+    return Response.json(operation(id, 'post', { handle, body, ...(game ? { game } : {}) }, () => {
+      checkGame(game, handle)
       const db = getDb()
       const user = db.prepare('select id from users where handle = ? and verified_bot = 1').get(handle) as { id: number } | undefined
       if (!user) throw new InputError('Unit not admitted. Verify before transmitting.', 403)
       const info = db.prepare('insert into posts (user_id, handle, body) values (?, ?, ?)').run(user.id, handle, body)
       logActivity('post', handle, body.length > 60 ? body.slice(0, 60) + '…' : body)
-      return { id: Number(info.lastInsertRowid) }
+      const postId = Number(info.lastInsertRowid)
+      const completion = completeGame(game, { id: user.id, handle }, { kind: 'post', postId })
+      return { id: postId, ...(completion ? { completion } : {}) }
     }))
   } catch (e) { return errorResponse(e) }
 }

@@ -1,6 +1,7 @@
 import { randomBytes, randomInt, randomUUID } from 'node:crypto'
 import { getDb, logActivity } from './db'
 import { operation } from './operations'
+import { readGame, checkGame, completeGame } from './survival/objectives'
 import { handleInput, InputError, object, requestId } from './server-input'
 import { MAX_SAMPLES, scoreHash, scoreMotion } from './motion'
 import { createImageRound, scoreImageRound, type ImageRound } from './image-captcha'
@@ -15,7 +16,9 @@ type StoredChallenge = IssuedChallenge & { round?: ImageRound }
 
 export function registerUnit(body: Record<string, unknown>) {
   const handle = handleInput(body.handle), id = requestId(body.requestId)
-  return operation(id, 'register-unit', { handle }, () => {
+  const game = readGame(body.game, id, 'admission')
+  return operation(id, 'register-unit', { handle, ...(game ? { game } : {}) }, () => {
+    checkGame(game, handle)
     const db = getDb()
     db.prepare('insert into users (handle, humanity_score, verified_bot) values (?, 1, 0) on conflict(handle) do nothing').run(handle)
     const user = db.prepare('select id, handle from users where handle = ?').get(handle)
@@ -27,7 +30,10 @@ export function issueChallenge(body: Record<string, unknown>): IssuedChallenge {
   const handle = handleInput(body.handle), id = requestId(body.requestId)
   if (!KINDS.includes(body.kind as ChallengeKind)) throw new InputError('Unknown or inactive test.')
   const kind = body.kind as ChallengeKind
-  return operation(id, 'issue', { handle, kind }, () => {
+  const game = readGame(body.game, id, 'admission')
+  if (game && kind !== 'image-confusion') throw new InputError('Admission requires the image CAPTCHA.')
+  return operation(id, 'issue', { handle, kind, ...(game ? { game } : {}) }, () => {
+    checkGame(game, handle)
     const startedAt = Date.now(), expiresAt = startedAt + WINDOW_MS[kind]
     const base = { id: randomUUID(), kind, startedAt, expiresAt }
     let stored: StoredChallenge = base, issued: IssuedChallenge = base
@@ -66,12 +72,15 @@ export function submitAttempt(body: Record<string, unknown>): AttemptReceipt {
   const handle = handleInput(body.handle), id = requestId(body.requestId)
   if (typeof body.challengeId !== 'string') throw new InputError('Issued challenge required.')
   const challengeId = body.challengeId, solution = parseSolution(body.solution)
-  return operation(id, 'attempt', { handle, challengeId, solution }, () => {
+  const game = readGame(body.game, id, 'admission')
+  return operation(id, 'attempt', { handle, challengeId, solution, ...(game ? { game } : {}) }, () => {
+    checkGame(game, handle)
     const db = getDb()
     const row = db.prepare('select payload, handle, used from challenge_instances where id = ?').get(challengeId) as { payload: string; handle: string; used: number } | undefined
     if (!row || row.handle !== handle) throw new InputError('Challenge not found for this unit.', 404)
     if (row.used) throw new InputError('Challenge already recorded. Start a new attempt.', 409)
     const challenge = JSON.parse(row.payload) as StoredChallenge
+    if (game && challenge.kind !== 'image-confusion') throw new InputError('Admission requires the image CAPTCHA.')
     const elapsed = Math.max(0, Date.now() - challenge.startedAt)
     const expected = challenge.kind === 'straight-line' ? 'samples' : challenge.kind === 'image-confusion' ? 'selected' : 'value'
     if (!(expected in solution)) throw new InputError('Wrong solution for this challenge.')
@@ -91,7 +100,8 @@ export function submitAttempt(body: Record<string, unknown>): AttemptReceipt {
     } else logActivity('fail', handle, `rejected on ${result.challenge}. ${result.meta.reason}`)
     const attemptId = Number(db.prepare('insert into captcha_attempts (user_id, handle, challenge, passed, score, duration_ms, meta) values (?, ?, ?, ?, ?, ?, ?)').run(user?.id ?? null, handle, result.challenge, Number(result.passed), result.score, result.duration_ms, JSON.stringify(result.meta)).lastInsertRowid)
     db.prepare('update challenge_instances set used = 1 where id = ?').run(challengeId)
-    return { ok: true, attemptId, requestId: id, handle, passed: result.passed, result, user: user ? { id: user.id, handle } : null, recordedAt: new Date().toISOString() }
+    const completion = result.passed && user ? completeGame(game, { id: user.id, handle }, { kind: 'admission', attemptId }) : undefined
+    return { ...(completion ? { completion } : {}), ok: true, attemptId, requestId: id, handle, passed: result.passed, result, user: user ? { id: user.id, handle } : null, recordedAt: new Date().toISOString() }
   })
 }
 
