@@ -106,7 +106,11 @@ const obj = (await read('/api/objectives?handle=' + handle)).body
 check('objectives: posted and liked', obj?.post === true && obj?.like === true)
 // Replies: verified units only, idempotent, counted on the post, an objective and public activity.
 const commentsPath = '/api/posts/' + transmission.body.id + '/comments'
-const replyBody = { requestId: randomUUID(), handle, body: 'Smoke reply. Recorded.' }
+const replyRule = (await read('/api/progress?handle=' + handle)).body.reply
+check('progress states the reply rule', typeof replyRule?.id === 'string')
+check('a reply that breaks the rule is rejected as human', (await post(commentsPath, { requestId: randomUUID(), handle, body: 'lol same here honestly', typing: steadyTyping(22) })).status === 422)
+const replyText = compose(replyRule, 'Smoke reply. Recorded.')
+const replyBody = { requestId: randomUUID(), handle, body: replyText, typing: steadyTyping(replyText.length) }
 const reply = await post(commentsPath, replyBody)
 check('admitted unit replies', reply.status === 200 && reply.body.id > 0 && reply.body.post_id === transmission.body.id)
 check('reply retry returns same reply', (await post(commentsPath, replyBody)).body.id === reply.body.id)
