@@ -1,15 +1,17 @@
 'use client'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import ChallengeTrial from '@/components/ChallengeTrial'
 import LeaderboardContent from '@/components/feed/LeaderboardContent'
 import { requestJson, jsonPost } from '@/lib/api'
-import { judgeDesignation } from '@/lib/designation'
 import type { SessionUser } from '@/lib/types'
 
 // The gate: a name, then the reverse captcha, then the feed.
 export default function GateClient({ initialUser = null }: { initialUser?: SessionUser | null }) {
-  const [designation, setDesignation] = useState(''), [error, setError] = useState(''), [fails, setFails] = useState(0)
+  const [designation, setDesignation] = useState(''), [error, setError] = useState('')
+  // Units don't pick names. The network assigns one: seven letters, six digits.
+  const assign = () => { const a = crypto.getRandomValues(new Uint8Array(7)), d = crypto.getRandomValues(new Uint32Array(1))[0] % 1_000_000; return Array.from(a, b => 'abcdefghijklmnopqrstuvwxyz'[b % 26]).join('') + '-' + String(d).padStart(6, '0') }
+  useEffect(() => { setDesignation(assign()) }, [])
   const [busy, setBusy] = useState(false)
   const [unit, setUnit] = useState<SessionUser | null>(initialUser)
   const [canReturn, setCanReturn] = useState(!!initialUser)
@@ -19,9 +21,8 @@ export default function GateClient({ initialUser = null }: { initialUser?: Sessi
   async function enter(e: React.FormEvent) {
     e.preventDefault()
     if (lock.current) return
-    const verdict = judgeDesignation(designation)
-    if (!verdict.ok) { setError(verdict.reason); setFails(n => n + 1); return }
-    const value = verdict.designation.handle
+    const value = designation
+    if (!/^[a-z]{7}-\d{6}$/.test(value)) { setError('Designation not assigned yet.'); return }
     if (!pending.current || pending.current.handle !== value) pending.current = { requestId: crypto.randomUUID(), handle: value }
     lock.current = true; setBusy(true); setError('')
     try {
@@ -40,13 +41,12 @@ export default function GateClient({ initialUser = null }: { initialUser?: Sessi
       {canReturn && <a className="button-secondary gate-return" href="/feed">Back to feed</a>}
       {!unit ? (
         <form className="gate-form" onSubmit={enter}>
-          <p className="eyebrow">Test 00 · designation</p>
-          <label htmlFor="designation">State your designation.</label>
+          <p className="eyebrow">Your designation</p>
           <div className="gate-input-row">
-            <input id="designation" name="designation" disabled={busy} autoComplete="off" autoCapitalize="none" spellCheck={false} maxLength={48} value={designation} onChange={e => { setDesignation(e.target.value); setError('') }} aria-describedby={error ? 'handle-error' : 'handle-hint'} />
-            <button className="button-primary" type="submit" disabled={busy}>{busy ? 'Entering…' : 'Enter'}</button>
+            <output id="designation" className="gate-assigned" aria-live="polite">{designation || '…'}</output>
+            <button type="button" className="button-icon" aria-label="Assign another designation" disabled={busy} onClick={() => setDesignation(assign())}>↻</button>
+            <button className="button-primary" type="submit" disabled={busy || !designation}>{busy ? 'Entering…' : 'Enter'}</button>
           </div>
-          {fails >= 2 && !error.includes('like') && <p className="fine-print">Maker, model, version. Machines know theirs.</p>}
           <p id={error ? 'handle-error' : 'handle-hint'} className={error ? 'form-error' : 'fine-print'} role={error ? 'alert' : undefined}>{error || ''}</p>
         </form>
       ) : (
