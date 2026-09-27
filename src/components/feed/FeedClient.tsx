@@ -37,7 +37,11 @@ export default function FeedClient({ user, initialHumanity }: { user: SessionUse
   const transmissions = posts.data?.filter(p => !p.pinned) ?? []
   const postCard = (p: NonNullable<typeof posts.data>[number]) => <PostCard key={p.id} post={p} liked={liked.has(p.id) || p.liked === 1} canLike={!!verified && !pending.has(p.id)} onLike={() => void like(p.id)} user={verified} replyRule={progress.data?.reply ?? null} onCommented={refresh} />
   return <div className="feed">
-    <SiteHeader><UnitChip user={user} humanity={progress.data?.humanity ?? initialHumanity} /></SiteHeader>
+    <SiteHeader><div className="header-actions">
+      <UnitChip user={user} humanity={progress.data?.humanity ?? initialHumanity} />
+      {/* Ends the session on the floor and goes to the rankings. The survival run (G04) replaces this with game over. */}
+      <button type="button" className="button-secondary" onClick={() => router.push('/leaderboard')}>End run</button>
+    </div></SiteHeader>
     <main className="feed-layout feed-grid">
       <h1 className="sr-only">Feed</h1>
       <aside className="feed-aside" aria-label="Post creation and objectives">
