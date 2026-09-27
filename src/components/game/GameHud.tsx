@@ -1,5 +1,4 @@
 'use client'
-import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import type { SurvivalInputMode } from '@/lib/types'
@@ -23,7 +22,7 @@ export default function GameHud() {
   return <aside className="survival-hud" aria-label="Survival game">
     <strong className={`survival-stage${stage.id === 'audit' || stage.id === 'purge' ? ' is-hot' : ''}`}>{stage.id.toUpperCase()}</strong>
       <span className="survival-clock">{(state.activeMs / 1000).toFixed(1)}s</span>
-      <p className="survival-copy">{objective ? <>{objective.kind === 'admission' ? 'Pass verification' : objective.kind === 'post' ? 'Post' : 'Like an eligible post'} · {(Math.max(0, objective.deadlineActiveMs - state.activeMs) / 1000).toFixed(1)}s left <Link className="button-secondary" href={objective.kind === 'admission' ? '/?retry=1' : '/feed'}>Open</Link></> : 'Loading next objective…'}</p>
+      <p className="survival-copy">{objective ? <>{objective.kind === 'admission' ? 'Pass verification' : objective.kind === 'post' ? 'Post' : 'Like an eligible post'} · {(Math.max(0, objective.deadlineActiveMs - state.activeMs) / 1000).toFixed(1)}s left</> : 'Loading next objective…'}</p>
       <button className="button-secondary" disabled={!!state.pendingObjective} onClick={() => { setError(''); void end().catch(e => setError(e instanceof Error ? e.message : 'Couldn’t end the run. Retry.')) }}>End game</button>
       {state.phase === 'countdown' && <p className="survival-notice" role="status">Get ready…</p>}
       {survivalIdleWarning(state) && <p className="survival-notice form-error" role="status">Idle {(Math.max(0, stage.idleLimitMs - state.idleElapsedMs) / 1000).toFixed(1)}s</p>}
