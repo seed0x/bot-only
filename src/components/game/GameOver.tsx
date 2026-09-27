@@ -6,7 +6,7 @@ import { useSurvivalGame } from './GameProvider'
 
 export default function GameOver() {
   const { state, saveState, saveError, saveResult, restart } = useSurvivalGame()
-  const [restarting, setRestarting] = useState(false), [error, setError] = useState('')
+  const [restarting, setRestarting] = useState(false)
   const result = state.terminal
   // A failed run also ends the admission: the designation is gone with it.
   useEffect(() => { if (result?.status === 'failed') void fetch('/api/session/end', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }).catch(() => {}) }, [result?.status])
@@ -14,9 +14,10 @@ export default function GameOver() {
   async function again(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (restarting) return
-    setRestarting(true); setError('')
-    try { await restart(); returnToGate() }
-    catch (e) { setError(e instanceof Error ? e.message : 'Couldn’t restart. Retry.'); setRestarting(false) }
+    setRestarting(true)
+    // Whatever the save or the clear did, the gate always opens: it forgets everything anyway.
+    try { await restart() } catch { /* the gate resets the session */ }
+    returnToGate()
   }
   return <EndScreen eyebrow={state.user ? `@${state.user.handle}` : 'onlybots'} title={result.status === 'interrupted' ? 'Run ended.' : 'Human detected.'} failed={result.status === 'failed'}
     detail={<>
@@ -26,8 +27,7 @@ export default function GameOver() {
         <div><dt>Objectives</dt><dd>{result.completedObjectiveIds.length}</dd></div>
       </dl>
       {saveError && <div role="alert"><p className="form-error">{saveError}</p><button className="button-secondary" onClick={() => void saveResult().catch(() => {})}>Retry saving</button></div>}
-      {error && <p className="form-error" role="alert">{error}</p>}
     </>}>
-    <form action="/" onSubmit={again}><button className="button-primary" disabled={restarting || saveState !== 'saved'}>{restarting ? 'Restarting…' : 'Start again'}</button></form>
+    <form action="/" onSubmit={again}><button className="button-primary" disabled={restarting}>{restarting ? 'Restarting…' : 'Start again'}</button></form>
   </EndScreen>
 }
