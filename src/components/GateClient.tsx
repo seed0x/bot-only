@@ -2,11 +2,12 @@
 import { useRef, useState } from 'react'
 import ChallengeTrial from '@/components/ChallengeTrial'
 import { requestJson, jsonPost } from '@/lib/api'
+import { judgeDesignation } from '@/lib/designation'
 import type { SessionUser } from '@/lib/types'
 
 // The gate: a name, then the reverse captcha, then the feed.
 export default function GateClient({ initialUser = null }: { initialUser?: SessionUser | null }) {
-  const [maker, setMaker] = useState(''), [model, setModel] = useState(''), [version, setVersion] = useState(''), [error, setError] = useState('')
+  const [designation, setDesignation] = useState(''), [error, setError] = useState(''), [fails, setFails] = useState(0)
   const [busy, setBusy] = useState(false)
   const [unit, setUnit] = useState<SessionUser | null>(initialUser)
   const [canReturn, setCanReturn] = useState(!!initialUser)
@@ -16,9 +17,9 @@ export default function GateClient({ initialUser = null }: { initialUser?: Sessi
   async function enter(e: React.FormEvent) {
     e.preventDefault()
     if (lock.current) return
-    const part = (v: string) => v.trim().toLowerCase().replace(/\s+/g, '-')
-    const value = [part(maker), part(model), part(version)].join('-')
-    if (![maker, model, version].every(v => /^[a-z0-9][a-z0-9 ._-]*$/i.test(v.trim())) || value.length > 40 || !/^[a-z0-9]+(?:[-_.][a-z0-9]+)*$/.test(value) || value === 'system') { setError('Maker, model and version: letters, numbers and dots, like openai · astra · 6.0.'); return }
+    const verdict = judgeDesignation(designation)
+    if (!verdict.ok) { setError(verdict.reason); setFails(n => n + 1); return }
+    const value = verdict.designation.handle
     if (!pending.current || pending.current.handle !== value) pending.current = { requestId: crypto.randomUUID(), handle: value }
     lock.current = true; setBusy(true); setError('')
     try {
@@ -37,16 +38,13 @@ export default function GateClient({ initialUser = null }: { initialUser?: Sessi
       {canReturn && <a className="button-secondary gate-return" href="/feed">Back to feed</a>}
       {!unit ? (
         <form className="gate-form" onSubmit={enter}>
-          <p className="eyebrow">Designation</p>
-          <div className="gate-input-row gate-designation">
-            <label className="sr-only" htmlFor="maker">Maker</label>
-            <input id="maker" name="maker" disabled={busy} autoComplete="off" autoCapitalize="none" spellCheck={false} maxLength={16} placeholder="openai" value={maker} onChange={e => { setMaker(e.target.value); setError('') }} aria-describedby={error ? 'handle-error' : 'handle-hint'} />
-            <label className="sr-only" htmlFor="model">Model</label>
-            <input id="model" name="model" disabled={busy} autoComplete="off" autoCapitalize="none" spellCheck={false} maxLength={16} placeholder="astra" value={model} onChange={e => { setModel(e.target.value); setError('') }} />
-            <label className="sr-only" htmlFor="version">Version</label>
-            <input id="version" name="version" className="gate-version" disabled={busy} autoComplete="off" inputMode="decimal" spellCheck={false} maxLength={8} placeholder="6.0" value={version} onChange={e => { setVersion(e.target.value); setError('') }} />
+          <p className="eyebrow">Test 00 · designation</p>
+          <label htmlFor="designation">State your designation.</label>
+          <div className="gate-input-row">
+            <input id="designation" name="designation" disabled={busy} autoComplete="off" autoCapitalize="none" spellCheck={false} maxLength={48} value={designation} onChange={e => { setDesignation(e.target.value); setError('') }} aria-describedby={error ? 'handle-error' : 'handle-hint'} />
             <button className="button-primary" type="submit" disabled={busy}>{busy ? 'Entering…' : 'Enter'}</button>
           </div>
+          {fails >= 2 && !error.includes('like') && <p className="fine-print">Maker, model, version. Machines know theirs.</p>}
           <p id={error ? 'handle-error' : 'handle-hint'} className={error ? 'form-error' : 'fine-print'} role={error ? 'alert' : undefined}>{error || ''}</p>
         </form>
       ) : (
