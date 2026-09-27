@@ -394,3 +394,21 @@
   .thread-rule { flex-basis: 100%; display: grid; gap: 2px; font-size: 13px; line-height: 1.4; }
   .gate-assigned { flex: 1; font-size: 22px; letter-spacing: .02em; font-variant-numeric: tabular-nums; padding: 12px 0; }
 }
+
+@layer components {
+  .strikes { display: inline-flex; gap: 5px; align-items: center; margin-left: 10px; }
+  .strike { width: 8px; height: 8px; border-radius: 50%; border: 1px solid var(--line); display: inline-block; }
+  .strike.hit { background: var(--danger); border-color: var(--danger); }
+  .terminated { min-height: calc(100dvh - 64px); display: grid; place-content: center; justify-items: center; text-align: center; gap: 18px; padding: 48px 24px; }
+  .terminated h1 { font-size: clamp(36px, 8vw, 72px); font-weight: 300; letter-spacing: -.04em; line-height: 1; }
+  .terminated .eyebrow { color: var(--danger); letter-spacing: .12em; text-transform: uppercase; }
+  .terminated-unit { display: flex; align-items: center; gap: 12px; }
+  .terminated-count { color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .detections { margin-top: 48px; border-top: 1px solid var(--line); padding-top: 24px; }
+  .detections-head { display: flex; align-items: baseline; justify-content: space-between; }
+  .detections-head h2 { font-size: 14px; font-weight: 500; }
+  .detections-count { font-size: 32px; font-weight: 300; letter-spacing: -.05em; font-variant-numeric: tabular-nums; color: var(--danger); }
+  .detections-rows { list-style: none; padding: 0; margin-top: 12px; }
+  .detections-rows li { display: flex; gap: 12px; align-items: baseline; padding-block: 10px; border-top: 1px solid var(--line); font-size: 13px; }
+  .detections-rows li span { color: var(--muted); }
+}

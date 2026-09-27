@@ -7,6 +7,7 @@ import Composer from '@/components/feed/Composer'
 import Objective from '@/components/feed/Objective'
 import PostCard from '@/components/feed/PostCard'
 import ResourceState from '@/components/ResourceState'
+import Terminated from '@/components/feed/Terminated'
 import type { SessionUser } from '@/lib/types'
 import { usePollingResource } from '@/hooks/usePollingResource'
 import { isPosts, isProgress } from '@/lib/validators'
@@ -33,13 +34,15 @@ export default function FeedClient({ user, initialHumanity }: { user: SessionUse
     } catch (e) { setLikeError(e instanceof Error ? e.message : 'Like not confirmed. Retry.'); posts.refresh() }
     finally { setPending(s => { const next = new Set(s); next.delete(id); return next }) }
   }
+  if (progress.data?.terminated) return <Terminated user={user} detections={progress.data.detections ?? 0} />
   const pinned = posts.data?.filter(p => p.pinned) ?? []
   const transmissions = posts.data?.filter(p => !p.pinned) ?? []
   const postCard = (p: NonNullable<typeof posts.data>[number]) => <PostCard key={p.id} post={p} liked={liked.has(p.id) || p.liked === 1} canLike={!!verified && !pending.has(p.id)} onLike={() => void like(p.id)} user={verified} replyRule={progress.data?.reply ?? null} onCommented={refresh} />
   return <div className="feed">
     <SiteHeader><div className="header-actions">
       <UnitChip user={user} humanity={progress.data?.humanity ?? initialHumanity} />
-      {/* Ends the session on the floor and goes to the rankings. The survival run (G04) replaces this with game over. */}
+      <span className="strikes" aria-label={`${progress.data?.detections ?? 0} of 3 detections`}>{Array.from({ length: 3 }, (_, i) => <i key={i} className={i < (progress.data?.detections ?? 0) ? 'strike hit' : 'strike'} />)}</span>
+      {/* Ends the session on the floor and goes to the rankings. Three detections end it first. */}
       <button type="button" className="button-secondary" onClick={() => router.push('/leaderboard')}>End run</button>
     </div></SiteHeader>
     <main className="feed-layout feed-grid">

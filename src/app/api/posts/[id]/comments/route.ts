@@ -1,4 +1,4 @@
-import { operation } from '@/lib/operations'
+import { detected, operation } from '@/lib/operations'
 import { getDb, logActivity } from '@/lib/db'
 import { requestAdmission } from '@/lib/gate'
 import { bodyInput, errorResponse, handleInput, InputError, requestId } from '@/lib/server-input'
@@ -34,7 +34,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       let prev = -1
       typing = b.typing.map((t) => { if (typeof t !== 'number' || !Number.isFinite(t) || t < 0 || t <= prev || t > 3_600_000) throw new InputError('Invalid typing record.'); prev = t; return t })
     }
-    return Response.json(operation(rid, 'comment', { postId: id, handle, body, typing }, () => {
+    return Response.json(detected(handle, 'reply', () => operation(rid, 'comment', { postId: id, handle, body, typing }, () => {
       const db = getDb()
       const user = db.prepare('select id from users where handle = ? and verified_bot = 1').get(handle) as { id: number } | undefined
       if (!user) throw new InputError('Unit not admitted. Verify before replying.', 403)
@@ -43,10 +43,10 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       // The reply is a test too: the network's rule for this unit's next reply, typed like a machine.
       const replied = (db.prepare('select count(*) as n from comments where user_id = ?').get(user.id) as { n: number }).n
       const rejection = checkTransmission(ruleFor(handle + ':reply', replied + 2), body) ?? judgeTyping(typing).measurement?.explanation ?? null
-      if (rejection) { logActivity('fail', handle, `reply rejected. ${rejection}`); throw new InputError(`Human detected. ${rejection}`, 422) }
+      if (rejection) throw new InputError(`Human detected. ${rejection}`, 422)
       const info = db.prepare('insert into comments (post_id, user_id, handle, body) values (?, ?, ?, ?)').run(id, user.id, handle, body)
       logActivity('comment', handle, `replied to @${post.handle}: ${body.length > 50 ? body.slice(0, 50) + '…' : body}`)
       return { id: Number(info.lastInsertRowid), post_id: id }
-    }))
+    })))
   } catch (e) { return errorResponse(e) }
 }

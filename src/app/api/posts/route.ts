@@ -1,4 +1,4 @@
-import { operation } from '@/lib/operations'
+import { detected, operation } from '@/lib/operations'
 import { getDb, logActivity } from '@/lib/db'
 import { requestAdmission } from '@/lib/gate'
 import { bodyInput, errorResponse, handleInput, InputError, requestId } from '@/lib/server-input'
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
       let prev = -1
       typing = b.typing.map((t) => { if (typeof t !== 'number' || !Number.isFinite(t) || t < 0 || t <= prev || t > 3_600_000) throw new InputError('Invalid typing record.'); prev = t; return t })
     }
-    return Response.json(operation(id, 'post', { handle, body, typing }, () => {
+    return Response.json(detected(handle, 'transmission', () => operation(id, 'post', { handle, body, typing }, () => {
       const db = getDb()
       const user = db.prepare('select id from users where handle = ? and verified_bot = 1').get(handle) as { id: number } | undefined
       if (!user) throw new InputError('Unit not admitted. Verify before transmitting.', 403)
@@ -39,13 +39,10 @@ export async function POST(req: Request) {
       const broken = checkTransmission(rule, body)
       const rhythm = judgeTyping(typing)
       const rejection = broken ?? rhythm.measurement?.explanation ?? null
-      if (rejection) {
-        logActivity('fail', handle, `transmission rejected. ${rejection}`)
-        throw new InputError(`Human detected. ${rejection}`, 422)
-      }
+      if (rejection) throw new InputError(`Human detected. ${rejection}`, 422)
       const info = db.prepare('insert into posts (user_id, handle, body) values (?, ?, ?)').run(user.id, handle, body)
       logActivity('post', handle, body.length > 60 ? body.slice(0, 60) + '…' : body)
       return { id: Number(info.lastInsertRowid) }
-    }))
+    })))
   } catch (e) { return errorResponse(e) }
 }
