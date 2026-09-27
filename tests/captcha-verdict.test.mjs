@@ -9,7 +9,7 @@ register('data:text/javascript,' + encodeURIComponent(String.raw`
     return nextResolve(local ? specifier + '.ts' : specifier, context)
   }
 `), import.meta.url)
-const { judgeCaptcha, CAPTCHA_STAGE } = await import('../src/lib/captcha-verdict.ts')
+const { judgeCaptcha, CAPTCHA_STAGE, CAPTCHA_IDLE_MS } = await import('../src/lib/captcha-verdict.ts')
 const { collected, interrupt, newPointerCollector, observe } = await import('../src/lib/survival/pointer-collector.ts')
 const { RULES } = await import('../src/lib/image-captcha.ts')
 
@@ -40,26 +40,26 @@ test('three curved strokes fail on the pointer detector with a boot-stage measur
   assert.ok(v.pointer.worstTrace, 'keeps the failing trace as evidence')
 })
 
-test.skip('two curved strokes are a warning, not a failure, at boot', () => {
+test('two curved strokes are a warning, not a failure, at boot', () => {
   const v = judgeCaptcha({ ...base, strokes: [curved(0), curved(1)] })
   assert.equal(v.passed, true)
   assert.equal(v.pointer.bad, 2)
 })
 
 test('a pause at the idle limit fails as idle', () => {
-  const v = judgeCaptcha({ ...base, strokes: [], clicks: [{ id: 'cw', t: 200 }, { id: 'tt', t: 200 + CAPTCHA_STAGE.idleLimitMs }] })
+  const v = judgeCaptcha({ ...base, strokes: [], clicks: [{ id: 'cw', t: 200 }, { id: 'tt', t: 200 + CAPTCHA_IDLE_MS }] })
   assert.equal(v.passed, false)
   assert.equal(v.primaryReason, 'idle')
   assert.equal(v.measurements[0].unit, 'ms')
 })
 
 test('wrong tiles outrank a pointer failure in the precedence order', () => {
-  const v = judgeCaptcha({ ...base, clicks: steady(['cw']), strokes: [curved(0), curved(1), curved(2)] })
+  const v = judgeCaptcha({ ...base, clicks: steady(['bk']), strokes: [curved(0), curved(1), curved(2)] })
   assert.equal(v.primaryReason, 'verification_failed')
   assert.deepEqual(v.measurements.map(m => m.reason), ['verification_failed', 'pointer'])
 })
 
-test.skip('changing the selection twice fails; once is allowed', () => {
+test('changing the selection twice fails; once is allowed', () => {
   const once = judgeCaptcha({ ...base, strokes: [], clicks: [...steady(['cw', 'bk']), { id: 'bk', t: 600 }, { id: 'tt', t: 750 }] })
   assert.equal(once.passed, true)
   const twice = judgeCaptcha({ ...base, strokes: [], clicks: [...steady(['cw', 'bk']), { id: 'bk', t: 600 }, { id: 'bk', t: 700 }, { id: 'bk', t: 800 }, { id: 'tt', t: 900 }] })
@@ -94,11 +94,17 @@ test('collector: rate cap, gap split, 750ms window split sharing the endpoint, i
   assert.equal(collected(short).length, 0, 'fewer than 6 samples never qualifies')
 })
 
-test.skip('the gap after the last click is judged through verification', () => {
+test('the gap after the last click is judged through verification', () => {
   const last = base.clicks.at(-1).t
-  const before = judgeCaptcha({ ...base, strokes: [], elapsedMs: last + CAPTCHA_STAGE.idleLimitMs - 1 })
+  const before = judgeCaptcha({ ...base, strokes: [], elapsedMs: last + CAPTCHA_IDLE_MS - 1 })
   assert.equal(before.passed, true)
-  const atLimit = judgeCaptcha({ ...base, strokes: [], elapsedMs: last + CAPTCHA_STAGE.idleLimitMs })
+  const atLimit = judgeCaptcha({ ...base, strokes: [], elapsedMs: last + CAPTCHA_IDLE_MS })
   assert.equal(atLimit.primaryReason, 'idle')
-  assert.equal(atLimit.maxGap, CAPTCHA_STAGE.idleLimitMs)
+  assert.equal(atLimit.maxGap, CAPTCHA_IDLE_MS)
+})
+
+test('one tile error passes the full verdict; two errors still fail', () => {
+  assert.equal(judgeCaptcha({ ...base, strokes: [], clicks: steady(['cw']) }).passed, true)
+  assert.equal(judgeCaptcha({ ...base, strokes: [], clicks: steady(['cw', 'tt', 'bk']) }).passed, true)
+  assert.equal(judgeCaptcha({ ...base, strokes: [], clicks: steady(['cw', 'bk']) }).primaryReason, 'verification_failed')
 })

@@ -28,6 +28,7 @@ export const RULES: Record<RuleId, { instruction: string; ordered: boolean }> = 
 export const IMAGE_WINDOW_MS = 30_000      // one round, start to verdict
 export const MAX_GAP_MS = 5_000           // reference for the descriptive rhythm metric
 export const MAX_CLICKS = 40
+export const MAX_TILE_ERRORS = 1
 
 export type RoundTile = { token: string; file: string; category: Category }
 export type ImageRound = { rule: RuleId; requested: Category; prompt: string; instruction: string; ordered: boolean; tiles: RoundTile[] }
@@ -94,7 +95,7 @@ export function scoreImageRound(round: ImageRound, clicks: ImageClick[]) {
   const picked = new Set(rhythm.selection)
   const wrong = rhythm.selection.filter((id) => !answer.includes(id)).length
   const missed = answer.filter((id) => !picked.has(id)).length
-  const setCorrect = picked.size > 0 && wrong === 0 && missed === 0
+  const setCorrect = picked.size > wrong && wrong + missed <= MAX_TILE_ERRORS
   const lookAlike = IMAGE_CATEGORIES[IMAGE_CATEGORIES[round.requested].opposite].label
   const skippedLookAlike = round.tiles.some((t) => t.category === IMAGE_CATEGORIES[round.requested].opposite && !picked.has(t.token))
 
@@ -102,7 +103,7 @@ export function scoreImageRound(round: ImageRound, clicks: ImageClick[]) {
   if (picked.size === 0) reason = 'Nothing selected.'
   else if (!setCorrect && skippedLookAlike) reason = `Selection incomplete. Include the ${lookAlike}.`
   else if (!setCorrect) reason = `${wrong + missed} incorrect or missing tile${wrong + missed === 1 ? '' : 's'}.`
-  else { passed = true; reason = 'Verification complete.' }
+  else { passed = true; reason = wrong + missed ? 'Verification complete. One tile error allowed.' : 'Verification complete.' }
 
   return { passed, wrong, missed, ...rhythm, humanity: rhythmHumanity(rhythm), reason }
 }

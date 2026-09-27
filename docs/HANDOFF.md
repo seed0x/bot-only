@@ -1,3 +1,10 @@
+## CAPTCHA error leniency — 2026-09-26
+
+- Codex / `main`, uncommitted. Fetched origin/main and compared: no divergence before editing. User requested more forgiving CAPTCHA errors. Owned `src/lib/image-captcha.ts`, `src/lib/captcha-verdict.ts`, their focused tests and current docs; no shared type/API/schema edits.
+- Server selection scoring now permits one total missing/extra tile, requiring at least one correctly selected tile. Empty/decoy-only selections and two errors still fail. Allow one deselection correction (previously zero), two bad pointer strokes (third fails, previously first), and pauses below 5000ms (previously 3000ms; equality fails). The existing player meter imports these thresholds directly. Expiration, token validation, recorded-result admission, survival thresholds and immutable mutation retry behavior remain unchanged.
+- Full npm test passes all 19 files; scoped ESLint, TypeScript no-emit and whitespace checks pass. Added selection boundary/full-verdict fixtures and reactivated previously skipped correction, pointer warning and final-click idle checks with current CAPTCHA constants. No rules disabled for a green baseline.
+- No browser/device rehearsal or production build performed. No server started or shared data inspected/modified; existing integration tests use disposable data. No commit, push or deployment. Next: playtest the CAPTCHA thresholds on mouse and touch.
+
 ## Bound-unit save race fixed — 2026-09-26
 
 - Codex / `main`, uncommitted atop `2d3856c`. Fetched origin/main and compared: no divergence. User reported “Only the bound unit can save this run” after completion. Root cause: GameOver mounted an effect that called `/api/session/end` on failed runs, racing the provider’s finish request and deleting the cookie/session required by server ownership checks.

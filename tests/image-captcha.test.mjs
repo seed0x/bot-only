@@ -13,14 +13,17 @@ const tile = (id, category) => ({ token: id, file: `${category}/01.webp`, catego
 const base = { requested: 'crosswalk', prompt: 'crosswalks', tiles: [tile('cw', 'crosswalk'), tile('tt', 'train-track'), tile('bk', 'bicycle'), tile('cw2', 'crosswalk')] }
 const round = rule => ({ ...base, rule, instruction: RULES[rule].instruction, ordered: RULES[rule].ordered })
 
-test('pair: the requested category and its look-alike, nothing else', () => {
+test('pair: selects both categories with one tile error allowed', () => {
   const r = round('pair')
   assert.deepEqual(answerFor(r), ['cw', 'tt', 'cw2'])
   assert.equal(scoreImageRound(r, steady(['cw', 'tt', 'cw2'])).passed, true)
   const human = scoreImageRound(r, steady(['cw', 'cw2']))
-  assert.equal(human.passed, false)
-  assert.match(human.reason, /Include the train tracks/)
-  assert.equal(scoreImageRound(r, steady(['cw', 'tt', 'cw2', 'bk'])).passed, false)
+  assert.equal(human.passed, true)
+  assert.equal(human.missed, 1)
+  assert.equal(scoreImageRound(r, steady(['cw', 'tt', 'cw2', 'bk'])).passed, true)
+  assert.equal(scoreImageRound(r, steady(['cw', 'bk'])).passed, false)
+  assert.equal(scoreImageRound(r, steady(['bk'])).passed, false)
+  assert.equal(scoreImageRound(r, []).passed, false)
 })
 
 test('rhythm: toggles replay into the final selection and count as corrections', () => {
@@ -75,4 +78,10 @@ test('generated rounds: nine unique opaque tiles, one pair rule across every cat
 
 test('pair selection order does not affect the verdict', () => {
   assert.equal(scoreImageRound(round('pair'), steady(['cw2', 'tt', 'cw'])).passed, true)
+})
+
+test('a singleton answer cannot pass with only a decoy selected', () => {
+  const r = { ...round('pair'), tiles: [tile('tt', 'train-track'), tile('bk', 'bicycle')] }
+  assert.equal(scoreImageRound(r, steady(['bk'])).passed, false)
+  assert.equal(scoreImageRound(r, []).passed, false)
 })

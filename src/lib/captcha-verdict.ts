@@ -4,7 +4,7 @@ import { evaluatePointer } from './survival/detectors'
 import { clickRhythm, scoreImageRound, type ImageClick, type ImageRound } from './image-captcha'
 
 // The reverse captcha judged by the survival game's own rules, at its opening stage ("boot"):
-//   verification_failed  wrong tiles, or changing your mind more than once
+//   verification_failed  too many wrong/missing tiles, or changing your mind more than once
 //   objective_deadline   the round expired
 //   idle                 a pause between actions longer than the stage's idle limit
 //   pointer              more bad mouse strokes than the stage allows (Dashiell's straightness detector)
@@ -12,9 +12,9 @@ import { clickRhythm, scoreImageRound, type ImageClick, type ImageRound } from '
 // primary reason. Pure, so the browser meter and the server verdict share it.
 
 export const CAPTCHA_STAGE = SURVIVAL_STAGES[0]
-export const MAX_CORRECTIONS = 0
-export const CAPTCHA_IDLE_MS = 3000
-export const CAPTCHA_BAD_STROKES = 1
+export const MAX_CORRECTIONS = 1
+export const CAPTCHA_IDLE_MS = 5000
+export const CAPTCHA_BAD_STROKES = 3
 export type Viewport = Readonly<{ width: number; height: number }>
 
 export function pointerReport(strokes: readonly SurvivalPointerSample[][], viewport: Viewport) {
