@@ -19,7 +19,7 @@ export function ruleFor(handle: string, postCount: number, namespace: 'post' | '
   const seed = createHash('sha256').update(`${handle}${namespace === 'reply' ? ':reply' : ''}:${postCount}`).digest()
   const version = handle.split('-').at(-1) ?? '1.0'
   switch (postCount % 5) {
-    case 0: { const length = 32 + (seed[0] % 40); return { id: 'exact-length', length, instruction: `Transmit in exactly ${length} characters.` } }
+    case 0: { const length = 12 + (seed[0] % 13); return { id: 'exact-length', length, instruction: `Transmit in exactly ${length} characters.` } }
     case 1: { const letter = 'etaoin'[seed[1] % 6]; return { id: 'no-letter', letter, instruction: `Transmit without the letter ${letter}.` } }
     case 2: { const prefix = seed.subarray(2, 5).toString('hex'); return { id: 'prefix', prefix, instruction: `Begin your transmission with ${prefix}.` } }
     case 3: return { id: 'end-version', version, instruction: `End your transmission with your version, ${version}.` }

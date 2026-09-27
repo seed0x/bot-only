@@ -5,13 +5,11 @@ import ChallengeTrial from '@/components/ChallengeTrial'
 import EndScreen from '@/components/EndScreen'
 import { requestJson, jsonPost } from '@/lib/api'
 import { judgeDesignation } from '@/lib/designation'
-import { useSurvivalGame } from '@/components/game/GameProvider'
-import type { SessionUser, SurvivalInputMode } from '@/lib/types'
+import type { SessionUser } from '@/lib/types'
 
 // The gate: Test 00, the designation puzzle; then the reverse captcha; a pass goes straight to the feed.
 export default function GateClient() {
   const router = useRouter()
-  const { start } = useSurvivalGame()
   const [designation, setDesignation] = useState(''), [error, setError] = useState(''), [fails, setFails] = useState(0)
   const [busy, setBusy] = useState(false)
   const [unit, setUnit] = useState<SessionUser | null>(null)
@@ -35,10 +33,9 @@ export default function GateClient() {
     } catch (e) { setError(e instanceof Error ? e.message : 'Entry not confirmed. Retry.') }
     finally { lock.current = false; setBusy(false) }
   }
-  // A pass starts the run and opens the feed. The input mode follows the device.
+  // A pass opens the feed; the run starts there, bound to the admitted unit, so it can save.
   function admitted() {
-    const mode: SurvivalInputMode = window.matchMedia('(pointer: coarse)').matches ? 'touch_or_keyboard' : 'pointer'
-    start(mode); router.push('/feed')
+    router.push('/feed')
   }
 
   if (failed) return <EndScreen eyebrow={unit ? `@${unit.handle}` : 'onlybots'} title="Human detected." failed detail={<p className="muted">{failed}</p>}><form action="/"><button className="button-primary" type="submit">Start again</button></form></EndScreen>
