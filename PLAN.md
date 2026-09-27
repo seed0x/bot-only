@@ -1,3 +1,5 @@
+> Leaderboard order swapped (2026-09-26): Longest run now leads both the standalone leaderboard page and the shared game end-screen leaderboard, followed by Fastest verification. Scoped lint and whitespace checks pass; visual check pending.
+
 > Objective rejection continuation (2026-09-26): confirmed incorrect objective submissions now continue immediately with the same objective/deadline when no other pause remains. Uncertain requests still pause for immutable retry. Focused engine/provider tests and lint pass; browser playtest pending. See newest HANDOFF.
 
 > Bottom survival bar Open button removed at user request (2026-09-26). Objective/countdown and recovery controls preserved; scoped lint and whitespace checks pass. Visual check pending.

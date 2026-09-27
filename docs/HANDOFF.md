@@ -1,3 +1,13 @@
+## End-screen leaderboard order follow-up — 2026-09-26
+
+- User reported the reorder did not appear. Found that shared `src/components/EndScreen.tsx`, used after run end, CAPTCHA failure and session termination, independently renders both tables in the old order. Swapped it to Longest run then Fastest verification, matching the standalone page. Codex / `main`, uncommitted atop `fd33193`.
+- Scoped ESLint for both components and whitespace checks pass. No browser visual verification, server/database work or deployment. Next: confirm the order on the actual end screen.
+
+## Leaderboard table order — 2026-09-26
+
+- Codex / `main`, uncommitted atop `fd33193`. Changed `src/app/leaderboard/page.tsx` at user request: Longest run is first with the main heading; Fastest verification follows with its description. Existing tables, loading/error/retry handling and detection section remain intact. Updated PLAN and this handoff.
+- Scoped page ESLint and `git diff --check` pass. No tests added for this presentation-only reorder. Browser/responsive visual checks not run; no server/database work, integration, push or deployment. Next: visual check of the reordered leaderboard.
+
 ## Continue after incorrect objective submissions — 2026-09-26
 
 - Codex / `main`, uncommitted atop `db80836`. Fetched origin/main and compared: no divergence. User requested continued gameplay after an incorrect objective. Changed `src/lib/survival/engine.ts`: definite rejection releases its request pause and immediately runs when no other pause remains, resetting partial sensor windows. Same objective/deadline and pre-request active/idle budgets remain; clocks advance from the response timestamp. Errors stay visible; rejected requests are cleared for correction. Uncertain responses retain their immutable pending request and pause. Leaderboard, hidden, blurred and resource pauses remain effective. CAPTCHA failure and terminal rules are unchanged.

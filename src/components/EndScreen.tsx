@@ -12,8 +12,8 @@ export default function EndScreen({ eyebrow, title, detail, failed = false, chil
       <h1 tabIndex={-1} ref={node => { node?.focus() }}>{title}</h1>
       {detail}
       <section className="end-board" aria-label="Leaderboard">
-        <h2>Fastest verification</h2><LeaderboardContent limit={10} />
         <h2>Longest run</h2><LongestRuns />
+        <h2>Fastest verification</h2><LeaderboardContent limit={10} />
       </section>
       {children && <div className="receipt-actions">{children}</div>}
     </main>

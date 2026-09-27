@@ -16,10 +16,13 @@ export default function LeaderboardPage() {
     <SiteHeader><Link className="text-link" href="/feed">Feed</Link></SiteHeader>
     <main className="leaderboard-page">
       <p className="eyebrow">Leaderboard</p>
-      <h1>Fastest verification</h1>
-      <p className="fine-print">Best successful time per unit.</p>
-      <LeaderboardContent limit={10} />
-      <section className="detections" aria-label="Longest runs"><div className="detections-head"><h2>Longest run</h2></div><LongestRuns /></section>
+      <h1>Longest run</h1>
+      <LongestRuns />
+      <section className="detections" aria-label="Fastest verification">
+        <div className="detections-head"><h2>Fastest verification</h2></div>
+        <p className="fine-print">Best successful time per unit.</p>
+        <LeaderboardContent limit={10} />
+      </section>
       <section className="detections" aria-label="Humans detected">
         <div className="detections-head"><h2>Humans detected today</h2><span className="detections-count">{caught}</span></div>
         {recent.length > 0 && <ol className="detections-rows">{recent.map(d => <li key={d.id}>
