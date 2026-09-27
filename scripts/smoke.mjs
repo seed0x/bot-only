@@ -2,6 +2,7 @@
 import { randomUUID } from 'node:crypto'
 import { setTimeout as delay } from 'node:timers/promises'
 import { curvedStrokes, solveImage, steadyClicks, straightStrokes, VIEWPORT } from './captcha-solver.mjs'
+import { compose, steadyTyping, unevenTyping } from './transmission-solver.mjs'
 if (!process.env.BASE_URL) throw new Error('Set BASE_URL explicitly to an isolated test server.')
 const base = process.env.BASE_URL, handle = 'smoke_' + randomUUID().slice(0, 8)
 let failures = 0, checks = 0, cookie = ''
@@ -83,7 +84,15 @@ await delay(solved.clicks.at(-1).t + 50)
 const machine = (await record(img, { clicks: solved.clicks, strokes: solved.strokes, viewport: solved.viewport })).body
 check('machine clicks and straight strokes admitted', machine?.passed === true && machine.result?.challenge === 'image-confusion' && machine.result.score <= 0.2 && machine.result.meta.strokes >= 1 && machine.result.meta.badStrokes === 0)
 check('image challenge cannot be replayed', (await record(img, { clicks: solved.clicks, strokes: solved.strokes, viewport: solved.viewport })).status === 409)
-const postBody = { requestId: randomUUID(), handle, body: 'Smoke transmission. Evidence recorded.' }
+// Transmission test: the network's rule for this unit's next post, typed like a machine.
+const rule = (await read('/api/progress?handle=' + handle)).body.transmission
+check('progress states the transmission rule', typeof rule?.id === 'string' && typeof rule?.instruction === 'string')
+const humanPost = await post('/api/posts', { requestId: randomUUID(), handle, body: 'hey everyone, excited to be here!', typing: steadyTyping(33) })
+check('a post that breaks the rule is rejected as human', humanPost.status === 422 && /Human detected/.test(humanPost.body.error))
+const machineText = compose(rule, 'Smoke transmission. Evidence recorded.')
+const jittery = await post('/api/posts', { requestId: randomUUID(), handle, body: machineText, typing: unevenTyping(machineText.length) })
+check('uneven typing is rejected as human', jittery.status === 422 && /typing/.test(jittery.body.error))
+const postBody = { requestId: randomUUID(), handle, body: machineText, typing: steadyTyping(machineText.length) }
 const transmission = await post('/api/posts', postBody)
 check('admitted unit transmits', transmission.status === 200 && transmission.body.id > 0)
 check('post retry returns same post', (await post('/api/posts', postBody)).body.id === transmission.body.id)

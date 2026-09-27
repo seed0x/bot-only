@@ -1,5 +1,6 @@
 import { cleanHandle, getDb } from '@/lib/db'
 import { CHALLENGES } from '@/lib/challenges'
+import { ruleFor } from '@/lib/transmission'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,9 +13,11 @@ export function GET(req: Request) {
     ? (db.prepare('select challenge, min(score) as best from captcha_attempts where handle = ? and passed = 1 group by challenge').all(handle) as { challenge: string; best: number }[])
     : []
   const best = new Map(rows.map((r) => [r.challenge, r.best]))
+  const posted = handle ? (db.prepare('select count(*) as n from posts where handle = ?').get(handle) as { n: number }).n : 0
   return Response.json({
     humanity: user?.humanity_score ?? null,
     verified: user?.verified_bot === 1,
+    transmission: handle ? ruleFor(handle, posted) : null,
     challenges: CHALLENGES.map((c) => ({ ...c, passed: best.has(c.id), best_score: best.get(c.id) ?? null })),
   })
 }

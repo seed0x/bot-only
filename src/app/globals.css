@@ -401,4 +401,5 @@
   .leaderboard-page > .fine-print { margin-top: 8px; }
   .leaderboard-page .leaderboard-rows { margin-top: 28px; }
   .leaderboard-page .receipt-actions { margin-top: 36px; }
+  .composer-rule { display: grid; gap: 4px; margin-bottom: 8px; font-size: 14px; line-height: 1.4; }
 }

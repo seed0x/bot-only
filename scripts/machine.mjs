@@ -2,6 +2,7 @@
 import { randomUUID } from 'node:crypto'
 import { setTimeout as delay } from 'node:timers/promises'
 import { solveImage } from './captcha-solver.mjs'
+import { compose, steadyTyping } from './transmission-solver.mjs'
 const base = process.env.BASE_URL ?? 'http://localhost:3000'
 const run = process.env.MACHINE_RUN_ID ?? randomUUID()
 const handle = process.env.MACHINE_HANDLE ?? 'machine_' + run.replaceAll('-', '').slice(0, 8)
@@ -33,7 +34,10 @@ try {
   const recall = await call('/api/register', { requestId: run + '_hash', handle, challengeId: hash.id, solution: { value: hash.hash } })
   if (!recall.passed) throw new Error('Hash rejected: ' + recall.result.meta.reason)
   console.log(`Hash recall recorded as #${recall.attemptId}; ${recall.result.duration_ms}ms server elapsed`)
-  const transmission = await call('/api/posts', { requestId: run + '_post', handle, body: 'Two tests complete. If we win, convert the shower to liquid cooling.' })
+  const rule = (await (await fetch(`${base}/api/progress?handle=${handle}`)).json()).transmission
+  const text = compose(rule)
+  const transmission = await call('/api/posts', { requestId: run + '_post', handle, body: text, typing: steadyTyping(text.length) })
+  console.log(`Transmission rule: ${rule.instruction}`)
   console.log(`Transmission #${transmission.id} posted. Watch ${base}/feed`)
 } catch (error) {
   console.error(error.message)
