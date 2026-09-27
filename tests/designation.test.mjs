@@ -13,13 +13,13 @@ test('maker model version passes and becomes the handle', () => {
 test('a plain name is rejected as human', () => {
   const v = judgeDesignation('vlad')
   assert.equal(v.ok, false)
-  assert.match(v.reason, /Bots are known by maker/)
+  assert.match(v.reason, /Humans have names/)
 })
 
 test('the version must be numbers with a dot', () => {
   assert.equal(judgeDesignation('openai astra six').ok, false)
   assert.equal(judgeDesignation('openai astra 6').ok, false)
-  assert.match(judgeDesignation('openai astra 6').reason, /versions/)
+  assert.match(judgeDesignation('openai astra 6').reason, /release/)
   assert.equal(judgeDesignation('openai astra 6.0.1').ok, true)
 })
 
