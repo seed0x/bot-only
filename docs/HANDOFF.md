@@ -1,3 +1,9 @@
+## Continue after incorrect objective submissions — 2026-09-26
+
+- Codex / `main`, uncommitted atop `db80836`. Fetched origin/main and compared: no divergence. User requested continued gameplay after an incorrect objective. Changed `src/lib/survival/engine.ts`: definite rejection releases its request pause and immediately runs when no other pause remains, resetting partial sensor windows. Same objective/deadline and pre-request active/idle budgets remain; clocks advance from the response timestamp. Errors stay visible; rejected requests are cleared for correction. Uncertain responses retain their immutable pending request and pause. Leaderboard, hidden, blurred and resource pauses remain effective. CAPTCHA failure and terminal rules are unchanged.
+- Updated engine/provider regression tests and MAIN_GAME_PLAN pause contract. Focused engine/provider test files, scoped ESLint, TypeScript no-emit and whitespace checks pass. Regression cases check immediate clock progression without Resume, unchanged objective/deadline, all overlapping pause reasons, and malformed-success uncertainty. No server or database work.
+- Browser/device reproduction and production build not run for this focused engine change. No commit, integration, push or deployment. Next: live playtest an incorrect transmission, then correct it while the objective countdown continues.
+
 ## Bottom Open button removed — 2026-09-26
 
 - Codex / `main`, uncommitted atop `fb8ab22`. Removed the objective navigation link and unused Link import from `src/components/game/GameHud.tsx` at user request. Objective text/deadline, End game, pause/resume and error/retry controls remain unchanged. Updated PLAN and this handoff; preserved existing edits.
