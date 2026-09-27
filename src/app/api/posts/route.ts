@@ -1,3 +1,4 @@
+import { requireActiveDesignation } from '@/lib/detections'
 import { readGame, checkGame, completeGame } from '@/lib/survival/objectives'
 import { operation } from '@/lib/operations'
 import { getDb, logActivity } from '@/lib/db'
@@ -32,6 +33,7 @@ export async function POST(req: Request) {
       typing = b.typing.map((t) => { if (typeof t !== 'number' || !Number.isFinite(t) || t < 0 || t <= prev || t > 3_600_000) throw new InputError('Invalid typing record.'); prev = t; return t })
     }
     const outcome = operation(id, 'post', { handle, body, typing, ...(game ? { game } : {}) }, () => {
+      requireActiveDesignation(handle)
       checkGame(game, handle)
       const db = getDb()
       // Test 01+: the network's rule for this unit's next transmission, and machine typing rhythm.

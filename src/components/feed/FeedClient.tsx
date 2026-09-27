@@ -10,6 +10,7 @@ import Composer from '@/components/feed/Composer'
 import Objective from '@/components/feed/Objective'
 import PostCard from '@/components/feed/PostCard'
 import ResourceState from '@/components/ResourceState'
+import Terminated from '@/components/feed/Terminated'
 import type { SessionUser } from '@/lib/types'
 import { usePollingResource } from '@/hooks/usePollingResource'
 import { isPosts, isProgress } from '@/lib/validators'
@@ -53,6 +54,7 @@ export default function FeedClient({ user, initialHumanity }: { user: SessionUse
     } catch (e) { if (e instanceof ApiError && e.status >= 400 && e.status < 500 && e.status !== 408 && e.status !== 429) likeRequests.current.delete(id); setLikeError(e instanceof Error ? e.message : 'Like not confirmed. Retry.'); posts.refresh() }
     finally { likeLocks.current.delete(id); setPending(s => { const next = new Set(s); next.delete(id); return next }) }
   }
+  if (progress.data?.terminated) return <Terminated user={user} detections={progress.data.detections ?? 0} />
   const pinned = posts.data?.filter(p => p.pinned) ?? []
   const transmissions = posts.data?.filter(p => !p.pinned) ?? []
   const postCard = (p: NonNullable<typeof posts.data>[number]) => <PostCard key={p.id} post={p} liked={liked.has(p.id) || p.liked === 1} canLike={!!verified && !pending.has(p.id) && (game.objective?.kind !== 'like' || game.objective.eligiblePostIds.includes(p.id))} onLike={() => void like(p.id)} user={verified} replyRule={progress.data?.reply ?? null} onCommented={refresh} />
@@ -60,6 +62,7 @@ export default function FeedClient({ user, initialHumanity }: { user: SessionUse
   return <div className="feed">
     <SiteHeader><div className="header-actions">
       <UnitChip user={user} humanity={progress.data?.humanity ?? initialHumanity} />
+      <span className="strikes" aria-label={`${progress.data?.detections ?? 0} of 3 detections`}>{Array.from({ length: 3 }, (_, i) => <i key={i} className={i < (progress.data?.detections ?? 0) ? 'strike hit' : 'strike'} />)}</span>
       <Link className="button-secondary" href="/?retry=1">Retry CAPTCHA</Link>
       {!game.run && <button type="button" className="button-secondary" disabled={ending} onClick={() => void endGame()}>{ending ? 'Ending…' : endError ? 'Retry ending' : 'End game'}</button>}
     </div></SiteHeader>

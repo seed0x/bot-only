@@ -1,4 +1,5 @@
 'use client'
+import { returnToGate } from '@/lib/navigation'
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import SiteHeader from '@/components/SiteHeader'
@@ -14,9 +15,8 @@ export default function GameOver() {
   async function again(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (restarting) return
-    const form = event.currentTarget
     setRestarting(true); setError('')
-    try { await restart(); form.submit() }
+    try { await restart(); returnToGate() }
     catch (e) { setError(e instanceof Error ? e.message : 'Couldn’t restart. Retry.'); setRestarting(false) }
   }
   return <>

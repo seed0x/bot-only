@@ -1,3 +1,4 @@
+import { requireActiveDesignation } from '../detections'
 import { randomBytes } from 'node:crypto'
 import { getDb } from '../db'
 import { operation } from '../operations'
@@ -92,6 +93,7 @@ export function bindRun(runId: string, input: SurvivalBindRequest, admitted: Ses
   if (admitted.handle !== input.handle) throw new InputError('This browser is admitted as a different unit.', 403)
   const user = { id: admitted.id, handle: admitted.handle }
   return operation(input.requestId, 'survival.bind', { runId, handle: input.handle }, () => {
+    requireActiveDesignation(input.handle)
     const db = getDb()
     const run = db.prepare('select user_id, terminal_status from game_runs where id = ?').get(runId) as { user_id: number | null; terminal_status: string | null } | undefined
     if (!run) throw new InputError('Run not found.', 404)

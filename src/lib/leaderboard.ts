@@ -9,3 +9,14 @@ export const CAPTCHA_LEADERBOARD_SQL = `
   order by bestTimeMs asc, u.handle collate nocase asc, u.id asc
   limit 100
 `
+
+// Humans caught on the floor: every rejected transmission, reply or CAPTCHA, newest first.
+export const DETECTIONS_TODAY_SQL = `
+  select count(*) as n from activity where kind = 'fail' and created_at >= datetime('now', '-1 day')
+`
+export const RECENT_DETECTIONS_SQL = `
+  select id, handle, text, created_at from activity
+  where kind = 'fail' order by id desc limit 6
+`
+export type Detection = { id: number; handle: string; text: string; created_at: string }
+export const detectionReason = (text: string) => text.replace(/^(?:transmission|reply) rejected\. |^rejected on [a-z-]+\. /, '')

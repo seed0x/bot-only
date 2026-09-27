@@ -1,3 +1,4 @@
+import { requireActiveDesignation } from '@/lib/detections'
 import { operation } from '@/lib/operations'
 import { getDb, logActivity } from '@/lib/db'
 import { requestAdmission, requireAdmission } from '@/lib/gate'
@@ -36,6 +37,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       typing = b.typing.map((t) => { if (typeof t !== 'number' || !Number.isFinite(t) || t < 0 || t <= prev || t > 3_600_000) throw new InputError('Invalid typing record.'); prev = t; return t })
     }
     const outcome = operation(rid, 'comment', { postId: id, handle, body, typing }, () => {
+      requireActiveDesignation(handle)
       const db = getDb()
       const post = db.prepare('select handle from posts where id = ?').get(id) as { handle: string } | undefined
       if (!post) throw new InputError('Transmission not found.', 404)

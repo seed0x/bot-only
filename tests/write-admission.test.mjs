@@ -76,6 +76,17 @@ test('admitted post, reply and like persist once; uncertain retries reuse receip
   assert.equal(db.prepare("select count(*) n from activity where kind='fail'").get().n, 2)
   assert.equal((await posts.POST(request(body, two.cookie))).status, 403, 'auth checked before replay')
 })
+test('three distinct detections block new writes but the third rejection still replays', async () => {
+  const body = payload({ body: 'x' })
+  // Two prior detections exist; this rejected reply is the third.
+  const id = db.prepare('select id from posts limit 1').get().id
+  const first = await replies.POST(request(body, one.cookie), ctx(id))
+  assert.equal(first.status, 422)
+  assert.equal((await replies.POST(request(body, one.cookie), ctx(id))).status, 422)
+  assert.equal(db.prepare("select count(*) n from activity where kind='fail'").get().n, 3)
+  assert.equal((await posts.POST(request(payload({ body: compose(ruleFor(one.user.handle, 1)) }), one.cookie))).status, 403)
+  assert.equal((await likes.POST(request(payload(), one.cookie), ctx(id))).status, 403)
+})
 test('End game revokes only this session; retry succeeds and posts/results remain', async () => {
   const response = end.POST(request({}, one.cookie))
   assert.equal(response.status, 200)

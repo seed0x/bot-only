@@ -1,3 +1,4 @@
+import { requireActiveDesignation } from '@/lib/detections'
 import { requireAdmission } from '@/lib/gate'
 import { getDb, logActivity } from '@/lib/db'
 import { operation } from '@/lib/operations'
@@ -13,6 +14,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     const user = requireAdmission(req, handle)
     const db = getDb()
     const write = () => {
+      requireActiveDesignation(handle)
       checkGame(game, handle)
       const post = db.prepare('select handle from posts where id = ?').get(postId) as { handle: string } | undefined
       if (!post) throw new InputError('Transmission not found.', 404)
