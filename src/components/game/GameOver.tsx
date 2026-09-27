@@ -1,6 +1,8 @@
 'use client'
 import { returnToGate } from '@/lib/navigation'
 import Link from 'next/link'
+import LeaderboardContent from '@/components/feed/LeaderboardContent'
+import LongestRuns from '@/components/feed/LongestRuns'
 import { useEffect, useRef, useState } from 'react'
 import SiteHeader from '@/components/SiteHeader'
 import { useSurvivalGame } from './GameProvider'
@@ -31,7 +33,9 @@ export default function GameOver() {
       </dl>
       <p className="fine-print" role="status">{saveState === 'saved' ? 'Result saved.' : saveState === 'error' ? 'Result not saved.' : 'Saving result…'}{result.status === 'interrupted' && ' Ended runs are not ranked.'}</p>
       {saveError && <div role="alert"><p className="form-error">{saveError}</p><button className="button-secondary" onClick={() => void saveResult().catch(() => {})}>Retry saving</button></div>}
-      <div className="receipt-actions">
+      <section className="end-board" aria-label="Leaderboard"><h2>Fastest verification</h2><LeaderboardContent limit={10} /><h2>Longest run</h2><LongestRuns /></section>
+      <section className="end-board" aria-label="Leaderboard"><h2>Fastest verification</h2><LeaderboardContent limit={10} /><h2>Longest run</h2><LongestRuns /></section>
+    <div className="receipt-actions">
         <form action="/" onSubmit={again}><button className="button-primary" disabled={restarting || saveState !== 'saved'}>{restarting ? 'Restarting…' : 'Start again'}</button></form>
         <Link className="button-secondary" href="/leaderboard">Leaderboard</Link>
       </div>

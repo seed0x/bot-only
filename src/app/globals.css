@@ -396,7 +396,7 @@
 
 /* Compact run controls share the established component layer. */
 @layer components {
-.survival-hud { position: relative; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 0 auto; padding: 16px 24px; width: 100%; max-width: 1040px; border-bottom: 1px solid var(--line); background: var(--bg); overflow-wrap: anywhere; }
+.survival-hud { position: fixed; inset: auto 0 0 0; z-index: 40; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 10px 24px; width: 100%; border-top: 1px solid var(--line); background: var(--bg); overflow-wrap: anywhere; }
 .survival-hud .survival-copy { flex: 1 1 240px; color: var(--muted); }
 .survival-hud .survival-notice { flex-basis: 100%; }
 .survival-clock { font: 500 24px var(--font-archivo), sans-serif; font-variant-numeric: tabular-nums; }
@@ -448,4 +448,14 @@
   .detections-rows { list-style: none; padding: 0; margin-top: 12px; }
   .detections-rows li { display: flex; gap: 12px; align-items: baseline; padding-block: 10px; border-top: 1px solid var(--line); font-size: 13px; }
   .detections-rows li span { color: var(--muted); }
+}
+
+@layer components {
+  body:has(.survival-hud) { padding-bottom: 72px; }
+  .gate-rules { list-style: none; padding: 0; margin: 16px 0 0; display: grid; gap: 4px; color: var(--muted); font-size: 13px; }
+  .end-board { width: min(100%, 520px); margin-top: 8px; text-align: left; }
+  .end-board h2 { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+  .end-board .leaderboard-rows { margin-top: 8px; }
+  .end-board .leaderboard-rows li { padding-block: 10px; }
+  .end-board .rank-score { font-size: 20px; }
 }

@@ -20,3 +20,13 @@ export const RECENT_DETECTIONS_SQL = `
 `
 export type Detection = { id: number; handle: string; text: string; created_at: string }
 export const detectionReason = (text: string) => text.replace(/^(?:transmission|reply) rejected\. |^rejected on [a-z-]+\. /, '')
+
+// Longest survival run per unit: the best ended run, longest first.
+export const LONGEST_RUNS_SQL = `
+  select u.handle, max(r.active_ms) as activeMs
+  from game_runs r join users u on u.id = r.user_id
+  where r.terminal_status = 'failed' and u.handle != 'system'
+  group by u.id, u.handle
+  order by activeMs desc, u.handle collate nocase asc
+  limit 10
+`

@@ -1,6 +1,8 @@
 'use client'
 import { returnToGate } from '@/lib/navigation'
 import Link from 'next/link'
+import LeaderboardContent from '@/components/feed/LeaderboardContent'
+import LongestRuns from '@/components/feed/LongestRuns'
 import { useEffect, useState } from 'react'
 import Avatar from './Avatar'
 import { useSurvivalGame } from '../game/GameProvider'
@@ -21,6 +23,7 @@ export default function Terminated({ user, detections }: { user: SessionUser; de
     <p className="eyebrow">Human detected</p>
     <h1>Designation revoked</h1>
     <div className="terminated-unit"><Avatar handle={user.handle} size={40} /><strong>@{user.handle}</strong><span className="terminated-count">{detections} detections</span></div>
+    <section className="end-board" aria-label="Leaderboard"><h2>Fastest verification</h2><LeaderboardContent limit={10} /><h2>Longest run</h2><LongestRuns /></section>
     <div className="receipt-actions"><form action="/" onSubmit={again}><button className="button-primary" disabled={busy}>{busy ? 'Restarting…' : 'Start again'}</button></form><Link className="button-secondary" href="/leaderboard">Leaderboard</Link></div>
     {error && <p className="form-error">{error}</p>}
   </main>

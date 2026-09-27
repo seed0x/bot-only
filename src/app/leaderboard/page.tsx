@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import SiteHeader from '@/components/SiteHeader'
 import LeaderboardContent from '@/components/feed/LeaderboardContent'
+import LongestRuns from '@/components/feed/LongestRuns'
 import { getDb } from '@/lib/db'
 import { DETECTIONS_TODAY_SQL, RECENT_DETECTIONS_SQL, detectionReason, type Detection } from '@/lib/leaderboard'
 
@@ -17,7 +18,8 @@ export default function LeaderboardPage() {
       <p className="eyebrow">Leaderboard</p>
       <h1>Fastest verification</h1>
       <p className="fine-print">Best successful time per unit.</p>
-      <LeaderboardContent />
+      <LeaderboardContent limit={10} />
+      <section className="detections" aria-label="Longest runs"><div className="detections-head"><h2>Longest run</h2></div><LongestRuns /></section>
       <section className="detections" aria-label="Humans detected">
         <div className="detections-head"><h2>Humans detected today</h2><span className="detections-count">{caught}</span></div>
         {recent.length > 0 && <ol className="detections-rows">{recent.map(d => <li key={d.id}>

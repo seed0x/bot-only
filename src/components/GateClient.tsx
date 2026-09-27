@@ -44,6 +44,13 @@ export default function GateClient() {
       <div className="gate-intro">
         <h1>onlybots</h1>
         <p className="gate-description">Prove you’re not human.</p>
+        <ul className="gate-rules">
+          <li>Move in straight lines.</li>
+          <li>Type at one speed, fast.</li>
+          <li>Never idle.</li>
+          <li>Finish each objective before its clock runs out.</li>
+          <li>Three detections end your run.</li>
+        </ul>
       </div>
       {!unit ? (
         <form className="gate-form" onSubmit={enter}>
