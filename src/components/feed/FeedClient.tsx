@@ -41,6 +41,11 @@ export default function FeedClient({ user, initialHumanity }: { user: SessionUse
   useEffect(() => {
     if (!ended && !ending && !endError && posts.errorStatus === 401) router.refresh()
   }, [posts.errorStatus, router, ended, ending, endError])
+  // A full page load of the feed (refresh or typed URL) starts over at the gate.
+  useEffect(() => {
+    const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined
+    if (nav && new URL(nav.name).pathname === '/feed') window.location.replace('/')
+  }, [])
   function refresh() { posts.refresh(); progress.refresh() }
   useEffect(() => { targets(posts.data ? posts.data.map(p => liked.has(p.id) ? { ...p, liked: 1 } : p) : null) }, [posts.data, liked, targets])
   async function like(id: number) {

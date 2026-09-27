@@ -1,5 +1,5 @@
 'use client'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import ChallengeTrial from '@/components/ChallengeTrial'
 import { requestJson, jsonPost } from '@/lib/api'
@@ -8,12 +8,14 @@ import { useSurvivalGame } from '@/components/game/GameProvider'
 import type { SessionUser, SurvivalInputMode } from '@/lib/types'
 
 // The gate: Test 00, the designation puzzle; then the reverse captcha; a pass goes straight to the feed.
-export default function GateClient({ initialUser = null }: { initialUser?: SessionUser | null }) {
+export default function GateClient() {
   const router = useRouter()
   const { start } = useSurvivalGame()
   const [designation, setDesignation] = useState(''), [error, setError] = useState(''), [fails, setFails] = useState(0)
   const [busy, setBusy] = useState(false)
-  const [unit, setUnit] = useState<SessionUser | null>(initialUser)
+  const [unit, setUnit] = useState<SessionUser | null>(null)
+  // Arriving at the gate forgets any earlier admission.
+  useEffect(() => { void fetch('/api/session/end', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }).catch(() => {}) }, [])
   const pending = useRef<{ requestId: string; handle: string } | null>(null)
   const lock = useRef(false)
 
