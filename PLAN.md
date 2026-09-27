@@ -1,3 +1,5 @@
+> Post keystroke checking removed locally (2026-09-26): content rules remain; composer no longer records typing or supplies survival typing evidence. Full 19-file suite, scoped lint and TypeScript pass. Browser check pending; see newest HANDOFF.
+
 > CAPTCHA leniency completed locally (2026-09-26): allow one tile error with at least one correct tile selected, one correction, two curved strokes, and pauses under five seconds. Full 19-file tests, scoped lint and TypeScript pass; browser rehearsal pending. See newest HANDOFF.
 
 > Completed run-save fix (2026-09-26): GameOver no longer revokes admission while finish is pending. Start again saves, then clears the session; failure stays visible on the result for retry. Focused component/provider/run tests, lint and TypeScript pass; live browser reproduction pending. See newest HANDOFF.

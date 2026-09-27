@@ -1,3 +1,5 @@
+> Post composition no longer records keystrokes or supplies survival typing evidence (2026-09-26). Posts are checked against their displayed content rule; pasting/editing is allowed. Immutable request retries and server admission remain. Reply typing checks are unchanged.
+
 > Current run flow: one root GameProvider owns server-acknowledged survival runs across client navigation. End game saves an interrupted result; automatic failures save their evidence. GameOver replaces gameplay and owns saving/retry/Start again. Start again revokes this browser admission and returns to the initial gate without deleting content/results. Leaderboard route pauses an active run. The CAPTCHA-to-feed action must be client navigation so it does not interrupt the run. See newest HANDOFF for tested scope.
 
 > Owner requirement: keep the top-five leaderboard visible as a right column beside the registration/designation form on desktop, stacked below on mobile. The separate /leaderboard page is additional, not a replacement.

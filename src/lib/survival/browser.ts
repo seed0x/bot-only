@@ -72,6 +72,8 @@ export function installSurvivalSensors(getState: () => SurvivalRunState,
     const now = performance.now()
     activity('input', now)
     if (target !== e.target) { typing = []; target = e.target }
+    // Post composition still counts as activity, but never supplies typing evidence.
+    if (e.target instanceof HTMLElement && e.target.dataset.survivalTyping === 'off') { typing = []; insertionIntent = -Infinity; return }
     if (composing || e.isComposing || e.inputType !== 'insertText' || now - insertionIntent > 250) { typing = []; insertionIntent = -Infinity; return }
     insertionIntent = -Infinity
     if (typing.length && (now - typing.at(-1)! > limits.typingGapMs || now <= typing.at(-1)!)) typing = []

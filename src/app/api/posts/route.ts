@@ -4,7 +4,7 @@ import { operation } from '@/lib/operations'
 import { getDb, logActivity } from '@/lib/db'
 import { requestAdmission, requireAdmission } from '@/lib/gate'
 import { bodyInput, errorResponse, handleInput, InputError, requestId } from '@/lib/server-input'
-import { checkTransmission, judgeTyping, ruleFor } from '@/lib/transmission'
+import { checkTransmission, ruleFor } from '@/lib/transmission'
 export const dynamic = 'force-dynamic'
 // GET /api/posts — newest 100, pinned first; `liked` is whether the admitted unit liked each one, `comments` the reply count.
 export function GET(req: Request) {
@@ -27,7 +27,8 @@ export async function POST(req: Request) {
     if (typeof b.body !== 'string' || !b.body.trim() || b.body.length > 280) throw new InputError('Transmit between 1 and 280 characters.')
     const body = b.body.trim(), game = readGame(b.game, id, 'post')
     let typing: number[] = []
-    // Every character is typed. Fewer insertions than characters means a paste or an edit: human.
+    // Retain legacy optional telemetry in the operation fingerprint for immutable retries.
+    // It no longer participates in post acceptance.
     if (b.typing !== undefined) {
       if (!Array.isArray(b.typing) || b.typing.length > 400) throw new InputError('Invalid typing record.')
       let prev = -1
@@ -37,13 +38,11 @@ export async function POST(req: Request) {
       requireActiveDesignation(handle)
       checkGame(game, handle)
       const db = getDb()
-      // Test 01+: the network's rule for this unit's next transmission, and machine typing rhythm.
+      // Test 01+: the content rule for this unit's next transmission.
       const posted = (db.prepare('select count(*) as n from posts where user_id = ?').get(user.id) as { n: number }).n
       const rule = ruleFor(handle, posted)
       const broken = checkTransmission(rule, body)
-      const rhythm = judgeTyping(typing, posted)
-      const pasted = typing.length < body.length ? `${body.length} characters, ${typing.length} keystrokes. Machines don’t paste or edit.` : null
-      const rejection = broken ?? pasted ?? rhythm.measurement?.explanation ?? null
+      const rejection = broken
       if (rejection) {
         logActivity('fail', handle, `transmission rejected. ${rejection}`)
         return { error: rejection }

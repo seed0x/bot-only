@@ -1,3 +1,10 @@
+## Remove post keystroke checking — 2026-09-26
+
+- Codex / `main`, uncommitted atop `de68a90`; prior CAPTCHA changes preserved, including their staged state. No integration/push/deployment. Last fetched main comparison in this session had no divergence.
+- `src/app/api/posts/route.ts` now accepts posts based on content rules alone; removed missing-keystroke/paste/edit and typing-rhythm rejection. Legacy optional typing arrays retain bounded validation and operation fingerprint inclusion so existing immutable retries replay unchanged. `src/components/feed/Composer.tsx` no longer collects/sends keystrokes and opts out of typing scoring through `data-survival-typing="off"`. `src/lib/survival/browser.ts` counts its input as activity but discards typing evidence. Other fields, replies, pointer/idle/objective rules and admission remain unchanged.
+- Added actual isolated SQLite route tests for omitted, empty and slow typing telemetry: valid posts persist, replay the same receipt, produce no detection and never duplicate writes. Existing invalid-content rejection/replay tests pass. Added sensor regression for exempt composer input activity and continued typing scoring in other fields. Full npm test passes all 19 files; scoped ESLint, TypeScript no-emit and whitespace pass.
+- No browser/device verification or production build performed; no server started or shared database inspected/modified. Next: browser playtest posting pasted/edited text that satisfies the displayed content rule.
+
 ## CAPTCHA error leniency — 2026-09-26
 
 - Codex / `main`, uncommitted. Fetched origin/main and compared: no divergence before editing. User requested more forgiving CAPTCHA errors. Owned `src/lib/image-captcha.ts`, `src/lib/captcha-verdict.ts`, their focused tests and current docs; no shared type/API/schema edits.

@@ -9,7 +9,7 @@ export function resolve(specifier, context, nextResolve) {
 const { installSurvivalSensors } = await import('../src/lib/survival/browser.ts')
 
 class Surface extends EventTarget { scrollTop = 10; scrollHeight = 10000; clientHeight = 500; parentElement = null }
-class Control extends Surface { type = 'text'; isContentEditable = false }
+class Control extends Surface { dataset = {}; type = 'text'; isContentEditable = false }
 function setup(mode = 'pointer') {
   let now = 0
   const doc = new EventTarget(), root = new Surface()
@@ -80,5 +80,24 @@ test('actual scroll displacement requires intent and clips boundary tails', () =
     s.root.scrollTop = 0; s.send('scroll', 1010, { target: s.root })
     s.sensors.pulse(1400)
     assert.equal(s.results.length, scored)
+  } finally { s.finish() }
+})
+
+test('post composition counts as activity without scoring keystrokes', () => {
+  const s = setup(), target = new Control()
+  target.dataset.survivalTyping = 'off'
+  try {
+    for (let i = 0; i < 20; i++) {
+      s.send('keydown', i * 700, { key: 'a', repeat: false, target })
+      s.send('input', i * 700 + 1, { inputType: 'insertText', target })
+    }
+    assert.equal(s.results.length, 0)
+    assert.equal(s.events.filter(e => e.type === 'activity' && e.source === 'input').length, 20)
+    const other = new Control()
+    for (let i = 0; i < 9; i++) {
+      s.send('keydown', 15000 + i * 100, { key: 'a', repeat: false, target: other })
+      s.send('input', 15001 + i * 100, { inputType: 'insertText', target: other })
+    }
+    assert.equal(s.results.length, 1, 'other fields retain typing scoring')
   } finally { s.finish() }
 })

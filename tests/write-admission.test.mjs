@@ -98,3 +98,20 @@ test.skip('End game revokes only this session; retry succeeds and posts/results 
   assert.equal(db.prepare('select count(*) n from posts').get().n, 1)
   assert.equal(db.prepare('select count(*) n from captcha_attempts').get().n, 2)
 })
+
+test('posts accept valid content without keystrokes and replay without duplicate writes', async () => {
+  const member = admit('post-no-keys-1.0')
+  for (const telemetry of [undefined, [], Array.from({ length: 30 }, (_, i) => i * 1000)]) {
+    const count = db.prepare('select count(*) n from posts where user_id = ?').get(member.user.id).n
+    const body = { requestId: randomUUID(), handle: member.user.handle,
+      body: compose(ruleFor(member.user.handle, count)), ...(telemetry === undefined ? {} : { typing: telemetry }) }
+    const first = await posts.POST(request(body, member.cookie))
+    assert.equal(first.status, 200)
+    const receipt = await first.json()
+    const replay = await posts.POST(request(body, member.cookie))
+    assert.equal(replay.status, 200)
+    assert.deepEqual(await replay.json(), receipt)
+    assert.equal(db.prepare('select count(*) n from posts where user_id = ?').get(member.user.id).n, count + 1)
+  }
+  assert.equal(db.prepare("select count(*) n from activity where handle = ? and kind = 'fail'").get(member.user.handle).n, 0)
+})

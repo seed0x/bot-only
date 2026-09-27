@@ -1,3 +1,5 @@
+> Authorized post-input revision (2026-09-26): post composition is exempt from survival typing scoring and post submission has no keystroke-count/rhythm/speed criterion. Composer inputs still count as activity; content rules, idle/pointer/objective rules and typing scoring in other fields remain. See newest HANDOFF for checks.
+
 # Main game: survive the network
 
 Status: integrated through `feat/fail-states` `fb8dc6b`. G04 runs with server-acknowledged start/bind; G05 uses the canonical admission-aware SQLite run APIs; G06 admission/post/like completions are connected to the current gate/feed. Game over replaces gameplay and saves through the finish API with idempotent retry. Manual End game is an unranked interruption; Start again returns to fresh registration. Detector/device calibration and broader G08 rehearsal remain. See the newest HANDOFF entry for checks and limits. Public CAPTCHA leaderboard stays fastest successful time; survival scores use their separate API.
