@@ -150,7 +150,7 @@ test('verified Start waits for acknowledged bind and issues post; failed Start r
   } finally { cleanup(); h.restore() }
 })
 
-test('lost mutation response pauses clocks; exact Retry advances once and requires explicit Resume', async () => {
+test('lost mutation response pauses clocks; exact Retry advances once and continues immediately', async () => {
   const h = host(); const cleanup = h.setup()
   try {
     verifiedNetwork(h); await h.value.start('pointer'); h.value.targets([{ id: 9, liked: 0 }])
@@ -173,15 +173,15 @@ test('lost mutation response pauses clocks; exact Retry advances once and requir
     assert.equal(h.state().completedObjectiveIds[0], objectiveId)
     assert.equal(h.state().objective.kind, 'like')
     assert.deepEqual(h.state().objective.eligiblePostIds, [9])
-    assert.equal(h.state().phase, 'paused')
+    assert.equal(h.state().phase, 'running')
     assert.equal(h.state().activeMs, paused.activeMs)
     const writes = h.network.requests.filter(r => r.url === '/api/posts')
     assert.equal(writes.length, 2); assert.deepEqual(writes[0].body, writes[1].body)
     await h.value.mutate('/api/posts', input, 'post', isPostReceipt)
     assert.equal(h.network.requests.filter(r => r.url === '/api/posts').length, 2)
     assert.equal(h.state().completedObjectiveIds.length, 1)
-    h.value.resume(); assert.equal(h.state().phase, 'countdown')
-    h.tick(103000)
+    h.tick(100100)
+    assert.equal(h.state().activeMs, paused.activeMs + 100)
     h.network.fetch = (_url, body) => Response.json({ ok: true, already: false, likes: 1, completion: completion(body, { kind: 'like', likeId: 12, postId: 9 }) })
     await h.value.mutate('/api/posts/9/like', { requestId: 'like_request_00000001', handle: 'verified' }, 'like', v => v?.ok === true, 9)
     assert.equal(h.state().completedObjectiveIds.length, 2); assert.equal(h.state().objective.kind, 'post')
@@ -341,6 +341,6 @@ test('submission at the deadline is acknowledged and the next objective uses the
     assert.equal(h.state().completedObjectiveIds.length, 1)
     assert.equal(h.state().objective.stage, 'observe')
     assert.equal(h.state().objective.deadlineActiveMs - h.state().activeMs, 30000)
-    assert.equal(h.state().phase, 'paused')
+    assert.equal(h.state().phase, 'running')
   } finally { cleanup(); h.restore() }
 })

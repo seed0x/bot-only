@@ -183,8 +183,14 @@ test('objective exact deadline submits on time; uncertain retry pauses without s
   assert.throws(() => step(state, 'objective_submitted', 53000, { submission: { ...payload, requestId: 'changed_000000001' } }))
   const receipt = { runId, objectiveId: obj.objectiveId, requestId: payload.requestId,
     completionId: 'completion_000001', user: { id: 1, handle: 'unit' }, action: { kind: 'post', postId: 1 }, recordedAt: startReceipt.startedAt }
+  const hidden = step(state, 'pause_acquired', 53000, { reason: 'hidden' })
+  const acknowledgedHidden = step(hidden, 'objective_acknowledged', 54000, { receipt })
+  assert.equal(acknowledgedHidden.phase, 'paused')
+  assert.deepEqual(acknowledgedHidden.pauseReasons, ['hidden'])
   state = step(state, 'objective_acknowledged', 54000, { receipt })
-  assert.equal(state.phase, 'paused')
+  assert.equal(state.phase, 'running')
+  assert.equal(state.activeMs, 35000)
+  assert.equal(step(state, 'tick', 54100).activeMs, 35100)
   assert.deepEqual(state.completedObjectiveIds, [obj.objectiveId])
   state = step(state, 'objective_acknowledged', 54000, { receipt })
   assert.equal(state.completedObjectiveIds.length, 1)

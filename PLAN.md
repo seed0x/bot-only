@@ -1,6 +1,6 @@
 # G06 — implemented locally — 2026-09-26
 
-Owner: Codex. Branch: `feat/fail-states`, base `1a7483c`; G06 work remains uncommitted. Owned slice: register/play action handling in `src/lib/game.ts`, post/like routes, objective validation/receipt helpers, root provider/HUD integration, gate `ChallengeTrial`, feed/Composer/Objective, result copy, focused tests and current docs. Frozen shared types/config/engine, DB schema, gate CAPTCHA scoring and leaderboard remain unchanged.
+Owner: Codex. Branch: `feat/fail-states`, base `1a7483c`; G06 work remains uncommitted. Owned slice: register/play action handling in `src/lib/game.ts`, post/like routes, objective validation/receipt helpers, root provider/HUD integration, gate `ChallengeTrial`, feed/Composer/Objective, result copy, focused tests and current docs. Shared types/config, DB schema, gate CAPTCHA scoring and leaderboard remain unchanged. At user request, successful objective acknowledgement now continues immediately when no other pause reason remains.
 
 Behavior/recovery/checks: acknowledged Start and verified binding; admission → post/like objectives; exact immutable uncertain retries with paused clocks; definite rejection keeps input/objective and requires Resume; no-target replacement with a new post budget. Focused disposable API and provider checks are recorded in `docs/HANDOFF.md`. G06 is implemented and ready for review; mounted browser/device acceptance remains unrun. Stop here. Next task is G07 result saving, survival leaderboard and complete terminal action blocking.
 
