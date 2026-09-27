@@ -12,17 +12,17 @@ export default function GameHud() {
   const stage = survivalStageAt(state.activeMs)
   const next = SURVIVAL_STAGES.find(s => s.startsAtMs > state.activeMs)
   return <aside className="survival-hud" aria-label="Survival game">
-    <strong>Survival run · unsaved / unranked</strong>
+    <strong>Survival run</strong>
     <span role="status">{state.phase === 'ready' ? 'Not started — monitoring is off' : state.phase === 'ended' ? 'Run ended — see result below' : state.phase === 'running' ? 'Monitoring active' : state.phase === 'paused' ? 'Monitoring paused' : 'Preparing to monitor'}</span>
     {state.phase === 'ready' ? <>
-      <p>Keep moving, type evenly and scroll consistently. Idle or repeated irregular windows end this run. Complete the current objective before its deadline. Scroll inertia counts. Results remain unsaved in this increment.</p>
+      <p>Keep moving, type evenly and scroll consistently. Idle or repeated irregular windows end this run. Complete the current objective before its deadline. Scroll inertia counts. After game over, save your result to compare confirmed runs.</p>
       <label>Input mode <select value={mode} onChange={e => setMode(e.target.value as SurvivalInputMode)}><option value="pointer">Mouse / pen</option><option value="touch_or_keyboard">Touch / keyboard</option></select></label>
       <button disabled={starting} onClick={() => start(mode)}>{starting ? 'Confirming start…' : networkError ? 'Retry Start' : 'Start run'}</button>
     </> : <>
       <span>{(state.activeMs / 1000).toFixed(1)}s · {stage.id} · {state.run?.inputMode}</span>
       {state.objective && <p><strong>{state.objective.kind === 'admission' ? 'Get admitted' : state.objective.kind === 'post' ? 'Transmit once' : 'Like an eligible transmission'}</strong> · {(Math.max(0, state.objective.deadlineActiveMs - state.activeMs) / 1000).toFixed(1)}s remaining · <Link href={state.objective.kind === 'admission' ? '/' : '/feed'}>{state.objective.kind === 'admission' ? 'Go to gate' : 'Go to feed'}</Link></p>}
       {!state.objective && state.pauseReasons.includes('required_resource') && <p><Link href="/feed">Go to feed to load objective targets</Link></p>}
-      {state.pendingObjective && <p role="status">Recording objective — clocks frozen. {networkError && <button onClick={retryMutation}>Retry recording</button>}</p>}
+      {state.phase !== 'ended' && state.pendingObjective && <p role="status">Recording objective — clocks frozen. {networkError && <button onClick={retryMutation}>Retry recording</button>}</p>}
       {fallback && <p role="status">{fallback}</p>}
       <span>Typing minimum: {stage.typingMinWpm} WPM</span>
       <span>Idle: {(Math.max(0, stage.idleLimitMs - state.idleElapsedMs) / 1000).toFixed(1)}s remaining</span>

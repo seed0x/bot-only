@@ -5,17 +5,26 @@ import { ApiError, jsonPost, requestJson } from '@/lib/api'
 import { getSessionUser } from '@/lib/session'
 import { isProgress } from '@/lib/validators'
 import { isStartReceipt, isBindReceipt, isCompletion } from '@/lib/survival/receipts'
-import type { Post, SurvivalObjective, SurvivalObjectiveSubmission, SurvivalStartRequest, SurvivalStartReceipt, SurvivalBindReceipt, SurvivalObjectiveReceipt, SurvivalDetectorResult, SurvivalEvent, SurvivalInputMode, SurvivalPauseReason, SurvivalRunState } from '@/lib/types'
+import type { Post, SurvivalObjective, SurvivalObjectiveSubmission, SurvivalStartRequest, SurvivalStartReceipt, SurvivalBindReceipt, SurvivalObjectiveReceipt, SurvivalDetectorResult, SurvivalEvent, SurvivalInputMode, SurvivalPauseReason, SurvivalRunState, SurvivalSaveState, SurvivalFinishRequest, SurvivalFinishReceipt } from '@/lib/types'
 import { createSurvivalState, transitionSurvival } from '@/lib/survival/engine'
 import { SURVIVAL_ID_PATTERN, SURVIVAL_LIMITS, SURVIVAL_RULES_VERSION, SURVIVAL_TIMING, survivalStageAt } from '@/lib/survival/config'
 import { installSurvivalSensors } from '@/lib/survival/browser'
 import GameHud from './GameHud'
 import GameOver from './GameOver'
+import LeaderboardPanel from '../feed/LeaderboardPanel'
 
 const checkpointKey = 'bot-only-survival-diagnostic-v1'
+function freezeRequestData<T>(value: T): T {
+  if (value && typeof value === 'object' && !Object.isFrozen(value)) {
+    Object.values(value).forEach(freezeRequestData)
+    Object.freeze(value)
+  }
+  return value
+}
 type Mutation = { url: string; body: Record<string, unknown>; game: SurvivalObjectiveSubmission; validate: (v: unknown) => boolean; result?: unknown; busy?: boolean }
 type Start = { request: SurvivalStartRequest; receipt?: SurvivalStartReceipt; bindId: string; handle?: string; verified?: boolean }
 type GameContextValue = {
+  saveState: SurvivalSaveState; saveResult: () => void; openLeaderboard: () => void
   state: SurvivalRunState; readings: Partial<Record<SurvivalDetectorResult['detector'], SurvivalDetectorResult>>
   storageError: string | null; networkError: string | null; starting: boolean; fallback: string | null; retryMutation: () => void
   resource: (owner: 'like_targets' | 'gate_challenge' | 'feed_identity', blocked: boolean) => void
@@ -40,6 +49,10 @@ export default function GameProvider({ children }: { children: React.ReactNode }
   const [storageError, setStorageError] = useState<string | null>(null)
   const [networkError, setNetworkError] = useState<string | null>(null)
   const [starting, setStarting] = useState(false)
+  const [saveState, setSaveState] = useState<SurvivalSaveState>({ status: 'not_sent' })
+  const finishPending = useRef<SurvivalFinishRequest | null>(null), saveLock = useRef(false), savedRun = useRef<string | null>(null)
+  const [leaderboardOpen, setLeaderboardOpen] = useState(false)
+  const leaderboard = useRef(false)
   const [fallback, setFallback] = useState<string | null>(null)
   const startPending = useRef<Start | null>(null), startLock = useRef(false), generation = useRef(0)
   const mutation = useRef<Mutation | null>(null)
@@ -53,7 +66,7 @@ export default function GameProvider({ children }: { children: React.ReactNode }
     try {
       const s = current.current
       // A checkpoint is only a neutral reload result, never a resumable engine state.
-      if (s.run) {
+      if (s.run && savedRun.current !== s.run.runId) {
         const payload = JSON.stringify({ run: s.run, activeMs: s.activeMs, completedObjectiveIds: s.completedObjectiveIds })
         if (payload !== lastCheckpoint.current) { sessionStorage.setItem(checkpointKey, payload); lastCheckpoint.current = payload }
       }
@@ -71,6 +84,29 @@ export default function GameProvider({ children }: { children: React.ReactNode }
   const pause = useCallback((reason: SurvivalPauseReason, acquired: boolean) => {
     emit({ type: acquired ? 'pause_acquired' : 'pause_released', reason, atMs: performance.now() })
   }, [emit])
+  const openLeaderboard = useCallback(() => { leaderboard.current = true; pause('leaderboard', true); setLeaderboardOpen(true) }, [pause])
+  const closeLeaderboard = useCallback(() => { leaderboard.current = false; pause('leaderboard', false); setLeaderboardOpen(false) }, [pause])
+  const saveResult = useCallback(async () => {
+    const terminal = current.current.terminal
+    if (!terminal || saveLock.current || savedRun.current === terminal.runId) return
+    const request = finishPending.current ??= freezeRequestData(structuredClone({ requestId: crypto.randomUUID(), snapshot: terminal }))
+    const token = generation.current
+    const canRank = terminal.status === 'failed' && current.current.user !== null
+    saveLock.current = true; setSaveState({ status: 'saving', request })
+    try {
+      const receipt = await requestJson(`/api/runs/${request.snapshot.runId}/finish`, jsonPost(request), (v): v is SurvivalFinishReceipt => {
+        if (!v || typeof v !== 'object') return false
+        const r = v as Record<string, unknown>
+        return r.ok === true && r.requestId === request.requestId && r.runId === request.snapshot.runId && r.resultId === request.snapshot.runId && typeof r.ranked === 'boolean' &&
+          (canRank || r.ranked === false) && typeof r.recordedAt === 'string' && /^\d{4}-\d\d-\d\dT/.test(r.recordedAt) && Number.isFinite(Date.parse(r.recordedAt))
+      })
+      window.dispatchEvent(new Event('network-updated'))
+      if (!mounted.current || token !== generation.current || current.current.terminal?.runId !== request.snapshot.runId) return
+      savedRun.current = receipt.runId; setSaveState({ status: 'saved', receipt }); persist()
+    } catch (error) {
+      if (mounted.current && token === generation.current && current.current.terminal?.runId === request.snapshot.runId) setSaveState({ status: 'save_error', request, message: error instanceof Error ? error.message : 'Result not confirmed.', retryable: !(error instanceof ApiError && error.status >= 400 && error.status < 500) })
+    } finally { if (token === generation.current) saveLock.current = false }
+  }, [persist])
   const resource = useCallback((owner: 'like_targets' | 'gate_challenge' | 'feed_identity', blocked: boolean) => {
     if (blocked) resources.current.add(owner)
     else resources.current.delete(owner)
@@ -128,6 +164,7 @@ export default function GameProvider({ children }: { children: React.ReactNode }
     startLock.current = true; setStarting(true); setNetworkError(null)
     if (!startPending.current) {
       generation.current++
+      finishPending.current = null; saveLock.current = false; savedRun.current = null; setSaveState({ status: 'not_sent' })
       emit({ type: 'new_run', atMs: performance.now() })
       mutation.current = null; confirmed.current.clear(); resources.current.delete('like_targets'); nextKind.current = null; setFallback(null); setReadings({})
       startPending.current = { request: { requestId: crypto.randomUUID(), rulesVersion: SURVIVAL_RULES_VERSION, inputMode: mode }, bindId: crypto.randomUUID(), handle: getSessionUser()?.handle }
@@ -139,6 +176,7 @@ export default function GameProvider({ children }: { children: React.ReactNode }
       const bound = pending.verified ? await requestJson(`/api/runs/${pending.receipt.runId}/bind`, jsonPost({ requestId: pending.bindId, handle: pending.handle }), (v): v is SurvivalBindReceipt => isBindReceipt(v) && v.runId === pending.receipt!.runId && v.requestId === pending.bindId && v.user.handle === pending.handle) : null
       if (!mounted.current || token !== generation.current) return
       conditions()
+      if (leaderboard.current) pause('leaderboard', true)
       if (resources.current.size) pause('required_resource', true)
       emit({ type: 'start_acknowledged', atMs: performance.now(), receipt: pending.receipt })
       if (bound) emit({ type: 'identity_bound', atMs: performance.now(), receipt: bound })
@@ -150,6 +188,7 @@ export default function GameProvider({ children }: { children: React.ReactNode }
     } finally { startLock.current = false; if (mounted.current) setStarting(false) }
   }, [conditions, emit, issue, pause, persist])
   const sendMutation = useCallback(async (m: Mutation) => {
+    if (current.current.terminal || current.current.run?.runId !== m.game.runId) throw new ApiError('This run has ended. Start another run to submit.', 409)
     if (m.result !== undefined) return m.result
     if (m.busy) throw new Error('Recording is already pending.')
     m.busy = true; setNetworkError(null)
@@ -165,9 +204,11 @@ export default function GameProvider({ children }: { children: React.ReactNode }
           (m.game.kind !== 'like' || 'already' in v && v.already === false && v.completion.action.kind === 'like' && v.completion.action.postId === Number(m.url.split('/').at(-2)))
       })
       m.result = data
+      let rejectedAdmission = false
       if (current.current.run?.runId === m.game.runId) confirmed.current.set(m.game.requestId, m)
       if (mounted.current && current.current.run?.runId === m.game.runId && current.current.phase !== 'ended') {
         if (m.game.kind === 'admission' && (data as { passed?: boolean }).passed === false) {
+          rejectedAdmission = true
           emit({ type: 'verification_rejected', runId: m.game.runId, attemptId: (data as { attemptId: number }).attemptId, atMs: performance.now() })
         } else {
           const receipt = (data as { completion: SurvivalObjectiveReceipt }).completion
@@ -183,10 +224,11 @@ export default function GameProvider({ children }: { children: React.ReactNode }
         persist()
       }
       window.dispatchEvent(new Event('network-updated'))
+      if (current.current.run?.runId !== m.game.runId || current.current.phase === 'ended' && !rejectedAdmission) throw new ApiError('The request was recorded after this run ended. Its result cannot change this run.', 409)
       return data
     } catch (error) {
       const rejected = error instanceof ApiError && error.status >= 400 && error.status < 500
-      if (mounted.current && current.current.run?.runId === m.game.runId) {
+      if (mounted.current && current.current.run?.runId === m.game.runId && current.current.phase !== 'ended') {
         setNetworkError(error instanceof Error ? error.message : 'Recording not confirmed. Retry.')
         emit({ type: rejected ? 'objective_rejected' : 'objective_uncertain', ...m.game, message: error instanceof Error ? error.message : 'Recording not confirmed.', atMs: performance.now() })
       }
@@ -195,6 +237,9 @@ export default function GameProvider({ children }: { children: React.ReactNode }
     } finally { m.busy = false }
   }, [emit, issue, persist])
   const mutate = useCallback(async <T,>(url: string, body: Record<string, unknown>, kind: SurvivalObjective['kind'], validate: (v: unknown) => v is T, postId?: number): Promise<T> => {
+    emit({ type: 'tick', atMs: performance.now() })
+    if (current.current.terminal) throw new ApiError('Run ended. Start another run before submitting.', 409)
+    const token = generation.current
     const prior = confirmed.current.get(body.requestId as string) ?? (mutation.current?.game.requestId === body.requestId ? mutation.current : null)
     if (prior) {
       const { game: _game, ...original } = prior.body
@@ -204,8 +249,9 @@ export default function GameProvider({ children }: { children: React.ReactNode }
     }
     const s = current.current
     if (s.pendingObjective) throw new ApiError('Resolve the pending objective with Retry first.', 409)
-    if (!s.run || s.phase === 'ended' || s.objective?.kind !== kind) {
+    if (!s.run || s.objective?.kind !== kind || url === '/api/play' || !('solution' in body) && url === '/api/register') {
       const data = await requestJson(url, jsonPost(body), validate)
+      if (!mounted.current || token !== generation.current || current.current.phase === 'ended') throw new ApiError('This request belongs to an ended run.', 409)
       if (kind === 'admission' && s.run && data && typeof data === 'object' && 'passed' in data && data.passed === false && 'attemptId' in data && typeof data.attemptId === 'number' && mounted.current) {
         emit({ type: 'verification_rejected', runId: s.run.runId, attemptId: data.attemptId, atMs: performance.now() })
       }
@@ -278,7 +324,7 @@ export default function GameProvider({ children }: { children: React.ReactNode }
     }
   }, [conditions, emit, persist])
   useEffect(() => { emit({ type: 'sensor_reset', cause: 'route', atMs: performance.now() }) }, [pathname, emit])
-  return <GameContext.Provider value={{ state, readings, storageError, networkError, starting, fallback, retryMutation, resource, targets, mutate, start, resume, pause }}>
-    <GameHud /><GameOver />{children}
+  return <GameContext.Provider value={{ saveState, saveResult, openLeaderboard, state, readings, storageError, networkError, starting, fallback, retryMutation, resource, targets, mutate, start, resume, pause }}>
+    <GameHud /><GameOver />{children}<LeaderboardPanel open={leaderboardOpen} onClose={closeLeaderboard} />
   </GameContext.Provider>
 }

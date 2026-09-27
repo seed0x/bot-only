@@ -6,7 +6,7 @@ import HashRecall from './HashRecall'
 import ImageCaptcha from './ImageCaptcha'
 import AttemptEvidence from './AttemptEvidence'
 import VerdictReceipt from './VerdictReceipt'
-import { ApiError, jsonPost, requestJson } from '@/lib/api'
+import { ApiError } from '@/lib/api'
 import { isChallenge, isReceipt } from '@/lib/validators'
 import type { AttemptReceipt, ChallengeKind, IssuedChallenge, Solution } from '@/lib/types'
 
@@ -16,10 +16,10 @@ type State = { phase: 'idle' } | { phase: 'preparing' | 'saving'; pending: Pendi
 export default function ChallengeTrial({ handle, kind, autoStart = false, onRecorded, children }: { handle: string; kind: ChallengeKind; autoStart?: boolean; onRecorded?: (r: AttemptReceipt) => void; children?: (r: AttemptReceipt) => React.ReactNode }) {
   const { state: game, mutate, resource } = useSurvivalGame()
   const [state, setState] = useState<State>({ phase: 'idle' })
-  const lock = useRef(false), active = useRef(true), controller = useRef<AbortController | null>(null)
+  const lock = useRef(false), active = useRef(true)
   useEffect(() => {
     active.current = true
-    return () => { active.current = false; controller.current?.abort() }
+    return () => { active.current = false }
   }, [])
   const needsChallenge = game.phase !== 'ended' && game.objective?.kind === 'admission' && (state.phase === 'preparing' || state.phase === 'error' && !('solution' in state.pending))
   useEffect(() => {
@@ -27,9 +27,8 @@ export default function ChallengeTrial({ handle, kind, autoStart = false, onReco
     return () => resource('gate_challenge', false)
   }, [needsChallenge, resource])
   async function send(pending: Pending) {
-    if (lock.current) return
+    if (lock.current || game.phase === 'ended') return
     lock.current = true
-    controller.current = new AbortController()
     const submitting = 'solution' in pending
     setState({ phase: submitting ? 'saving' : 'preparing', pending })
     try {
@@ -39,7 +38,7 @@ export default function ChallengeTrial({ handle, kind, autoStart = false, onReco
         setState({ phase: 'recorded', receipt }); onRecorded?.(receipt)
         window.dispatchEvent(new Event('network-updated'))
       } else {
-        const challenge = await requestJson('/api/play', { ...jsonPost(pending), signal: controller.current.signal }, isChallenge)
+        const challenge = await mutate('/api/play', pending, 'admission', isChallenge)
         if (active.current) setState({ phase: 'playing', challenge })
       }
     } catch (error) {
@@ -49,6 +48,7 @@ export default function ChallengeTrial({ handle, kind, autoStart = false, onReco
   function start() { void send({ requestId: crypto.randomUUID(), handle, kind }) }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (!autoStart) return; const t = setTimeout(start, 0); return () => clearTimeout(t) }, [])
+  if (game.phase === 'ended') return <p>Run ended. Start another run to verify.</p>
   if (state.phase === 'idle') return <div className="trial-ready">
     <button className="button-primary" onClick={start}>Try it</button>
   </div>

@@ -1,6 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { readFileSync, mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { register } from 'node:module'
 import ts from 'typescript'
 import { SURVIVAL_RULES_VERSION } from '../src/lib/survival/config.ts'
@@ -27,11 +29,12 @@ const sessionUrl = 'data:text/javascript,' + encodeURIComponent('export const ge
 const libRoot = new URL('../src/lib/', import.meta.url).href
 register('data:text/javascript,' + encodeURIComponent(`
 export function resolve(specifier, context, nextResolve) {
-  const mocks = ${JSON.stringify({ '@/lib/session': sessionUrl, react: hookUrl, 'react/jsx-runtime': jsxUrl, 'next/navigation': navUrl, './GameHud': childUrl, './GameOver': childUrl })};
+  const mocks = ${JSON.stringify({ '@/lib/session': sessionUrl, react: hookUrl, 'react/jsx-runtime': jsxUrl, 'next/navigation': navUrl, './GameHud': childUrl, './GameOver': childUrl, '../feed/LeaderboardPanel': childUrl })};
   if (context.parentURL === ${JSON.stringify(providerUrl)}) {
     if (mocks[specifier]) return { url: mocks[specifier], shortCircuit: true };
     if (specifier.startsWith('@/lib/')) return { url: ${JSON.stringify(libRoot)} + specifier.slice(6) + '.ts', shortCircuit: true };
   }
+  if (specifier.startsWith('@/')) return { url: ${JSON.stringify(new URL('../src/', import.meta.url).href)} + specifier.slice(2) + '.ts', shortCircuit: true };
   if (context.parentURL?.startsWith(${JSON.stringify(libRoot)}) && specifier.startsWith('.') && !specifier.endsWith('.ts')) specifier += '.ts';
   return nextResolve(specifier, context);
 }`), import.meta.url)
@@ -70,7 +73,7 @@ function host(checkpoint = null) {
   const tree = GameProvider({ children: null })
   const value = tree.props.value
   const [setup, route] = globalThis.__survivalHost.effects
-  return { document, window, timers, value, setup, route,
+  return { document, window, timers, value, setup, route, panel: tree.props.children.at(-1).props,
     tick: time => { now = time; [...timers.values()].forEach(fn => fn()) },
     updates: globalThis.__survivalHost.updates, network: globalThis.__survivalHost, now: time => { now = time },
     state: () => globalThis.__survivalHost.updates.filter(value => value?.phase).at(-1),
@@ -283,7 +286,7 @@ test('a late objective acknowledgement cannot change the next run', async () => 
     }
     await h.value.start('pointer')
     const next = h.state().objective.objectiveId
-    resolve(); await old
+    resolve(); await assert.rejects(old, { status: 409 })
     assert.equal(h.state().run.runId, 'server_run_000000002')
     assert.equal(h.state().objective.objectiveId, next); assert.equal(h.state().completedObjectiveIds.length, 0)
   } finally { cleanup(); h.restore() }
@@ -342,5 +345,208 @@ test('submission at the deadline is acknowledged and the next objective uses the
     assert.equal(h.state().objective.stage, 'observe')
     assert.equal(h.state().objective.deadlineActiveMs - h.state().activeMs, 30000)
     assert.equal(h.state().phase, 'running')
+  } finally { cleanup(); h.restore() }
+})
+
+const saved = h => h.updates.filter(v => ['not_sent', 'saving', 'saved', 'save_error'].includes(v?.status)).at(-1)
+const finishResponse = body => ({ ok: true, requestId: body.requestId, runId: body.snapshot.runId, resultId: body.snapshot.runId, ranked: false, recordedAt: '2026-09-26T00:00:00.000Z' })
+
+test('leaderboard entry freezes both budgets; exit and overlapping pause require explicit Resume', async () => {
+  const h = host(); const cleanup = h.setup()
+  try {
+    await h.value.start('pointer'); h.tick(3000); h.tick(3500)
+    const objective = h.state().objective
+    h.value.openLeaderboard(); h.value.openLeaderboard(); h.tick(100000)
+    assert.equal(h.state().activeMs, 500); assert.equal(h.state().idleElapsedMs, 500)
+    assert.deepEqual(h.state().objective, objective)
+    h.document.hidden = true; h.value.pause('hidden', true); h.panel.onClose()
+    assert.deepEqual(h.state().pauseReasons, ['hidden'])
+    h.value.resume(); assert.equal(h.state().phase, 'paused')
+    h.document.hidden = false; h.value.pause('hidden', false); assert.equal(h.state().phase, 'paused')
+    h.value.resume(); h.tick(103000); h.tick(103100)
+    assert.equal(h.state().activeMs, 600)
+    h.value.openLeaderboard(); h.panel.onClose(); h.panel.onClose()
+    assert.deepEqual(h.state().pauseReasons, []); assert.equal(h.state().phase, 'paused')
+  } finally { cleanup(); h.restore() }
+})
+
+test('Start while browsing rankings retains the pause and cannot accrue time', async () => {
+  const h = host(); const cleanup = h.setup()
+  try {
+    h.value.openLeaderboard(); await h.value.start('pointer'); h.tick(50000)
+    assert.equal(h.state().phase, 'paused'); assert.equal(h.state().activeMs, 0)
+    assert.ok(h.state().pauseReasons.includes('leaderboard'))
+    h.panel.onClose(); h.value.resume(); h.tick(53000)
+    assert.equal(h.state().phase, 'running')
+  } finally { cleanup(); h.restore() }
+})
+
+test('terminal guards all new write kinds, including submission before the next timer pulse', async () => {
+  const h = host(); const cleanup = h.setup()
+  try {
+    await h.value.start('pointer'); h.tick(3000); h.now(15000)
+    const before = h.network.requests.length
+    for (const [url, kind, body] of [
+      ['/api/register', 'admission', { handle: 'tester' }], ['/api/play', 'admission', { handle: 'tester', kind: 'image-confusion' }],
+      ['/api/posts', 'post', { body: 'late' }], ['/api/posts/9/like', 'like', {}],
+    ]) await assert.rejects(h.value.mutate(url, { requestId: crypto.randomUUID(), ...body }, kind, () => true), { status: 409 })
+    assert.equal(h.network.requests.length, before)
+    const terminal = h.state().terminal
+    h.tick(30000); assert.deepEqual(h.state().terminal, terminal)
+  } finally { cleanup(); h.restore() }
+})
+
+test('uncertain finish retries the exact snapshot; duplicate save is locked and acknowledged once', async () => {
+  const h = host(); const cleanup = h.setup()
+  try {
+    await h.value.start('pointer'); h.tick(3000); h.tick(15000)
+    const terminal = h.state().terminal
+    let resolve
+    h.network.fetch = () => new Promise(done => { resolve = done })
+    const first = h.value.saveResult(); await h.value.saveResult()
+    assert.ok(Object.isFrozen(saved(h).request.snapshot))
+    assert.throws(() => { saved(h).request.snapshot.measurements[0].value = 0 }, TypeError)
+    assert.equal(h.network.requests.filter(r => r.url.endsWith('/finish')).length, 1)
+    resolve(Response.json({ error: 'server unavailable' }, { status: 500 })); await first
+    assert.equal(saved(h).status, 'save_error'); assert.equal(saved(h).retryable, true)
+    h.tick(40000); assert.deepEqual(h.state().terminal, terminal)
+    h.network.fetch = (_url, body) => Response.json(finishResponse(body))
+    await h.value.saveResult(); await h.value.saveResult()
+    const requests = h.network.requests.filter(r => r.url.endsWith('/finish'))
+    assert.equal(requests.length, 2); assert.deepEqual(requests[0].body, requests[1].body)
+    assert.deepEqual(requests[0].body.snapshot, terminal)
+    assert.equal(saved(h).status, 'saved'); assert.equal(saved(h).receipt.ranked, false)
+    assert.equal(globalThis.sessionStorage.getItem('checkpoint'), null)
+  } finally { cleanup(); h.restore() }
+})
+
+test('malformed finish acknowledgement remains retryable; definite rejection stays local', async () => {
+  const h = host(); const cleanup = h.setup()
+  try {
+    await h.value.start('pointer'); h.tick(3000); h.tick(15000)
+    h.network.fetch = (_url, body) => Response.json({ ...finishResponse(body), resultId: 'wrong_result_00000001' })
+    await h.value.saveResult(); assert.equal(saved(h).status, 'save_error'); assert.equal(saved(h).retryable, true)
+    h.network.fetch = () => Response.json({ error: 'invalid snapshot' }, { status: 400 })
+    await h.value.saveResult(); assert.equal(saved(h).retryable, false)
+    assert.equal(h.state().phase, 'ended')
+  } finally { cleanup(); h.restore() }
+})
+
+test('old save acknowledgement cannot replace the next run save state or unlock its pending save', async () => {
+  const h = host(); const cleanup = h.setup()
+  try {
+    await h.value.start('pointer'); h.tick(3000); h.tick(15000)
+    let resolve
+    h.network.fetch = (_url, body) => new Promise(done => { resolve = () => done(Response.json(finishResponse(body))) })
+    const old = h.value.saveResult()
+    const normal = verifiedNetwork
+    normal(h)
+    h.network.fetch = (url, body) => {
+      if (url.startsWith('/api/progress')) return Response.json({ humanity: 0, verified: true, challenges: [] })
+      if (url.endsWith('/bind')) return Response.json({ ...body, ok: true, runId: 'server_run_000000002', user: h.network.user })
+      return Response.json({ ...body, ok: true, runId: 'server_run_000000002', startedAt: '2026-09-26T00:00:00.000Z' })
+    }
+    await h.value.start('pointer'); h.tick(18000); h.tick(30000)
+    let resolveNew
+    h.network.fetch = (_url, body) => new Promise(done => { resolveNew = () => done(Response.json(finishResponse(body))) })
+    const next = h.value.saveResult()
+    resolve(); await old
+    assert.equal(saved(h).status, 'saving'); assert.equal(saved(h).request.snapshot.runId, 'server_run_000000002')
+    const count = h.network.requests.length; await h.value.saveResult(); assert.equal(h.network.requests.length, count)
+    resolveNew(); await next; assert.equal(saved(h).receipt.runId, 'server_run_000000002')
+  } finally { cleanup(); h.restore() }
+})
+
+test('late non-objective replies cannot invoke successful component continuation after terminal state', async () => {
+  const h = host(); const cleanup = h.setup()
+  try {
+    await h.value.start('pointer'); h.tick(3000)
+    let resolve
+    h.network.fetch = () => new Promise(done => { resolve = done })
+    const pending = h.value.mutate('/api/play', { requestId: 'issue_delayed_000001', handle: 'tester', kind: 'image-confusion' }, 'admission', () => true)
+    h.tick(15000); const terminal = h.state().terminal
+    resolve(Response.json({ id: 'challenge_late_00001' }))
+    await assert.rejects(pending, { status: 409 }); assert.deepEqual(h.state().terminal, terminal)
+  } finally { cleanup(); h.restore() }
+})
+
+test('actual provider finish reconciles response loss with disposable API and ranks one whole run once', async () => {
+  const disposable = mkdtempSync(join(tmpdir(), 'survival-g07-'))
+  const previousDbPath = process.env.DB_PATH
+  process.env.DB_PATH = join(disposable, 'isolated.sqlite')
+  let db, cleanup, h
+  try {
+    const startRoute = await import('../src/app/api/runs/route.ts')
+    const bindRoute = await import('../src/app/api/runs/[id]/bind/route.ts')
+    const finishRoute = await import('../src/app/api/runs/[id]/finish/route.ts')
+    const scoresRoute = await import('../src/app/api/scores/route.ts')
+    const { getDb } = await import('../src/lib/db.ts')
+    db = getDb()
+    const userId = Number(db.prepare('insert into users (handle, verified_bot) values (?, 1)').run('g07_player').lastInsertRowid)
+    h = host(); cleanup = h.setup(); h.network.user = { id: userId, handle: 'g07_player' }
+    let loseFinish = true
+    h.network.fetch = async (url, body) => {
+      if (url.startsWith('/api/progress')) return Response.json({ humanity: 0, verified: true, challenges: [] })
+      const request = new Request('http://disposable' + url, { method: 'POST', body: JSON.stringify(body) })
+      if (url === '/api/runs') return startRoute.POST(request)
+      const context = { params: Promise.resolve({ id: url.split('/')[3] }) }
+      if (url.endsWith('/bind')) return bindRoute.POST(request, context)
+      if (url.endsWith('/finish')) {
+        const response = await finishRoute.POST(request, context)
+        assert.equal(response.status, 200)
+        if (loseFinish) { loseFinish = false; throw new Error('accepted finish response lost') }
+        return response
+      }
+      throw new Error('Unexpected write: ' + url)
+    }
+    await h.value.start('pointer'); h.tick(3000); h.tick(15000)
+    const terminal = h.state().terminal
+    await h.value.saveResult(); assert.equal(saved(h).status, 'save_error')
+    assert.equal(db.prepare("select count(*) as n from game_runs where terminal_status='failed'").get().n, 1)
+    await h.value.saveResult(); await h.value.saveResult()
+    assert.equal(saved(h).status, 'saved'); assert.equal(saved(h).receipt.ranked, true)
+    const scoreResponse = await scoresRoute.GET(new Request('http://disposable/api/scores?inputMode=pointer'))
+    const ranking = await scoreResponse.json()
+    assert.equal(ranking.scores.length, 1)
+    assert.equal(ranking.scores[0].runId, terminal.runId); assert.equal(ranking.scores[0].activeMs, terminal.activeMs)
+    assert.equal(ranking.scores[0].completedObjectives, terminal.completedObjectiveIds.length)
+    assert.equal((await (await scoresRoute.GET(new Request('http://disposable/api/scores?inputMode=touch_or_keyboard'))).json()).scores.length, 0)
+    const requests = h.network.requests.filter(r => r.url.endsWith('/finish'))
+    assert.equal(requests.length, 2); assert.deepEqual(requests[0].body, requests[1].body)
+    const before = db.prepare('select count(*) as n from posts').get().n
+    await assert.rejects(h.value.mutate('/api/posts', { requestId: crypto.randomUUID(), handle: 'g07_player', body: 'blocked' }, 'post', isPostReceipt), { status: 409 })
+    assert.equal(db.prepare('select count(*) as n from posts').get().n, before)
+  } finally {
+    cleanup?.(); h?.restore(); db?.close(); rmSync(disposable, { recursive: true, force: true })
+    if (previousDbPath === undefined) delete process.env.DB_PATH
+    else process.env.DB_PATH = previousDbPath
+  }
+})
+
+test('late objective reply after interruption cannot change the latched terminal snapshot', async () => {
+  const h = host(); const cleanup = h.setup()
+  try {
+    verifiedNetwork(h); await h.value.start('pointer'); h.tick(3000)
+    let resolve
+    h.network.fetch = (_url, body) => new Promise(done => { resolve = () => done(Response.json({ id: 42, completion: completion(body, { kind: 'post', postId: 42 }) })) })
+    const pending = h.value.mutate('/api/posts', { requestId: 'post_late_closed_001', handle: 'verified', body: 'old' }, 'post', isPostReceipt)
+    h.window.dispatchEvent(new Event('pagehide')); const terminal = h.state().terminal
+    resolve(); await assert.rejects(pending, { status: 409 })
+    assert.deepEqual(h.state().terminal, terminal); assert.equal(h.state().completedObjectiveIds.length, 0)
+    assert.equal(terminal.status, 'interrupted')
+  } finally { cleanup(); h.restore() }
+})
+
+test('restored neutral interruption saves only an acknowledged unranked result', async () => {
+  const h = host(JSON.stringify({ run: { runId: 'server_checkpoint_001', rulesVersion: SURVIVAL_RULES_VERSION, inputMode: 'pointer' }, activeMs: 1234 }))
+  const cleanup = h.setup()
+  try {
+    h.network.fetch = (_url, body) => Response.json({ ...finishResponse(body), ranked: true })
+    await h.value.saveResult(); assert.equal(saved(h).status, 'save_error'); assert.equal(saved(h).retryable, true)
+    h.network.fetch = (_url, body) => Response.json(finishResponse(body))
+    await h.value.saveResult(); assert.equal(saved(h).status, 'saved'); assert.equal(saved(h).receipt.ranked, false)
+    assert.equal(h.network.requests[0].body.snapshot.status, 'interrupted')
+    assert.deepEqual(h.network.requests[0].body, h.network.requests[1].body)
+    assert.equal(h.state().terminal.interruption, 'reload')
   } finally { cleanup(); h.restore() }
 })

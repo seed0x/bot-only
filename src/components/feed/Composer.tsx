@@ -6,12 +6,12 @@ import { ApiError } from '@/lib/api'
 import type { SessionUser } from '@/lib/types'
 type Pending = { requestId: string; handle: string; body: string }
 export default function Composer({ user, onPosted }: { user: SessionUser; onPosted: () => void }) {
-  const { mutate } = useSurvivalGame()
+  const { mutate, state: game } = useSurvivalGame()
   const [body, setBody] = useState(''), [error, setError] = useState(''), [busy, setBusy] = useState(false), [editable, setEditable] = useState(true)
   const pending = useRef<Pending | null>(null), lock = useRef(false)
   async function submit(e: React.FormEvent) {
     e.preventDefault()
-    if (lock.current || !body.trim()) return
+    if (lock.current || game.phase === 'ended' || !body.trim()) return
     pending.current ??= { requestId: crypto.randomUUID(), handle: user.handle, body: body.trim() }
     lock.current = true; setBusy(true); setError('')
     try {
@@ -28,8 +28,8 @@ export default function Composer({ user, onPosted }: { user: SessionUser; onPost
     <Avatar handle={user.handle} size={36} />
     <div className="composer-content">
       <label htmlFor="compose" className="eyebrow">New post</label>
-      <textarea id="compose" rows={2} maxLength={280} disabled={busy || !editable} value={body} onChange={e => { setBody(e.target.value); setError('') }} placeholder="What’s happening?" />
-      <div className="composer-actions"><span className="fine-print">{280 - body.length} characters left</span><button className="button-primary" disabled={!body.trim() || busy}>{busy ? 'Posting…' : error ? 'Try again' : 'Post'}</button></div>
+      <textarea id="compose" rows={2} maxLength={280} disabled={busy || !editable || game.phase === 'ended'} value={body} onChange={e => { setBody(e.target.value); setError('') }} placeholder="What’s happening?" />
+      <div className="composer-actions"><span className="fine-print">{280 - body.length} characters left</span><button className="button-primary" disabled={!body.trim() || busy || game.phase === 'ended'}>{busy ? 'Posting…' : error ? 'Try again' : 'Post'}</button></div>
       {error && <p className="form-error" role="alert">{error} Your draft is saved here.</p>}
     </div>
   </form>

@@ -31,7 +31,7 @@ export default function Feed() {
     return () => resource('feed_identity', false)
   }, [game.user, admissionReady, resource])
   async function like(id: number) {
-    if (!verified || liked.has(id) || locks.current.has(id)) return
+    if (game.phase === 'ended' || !verified || liked.has(id) || locks.current.has(id)) return
     locks.current.add(id)
     if (!requests.current.has(id)) requests.current.set(id, { requestId: crypto.randomUUID(), handle: verified.handle })
     setPending(s => new Set(s).add(id)); setLikeError('')
@@ -43,7 +43,7 @@ export default function Feed() {
   }
   const pinned = posts.data?.filter(p => p.pinned) ?? []
   const transmissions = posts.data?.filter(p => !p.pinned) ?? []
-  const postCard = (p: NonNullable<typeof posts.data>[number]) => <PostCard key={p.id} post={p} liked={liked.has(p.id) || p.liked === 1} canLike={!!verified && !pending.has(p.id) && (!game.objective || game.objective.kind !== 'like' || game.objective.eligiblePostIds.includes(p.id))} onLike={() => void like(p.id)} />
+  const postCard = (p: NonNullable<typeof posts.data>[number]) => <PostCard key={p.id} post={p} liked={liked.has(p.id) || p.liked === 1} canLike={game.phase !== 'ended' && !!verified && !pending.has(p.id) && (!game.objective || game.objective.kind !== 'like' || game.objective.eligiblePostIds.includes(p.id))} onLike={() => void like(p.id)} />
   return <div className="feed">
     <SiteHeader><UnitChip user={user} humanity={verified ? progress.data?.humanity ?? null : null} /></SiteHeader>
     <main className="feed-layout feed-grid">

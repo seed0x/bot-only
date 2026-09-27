@@ -1,3 +1,9 @@
+# G07 — implemented locally — 2026-09-26
+
+Owner: Codex. Branch: `feat/fail-states`, base `fb8dc6b`; G07 changes uncommitted. Owned slice: `src/components/feed/LeaderboardPanel.tsx`, navigation controls in SiteHeader and gate/feed, root GameProvider/GameHud/GameOver final hookup, ChallengeTrial/Composer terminal controls, focused tests and current docs. Shared wire types, engine/config/detectors, schema, API routes and CAPTCHA scoring unchanged.
+
+Behavior/recovery/checks: explicit immutable finish/save and identical uncertain retry; receipt-only public eligibility; survival rankings separated by version/input mode; a global modal pauses all budgets through every close path and requires Resume; all gameplay writes pass the terminal guard. Twenty-two provider cases and three panel cases pass, including actual provider→finish→ranking response-loss reconciliation on disposable SQLite. Full nine-file suite, scoped lint, source-only TypeScript and whitespace checks pass. No connected browser: native dialog/device/viewport acceptance remains unrun. Local save retry bodies do not survive reload/new run. See latest handoff for limits. Stop here; next is G08 acceptance-driven tuning and rehearsal.
+
 # G06 — implemented locally — 2026-09-26
 
 Owner: Codex. Branch: `feat/fail-states`, base `1a7483c`; G06 work remains uncommitted. Owned slice: register/play action handling in `src/lib/game.ts`, post/like routes, objective validation/receipt helpers, root provider/HUD integration, gate `ChallengeTrial`, feed/Composer/Objective, result copy, focused tests and current docs. Shared types/config, DB schema, gate CAPTCHA scoring and leaderboard remain unchanged. At user request, successful objective acknowledgement now continues immediately when no other pause reason remains.
